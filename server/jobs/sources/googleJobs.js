@@ -3,6 +3,7 @@
 // against their terms). Enabled only when SERPAPI_KEY is set.
 
 import { DAY, classify, cleanText, fetchJson, isTech, normalizeUrl } from "../classify.js";
+import { domainFromUrl } from "../logos.js";
 
 const QUERIES = [
   "software engineer intern",
@@ -10,6 +11,32 @@ const QUERIES = [
   "entry level software engineer",
   "data science intern",
 ];
+
+const ATS = /(greenhouse\.io|lever\.co|ashbyhq\.com|myworkdayjobs\.com|icims\.com|smartrecruiters\.com|workable\.com|jobvite\.com|oraclecloud\.com|successfactors)/i;
+const MAJOR_BOARDS = /(linkedin\.com|indeed\.com|glassdoor\.com)/i;
+
+const squash = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+/** Best place to apply: the company's own site → its hiring platform → LinkedIn/Indeed/Glassdoor → anything else. */
+function pickApply(options, company) {
+  const name = squash(company).replace(/(inc|llc|corp|corporation|company|technologies)$/, "");
+  const host = (o) => {
+    try {
+      return new URL(o.link).hostname.toLowerCase();
+    } catch {
+      return "";
+    }
+  };
+  const score = (o) => {
+    const h = host(o);
+    if (name.length >= 3 && squash(h).includes(name)) return 0; // e.g. pinterestcareers.com
+    if (ATS.test(h)) return 1;
+    if (MAJOR_BOARDS.test(h)) return 2;
+    return 3;
+  };
+  const best = [...options].filter((o) => o.link).sort((a, b) => score(a) - score(b))[0];
+  return best ? { link: best.link, ownSite: score(best) === 0 } : null;
+}
 
 /** "3 days ago" / "12 hours ago" → epoch ms (approximate). */
 function parseAgo(s = "") {
@@ -38,8 +65,11 @@ export async function fetchGoogleJobs() {
       const data = await fetchJson(`https://serpapi.com/search.json?${params}`, { timeoutMs: 30000 });
       for (const j of data.jobs_results || []) {
         const title = cleanText(j.title);
-        const posted = parseAgo(j.detected_extensions?.posted_at);
-        const url = j.apply_options?.[0]?.link || j.share_link;
+        // Posting age is in detected_extensions.posted_at or, in newer responses, in `extensions`.
+        const ago = j.detected_extensions?.posted_at || (j.extensions || []).find((e) => /\bago\b/i.test(e));
+        const posted = parseAgo(ago);
+        const apply = pickApply(j.apply_options || [], j.company_name || "");
+        const url = apply?.link || j.share_link;
         if (!posted || !url || !isTech(title)) continue;
         const level = classify(title, /intern/i.test(q) ? undefined : "entry");
         if (!level) continue;
@@ -54,6 +84,8 @@ export async function fetchGoogleJobs() {
           postedApprox: true,
           level,
           sponsorship: null,
+          // Logo only from the company's own site; otherwise the name lookup decides.
+          domain: apply?.ownSite ? domainFromUrl(apply.link) : null,
         });
       }
     } catch (err) {
