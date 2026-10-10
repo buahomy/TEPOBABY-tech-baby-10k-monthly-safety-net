@@ -16,6 +16,7 @@ import { getLogo } from "./jobs/logos.js";
 import fs from "node:fs";
 import { getProfile, saveAnswers } from "./profileStore.js";
 import { importSaved, listSaved, removeSaved, upsertSaved } from "./savedJobsStore.js";
+import { ginnyRoutes } from "./ginny/routes.js";
 
 const {
   GOOGLE_CLIENT_ID,
@@ -133,7 +134,8 @@ const app = express();
 app.disable("x-powered-by");
 if (isProd) app.set("trust proxy", 1);
 app.use("/api/saved/import", express.json({ limit: "512kb" })); // up to 500 saved jobs
-app.use(express.json({ limit: "8kb" }));
+const globalJson = express.json({ limit: "8kb" });
+app.use((req, res, next) => (req.path.startsWith("/api/ginny/") ? next() : globalJson(req, res, next)));
 app.use("/api", (_req, res, next) => {
   res.set("Cache-Control", "no-store");
   next();
@@ -251,6 +253,13 @@ app.post("/api/saved/import", requireXhr, requireUser, async (req, res) => {
   } catch (err) {
     sendStoreError(res, err, "import");
   }
+});
+
+// ---- Ginny: ATS match analysis + Ask Gemini (see server/ginny) ----
+ginnyRoutes(app, {
+  readSession: (req) => readSession(parseCookies(req.headers.cookie)[SESSION_COOKIE]),
+  requireXhr,
+  requireUser,
 });
 
 // ---- Job postings (public: guests see them too) ----

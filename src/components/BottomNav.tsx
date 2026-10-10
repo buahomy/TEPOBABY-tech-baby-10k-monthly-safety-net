@@ -1,9 +1,9 @@
 // Bottom tab bar: Home · Interview · (+) · Connect · Profile.
-// The active tab's icon switches from outline to solid; "+" is the raised upload button.
+// The active tab's icon switches from outline to solid; "+" opens the Job / Ginny! sheet.
 
 export type Tab = "home" | "interview" | "connect" | "profile";
 
-type Props = { active: Tab; onSelect: (tab: Tab) => void; onUpload: () => void };
+type Props = { active: Tab; onSelect: (tab: Tab) => void; onPlus: () => void };
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "home", label: "Home" },
@@ -50,7 +50,7 @@ function NavIcon({ tab, active }: { tab: Tab; active: boolean }) {
   );
 }
 
-export default function BottomNav({ active, onSelect, onUpload }: Props) {
+export default function BottomNav({ active, onSelect, onPlus }: Props) {
   const item = (t: (typeof TABS)[number]) => (
     <button
       key={t.id}
@@ -67,7 +67,7 @@ export default function BottomNav({ active, onSelect, onUpload }: Props) {
   return (
     <nav className="bottom-nav" aria-label="Main">
       {TABS.slice(0, 2).map(item)}
-      <button type="button" className="nav-plus" aria-label="Upload an image" onClick={onUpload}>
+      <button type="button" className="nav-plus" aria-label="Open Ginny: pick a job and use AI tools" onClick={onPlus}>
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
           <path d="M12 5.5v13M5.5 12h13" />
         </svg>

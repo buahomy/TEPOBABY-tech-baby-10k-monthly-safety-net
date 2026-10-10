@@ -1,0 +1,548 @@
+/* Job / Ginny! sheet opened from the center "+" button. Built on the tokens in mess01.css. */
+
+.m01 .gs-backdrop {
+  position: absolute;
+  z-index: 5;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  background: rgba(0, 0, 0, 0.55);
+  animation: fade-in 160ms ease both;
+}
+
+.m01 .gs {
+  display: flex;
+  width: 100%;
+  height: 92%;
+  flex-direction: column;
+  border-top: 1px solid var(--stroke-strong);
+  border-radius: 24px 24px 0 0;
+  background: #11131f;
+  animation: sheet-up 220ms ease both;
+}
+
+.m01 .gs-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 14px 10px;
+}
+
+.m01 .gs-icon-btn {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 11px;
+  color: var(--text-secondary);
+  background: var(--surface-raised);
+  font-size: 14px;
+}
+
+.m01 .gs-icon-btn .icon {
+  width: 17px;
+  height: 17px;
+}
+
+.m01 .gs-spacer {
+  visibility: hidden;
+}
+
+.m01 .gs-tabs {
+  display: grid;
+  flex: 1;
+  grid-template-columns: 1fr 1fr;
+  padding: 3px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.m01 .gs-tabs button {
+  height: 34px;
+  border-radius: 9px;
+  color: var(--text-tertiary);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.m01 .gs-tabs button.is-active {
+  color: var(--text);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.55), rgba(85, 88, 219, 0.55));
+}
+
+.m01 .gs-body {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 12px;
+  padding: 6px 16px 28px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.m01 .gs-title {
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.m01 .gs-hint {
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.m01 .gs-note {
+  padding: 10px 12px;
+  border-radius: 12px;
+  color: #fcd34d;
+  background: rgba(251, 191, 36, 0.1);
+  font-size: 12px;
+}
+
+.m01 .gs-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 30px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+/* Job picker */
+.m01 .gs-jobs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  list-style: none;
+}
+
+.m01 .gs-job,
+.m01 .gs-selected {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--stroke);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  text-align: left;
+}
+
+.m01 .gs-job.is-selected {
+  border-color: rgba(129, 140, 248, 0.7);
+  background: var(--indigo-soft);
+}
+
+.m01 .gs-radio {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1.5px solid var(--stroke-strong);
+  border-radius: 50%;
+}
+
+.m01 .is-selected .gs-radio {
+  border-color: transparent;
+  color: white;
+  background: var(--indigo);
+}
+
+.m01 .gs-radio .icon {
+  width: 14px;
+  height: 14px;
+}
+
+.m01 .gs-change {
+  flex: 0 0 auto;
+  font-size: 12px;
+}
+
+/* Tools */
+.m01 .gs-tool {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--stroke);
+  border-radius: 16px;
+  background: linear-gradient(105deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+  text-align: left;
+}
+
+.m01 .gs-tool:hover {
+  border-color: rgba(129, 140, 248, 0.45);
+}
+
+.m01 .gs-tool > .icon-arrow {
+  width: 15px;
+  flex: 0 0 auto;
+  color: #50586f;
+}
+
+.m01 .gs-tool-icon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 13px;
+  background: var(--indigo-soft);
+  font-size: 20px;
+}
+
+.m01 .gs-tool-copy {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.m01 .gs-tool-title {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.m01 .gs-tool-detail {
+  color: var(--text-tertiary);
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+
+/* Resume + privacy */
+.m01 .gs-resume {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.m01 .gs-resume-file {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.m01 .gs-resume-actions {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+}
+
+.m01 .gs-privacy {
+  color: var(--text-tertiary);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.m01 .gs-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  list-style: none;
+  color: var(--text-tertiary);
+  font-size: 12.5px;
+}
+
+.m01 .gs-steps .is-active {
+  color: var(--text);
+}
+
+.m01 .gs-steps .is-done {
+  color: var(--emerald);
+}
+
+.m01 .gs-paste {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.m01 .gs-paste textarea,
+.m01 .gs-input input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--stroke-strong);
+  border-radius: 12px;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
+  font: inherit;
+  font-size: 13px;
+  resize: vertical;
+}
+
+/* Report */
+.m01 .gs-report {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.m01 .gs-tier {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-radius: 16px;
+  color: #0b0d17;
+  font-weight: 800;
+}
+
+.m01 .gs-tier--strong { background: #34d399; }
+.m01 .gs-tier--good { background: #a3e635; }
+.m01 .gs-tier--average { background: #fbbf24; }
+.m01 .gs-tier--weak { background: #f87171; }
+
+.m01 .gs-tier-label {
+  font-size: 16px;
+}
+
+.m01 .gs-tier-score {
+  font-size: 14px;
+}
+
+.m01 .gs-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.m01 .gs-bar {
+  display: grid;
+  grid-template-columns: 84px 1fr 28px;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 11.5px;
+}
+
+.m01 .gs-bar-track {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.m01 .gs-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #818cf8, #6ee7b7);
+}
+
+.m01 .gs-bar-value {
+  color: var(--text);
+  font-weight: 700;
+  text-align: right;
+}
+
+.m01 .gs-sub {
+  margin-top: 4px;
+  color: #b8bdfb;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+.m01 .gs-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.m01 .gs-chip {
+  padding: 4px 9px;
+  border: 1px solid var(--stroke-strong);
+  border-radius: 999px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.m01 .gs-chip--ok {
+  border-color: transparent;
+  color: var(--emerald);
+  background: var(--emerald-soft);
+}
+
+.m01 .gs-chip--req {
+  border-color: rgba(248, 113, 113, 0.4);
+  color: #fca5a5;
+}
+
+.m01 .gs-evidence {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  list-style: none;
+}
+
+.m01 .gs-evidence li {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 9px 11px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.m01 .gs-req {
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.m01 .gs-proof {
+  color: var(--text-tertiary);
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+
+.m01 .gs-how {
+  color: var(--text-tertiary);
+  font-size: 11px;
+}
+
+.m01 .gs-how summary {
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.m01 .gs-how ul {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+  padding-left: 16px;
+}
+
+/* Chat */
+.m01 .gs-chat {
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.m01 .gs-messages {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.m01 .gs-suggest {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.m01 .gs-suggestion {
+  padding: 10px 12px;
+  border: 1px solid rgba(129, 140, 248, 0.35);
+  border-radius: 14px;
+  color: #c7d2fe;
+  background: var(--indigo-soft);
+  font-size: 12.5px;
+  line-height: 1.4;
+  text-align: left;
+}
+
+.m01 .gs-suggestion:disabled {
+  opacity: 0.5;
+}
+
+.m01 .gs-msg {
+  max-width: 92%;
+  padding: 10px 12px;
+  border-radius: 14px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.m01 .gs-msg-text {
+  white-space: pre-wrap;
+}
+
+.m01 .gs-msg--user {
+  align-self: flex-end;
+  color: white;
+  background: var(--indigo);
+}
+
+.m01 .gs-msg--model {
+  align-self: flex-start;
+  border: 1px solid var(--stroke);
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.m01 .gs-typing {
+  color: var(--text-tertiary);
+}
+
+.m01 .gs-sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin-top: 8px;
+  color: var(--text-tertiary);
+  font-size: 11px;
+}
+
+.m01 .gs-sources a {
+  color: var(--indigo-bright);
+}
+
+.m01 .gs-input {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  gap: 8px;
+  padding-top: 8px;
+  background: #11131f;
+}
+
+.m01 .gs-send {
+  display: grid;
+  width: 42px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 12px;
+  color: white;
+  background: var(--indigo);
+}
+
+.m01 .gs-send:disabled {
+  opacity: 0.5;
+}
+
+.m01 .gs-send .icon {
+  width: 17px;
+  height: 17px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .m01 .gs,
+  .m01 .gs-backdrop {
+    animation: none;
+  }
+}
