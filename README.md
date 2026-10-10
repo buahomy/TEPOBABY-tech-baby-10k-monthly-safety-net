@@ -30,12 +30,12 @@ Safety Assurance: You sign in on Google's own page, so I never see or store your
 `.env.local` is git-ignored. Never commit real values.
 
 ### How it works
-- **Google Identity Services** (authorization code flow) opens Google's account picker and gives the browser a one-time code. A random `state` value is checked so forged sign-ins are rejected.
+- **Google Identity Services** (authorization code flow, redirect mode) sends the page to Google's account picker, and Google sends the browser back with a one-time code. A random `state` value is checked so forged sign-ins are rejected.
 - **A small Node.js/Express server** ([server/index.js](server/index.js)) exchanges the code with Google and verifies the ID token with the official `google-auth-library`. It checks the signature, that the token was issued for this app, the issuer, and the expiry.
 - The server only accepts accounts whose email is **verified and ends in `.edu`**.
 - It then sets its own **signed, httpOnly session cookie** (7 days, `SameSite=Lax`, `Secure` in production). Google tokens are discarded.
 - Requests that change data need an `X-Requested-With` header, which blocks cross-site requests (CSRF).
-- In the iPhone Home Screen app, popups don't work, so sign-in switches to a full-page redirect.
+- Sign-in uses a full-page redirect instead of a popup, so it works in every browser, including the iPhone Home Screen app.
 - The service worker never caches `/api`, so sign-in status is never stale.
 
 API routes (the Vite dev server forwards `/api` to the auth server):

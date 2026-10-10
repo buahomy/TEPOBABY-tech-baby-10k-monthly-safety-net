@@ -1,30 +1,25 @@
-// Google sign-in (Google Identity Services, authorization-code model).
-// The browser only obtains a one-time code; the server (server/index.js) exchanges it, verifies the
-// ID token and enforces the .edu rule, then sets an httpOnly session cookie.
+// Google sign-in (Google Identity Services, authorization-code model, redirect mode).
+// The browser never sees tokens: Google redirects back to the server with a one-time code, and the
+// server (server/index.js) exchanges it, verifies the ID token, enforces the .edu rule, and sets an
+// httpOnly session cookie.
 
 export type User = { email: string; name: string; picture: string };
 
-type CodeResponse = { code?: string; state?: string; error?: string; error_description?: string };
 type CodeClient = { requestCode: () => void };
 type GoogleOAuth2 = {
   initCodeClient: (config: {
     client_id: string;
     scope: string;
-    ux_mode: "popup" | "redirect";
+    ux_mode: "redirect";
     redirect_uri?: string;
     state?: string;
     select_account?: boolean;
-    callback?: (resp: CodeResponse) => void;
-    error_callback?: (err: { type: string }) => void;
   }) => CodeClient;
 };
 
 declare global {
   interface Window {
     google?: { accounts: { oauth2: GoogleOAuth2 } };
-  }
-  interface Navigator {
-    standalone?: boolean;
   }
 }
 
@@ -42,7 +37,7 @@ export const AUTH_ERRORS: Record<string, string> = {
 
 let gisLoad: Promise<void> | null = null;
 
-/** Loads the Google Identity Services script. Call early so the click handler can open the popup synchronously. */
+/** Loads the Google Identity Services script early so the sign-in button responds instantly. */
 export function prepareGoogleSignIn(): Promise<void> {
   if (window.google?.accounts?.oauth2) return Promise.resolve();
   gisLoad ??= new Promise((resolve, reject) => {
@@ -64,70 +59,32 @@ function randomState() {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-function isStandalone() {
-  return window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
-}
-
 /**
- * Starts Google sign-in. Must be called directly from a click/tap handler.
- * Resolves with the user (popup flow) or "redirecting" (Home Screen app, page navigates away).
+ * Starts Google sign-in by sending the whole page to Google's account picker. Google then sends the
+ * browser back to /api/auth/google/callback, the server signs the student in, and the app reloads
+ * straight into onboarding. A full-page redirect works everywhere, including in-editor browsers,
+ * strict popup blockers and the iOS Home Screen app, where a popup can't report back to the page.
  */
-export function signInWithGoogle(): Promise<User | "redirecting"> {
-  if (!CLIENT_ID) return Promise.reject(new Error("Google sign-in isn't configured (VITE_GOOGLE_CLIENT_ID)."));
+export function signInWithGoogle(): void {
+  if (!CLIENT_ID) throw new Error("Google sign-in isn't configured (VITE_GOOGLE_CLIENT_ID).");
   const oauth2 = window.google?.accounts?.oauth2;
-  if (!oauth2) return Promise.reject(new Error("Google sign-in is still loading. Try again in a second."));
+  if (!oauth2) throw new Error("Google sign-in is still loading. Try again in a second.");
 
+  // CSRF protection: the server only accepts the callback if `state` matches this cookie.
   const state = randomState();
+  const secure = location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `${STATE_COOKIE}=${state}; Path=/api/auth; Max-Age=600; SameSite=Lax${secure}`;
 
-  // Popups are unreliable inside an iOS Home Screen app, so use a full-page redirect there.
-  if (isStandalone()) {
-    const secure = location.protocol === "https:" ? "; Secure" : "";
-    document.cookie = `${STATE_COOKIE}=${state}; Path=/api/auth; Max-Age=600; SameSite=Lax${secure}`;
-    oauth2
-      .initCodeClient({
-        client_id: CLIENT_ID,
-        scope: SCOPE,
-        ux_mode: "redirect",
-        redirect_uri: `${location.origin}/api/auth/google/callback`,
-        state,
-        select_account: true,
-      })
-      .requestCode();
-    return Promise.resolve("redirecting");
-  }
-
-  return new Promise((resolve, reject) => {
-    oauth2
-      .initCodeClient({
-        client_id: CLIENT_ID,
-        scope: SCOPE,
-        ux_mode: "popup",
-        state,
-        select_account: true,
-        callback: async (resp) => {
-          if (resp.error || !resp.code) return reject(new Error(AUTH_ERRORS.cancelled));
-          if (resp.state !== state) return reject(new Error(AUTH_ERRORS.state));
-          try {
-            const res = await fetch("/api/auth/google", {
-              method: "POST",
-              credentials: "same-origin",
-              headers: { "Content-Type": "application/json", "X-Requested-With": "XmlHttpRequest" },
-              body: JSON.stringify({ code: resp.code }),
-            });
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok) return reject(new Error(data.error || AUTH_ERRORS.failed));
-            resolve(data.user as User);
-          } catch {
-            reject(new Error(AUTH_ERRORS.failed));
-          }
-        },
-        error_callback: (err) =>
-          reject(
-            new Error(err.type === "popup_failed_to_open" ? "Allow pop-ups to sign in with Google." : AUTH_ERRORS.cancelled),
-          ),
-      })
-      .requestCode();
-  });
+  oauth2
+    .initCodeClient({
+      client_id: CLIENT_ID,
+      scope: SCOPE,
+      ux_mode: "redirect",
+      redirect_uri: `${location.origin}/api/auth/google/callback`,
+      state,
+      select_account: true,
+    })
+    .requestCode();
 }
 
 export async function getCurrentUser(): Promise<User | null> {

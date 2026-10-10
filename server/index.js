@@ -1,7 +1,8 @@
 // Auth API for Tepobaby: Google sign-in restricted to verified .edu accounts.
 //
 // Flow (Google Identity Services, authorization-code model):
-//   1. Browser gets a one-time code from Google (popup, or full redirect in the iOS Home Screen app).
+//   1. The browser is redirected to Google; Google redirects back to /api/auth/google/callback with a
+//      one-time code (and the `state` we set, checked against a cookie to block forged callbacks).
 //   2. This server exchanges the code with Google using the client secret and receives an ID token.
 //   3. The ID token is verified (signature, audience, issuer, expiry) and the email must be
 //      verified and end in .edu. The browser never decides who is allowed in.
@@ -10,6 +11,7 @@
 import crypto from "node:crypto";
 import express from "express";
 import { OAuth2Client } from "google-auth-library";
+import { getProfile, saveAnswers } from "./profileStore.js";
 
 const {
   GOOGLE_CLIENT_ID,
@@ -139,23 +141,7 @@ function requireXhr(req, res, next) {
   next();
 }
 
-// Popup flow: the browser posts the code it received via postMessage.
-app.post("/api/auth/google", requireXhr, async (req, res) => {
-  try {
-    const user = await userFromCode(req.body?.code, "postmessage");
-    res.cookie(SESSION_COOKIE, signSession(user), sessionCookieOptions);
-    res.json({ user: publicUser(user) });
-  } catch (err) {
-    const known = err instanceof AuthError;
-    if (!known) console.error("[auth] code exchange failed:", err?.message);
-    res.status(known && err.code !== "failed" ? 403 : 401).json({
-      error: known ? err.message : "Google sign-in failed. Please try again.",
-      code: known ? err.code : "failed",
-    });
-  }
-});
-
-// Redirect flow (iOS Home Screen app, where popups don't work).
+// Google sends the browser here after the student picks an account.
 app.get("/api/auth/google/callback", async (req, res) => {
   const cookies = parseCookies(req.headers.cookie);
   const expectedState = cookies[STATE_COOKIE];
@@ -163,15 +149,22 @@ app.get("/api/auth/google/callback", async (req, res) => {
 
   const fail = (code) => res.redirect(303, `/?auth_error=${encodeURIComponent(code)}`);
 
-  if (req.query.error) return fail("cancelled");
-  if (!expectedState || !safeEqual(expectedState, req.query.state ?? "")) return fail("state");
+  if (req.query.error) {
+    console.log(`[auth] sign-in cancelled at Google: ${req.query.error}`);
+    return fail("cancelled");
+  }
+  if (!expectedState || !safeEqual(expectedState, req.query.state ?? "")) {
+    console.error("[auth] sign-in rejected: state cookie missing or mismatched");
+    return fail("state");
+  }
 
   try {
     const user = await userFromCode(req.query.code, REDIRECT_URI);
     res.cookie(SESSION_COOKIE, signSession(user), sessionCookieOptions);
+    console.log(`[auth] signed in @${user.email.split("@")[1]}`);
     res.redirect(303, "/");
   } catch (err) {
-    if (!(err instanceof AuthError)) console.error("[auth] redirect exchange failed:", err?.message);
+    console.error(`[auth] sign-in rejected: ${err instanceof AuthError ? err.code : err?.message}`);
     fail(err instanceof AuthError ? err.code : "failed");
   }
 });
@@ -185,6 +178,36 @@ app.get("/api/auth/me", (req, res) => {
 app.post("/api/auth/logout", requireXhr, (_req, res) => {
   res.clearCookie(SESSION_COOKIE, { ...sessionCookieOptions, maxAge: undefined });
   res.json({ ok: true });
+});
+
+// ---- Onboarding profile (signed-in users only, each user can only touch their own) ----
+
+function requireUser(req, res, next) {
+  const session = readSession(parseCookies(req.headers.cookie)[SESSION_COOKIE]);
+  if (!session) return res.status(401).json({ error: "Sign in first." });
+  req.session = session;
+  next();
+}
+
+app.get("/api/profile", requireUser, async (req, res) => {
+  const profile = await getProfile(req.session.sub);
+  res.json({ profile: profile && { answers: profile.answers, completedAt: profile.completedAt } });
+});
+
+app.put("/api/profile", requireXhr, requireUser, async (req, res) => {
+  try {
+    const profile = await saveAnswers(
+      req.session.sub,
+      req.session.email,
+      req.body?.answers,
+      req.body?.complete === true,
+    );
+    res.json({ profile: { answers: profile.answers, completedAt: profile.completedAt } });
+  } catch (err) {
+    if (err?.status === 400) return res.status(400).json({ error: err.message });
+    console.error("[profile] save failed:", err?.message);
+    res.status(500).json({ error: "Couldn't save your answers. Please try again." });
+  }
 });
 
 app.listen(Number(PORT), "127.0.0.1", () => {

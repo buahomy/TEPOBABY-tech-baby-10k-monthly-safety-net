@@ -226,3 +226,6 @@ node_modules/
 
 # macOS
 .DS_Store
+
+# Local onboarding profile store (contains personal data)
+server/data/
