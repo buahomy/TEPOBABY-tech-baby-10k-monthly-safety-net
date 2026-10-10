@@ -18,6 +18,7 @@ import { getProfile, saveAnswers } from "./profileStore.js";
 import { importSaved, listSaved, removeSaved, upsertSaved } from "./savedJobsStore.js";
 import { ginnyRoutes } from "./ginny/routes.js";
 import { companyOptions, createSession, realtimeEnabled } from "./interview/realtime.js";
+import { customExpected, getProblem, problemList, warmCache } from "./neetcode/index.js";
 
 const {
   GOOGLE_CLIENT_ID,
@@ -136,7 +137,8 @@ app.disable("x-powered-by");
 if (isProd) app.set("trust proxy", 1);
 app.use("/api/saved/import", express.json({ limit: "512kb" })); // up to 500 saved jobs
 const globalJson = express.json({ limit: "8kb" });
-app.use((req, res, next) => (req.path.startsWith("/api/ginny/") ? next() : globalJson(req, res, next)));
+app.use("/api/neetcode/expected", express.json({ limit: "64kb" })); // custom test inputs
+app.use((req, res, next) => (req.path.startsWith("/api/ginny/") || req.body !== undefined ? next() : globalJson(req, res, next)));
 app.use("/api", (_req, res, next) => {
   res.set("Cache-Control", "no-store");
   next();
@@ -291,6 +293,38 @@ app.post("/api/interview/session", requireXhr, express.json({ limit: "4kb" }), a
   }
 });
 
+// ---- Technical: NeetCode 150 (public: guests can practice too) ----
+// Problems and tests come from here; students' code runs in their own browser.
+
+app.get("/api/neetcode", (_req, res) => res.json(problemList()));
+
+app.get("/api/neetcode/problem/:slug", async (req, res) => {
+  try {
+    const p = await getProblem(req.params.slug);
+    if (!p) return res.status(404).json({ error: "Unknown problem." });
+    res.json(p);
+  } catch (err) {
+    console.error("[neetcode] problem failed:", req.params.slug, err.message);
+    res.status(502).json({ error: "Couldn't load this problem from LeetCode. Try again in a minute." });
+  }
+});
+
+const expectedHits = new Map();
+app.post("/api/neetcode/expected", requireXhr, async (req, res) => {
+  const key = req.ip;
+  const now = Date.now();
+  const recent = (expectedHits.get(key) || []).filter((t) => now - t < 60e3);
+  if (recent.length >= 40) return res.status(429).json({ error: "Too many custom runs. Wait a minute and try again." });
+  expectedHits.set(key, [...recent, now]);
+  const { slug, input } = req.body || {};
+  if (typeof slug !== "string" || typeof input !== "string") return res.status(400).json({ error: "Missing slug or input." });
+  try {
+    res.json({ expected: await customExpected(slug, input) });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+
 // ---- Job postings (public: guests see them too) ----
 
 const LEVELS = new Set(["underclassmen", "internship", "entry"]);
@@ -359,6 +393,8 @@ app.get("/api/postings/stream", (_req, res) => {
 });
 
 startJobFeed();
+// Fetch any NeetCode problems not cached yet (one request at a time).
+warmCache().catch((err) => console.warn("[neetcode] warm-up failed:", err.message));
 // Warm the logo cache so launchpads load instantly.
 Promise.allSettled([...LAUNCHPAD].map(([d, opts]) => getLogo(d, opts)));
 

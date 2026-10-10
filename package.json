@@ -9,10 +9,19 @@
     "dev:api": "node --env-file=.env.local --watch server/index.js",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "start:api": "NODE_ENV=production node server/index.js"
+    "start:api": "NODE_ENV=production node server/index.js",
+    "check:neetcode": "node scripts/check-neetcode.mjs"
   },
   "dependencies": {
+    "@codemirror/commands": "^6.11.1",
+    "@codemirror/lang-javascript": "^6.2.2",
+    "@codemirror/lang-python": "^6.1.6",
+    "@codemirror/language": "^6.13.1",
+    "@codemirror/state": "^6.7.6",
+    "@codemirror/theme-one-dark": "^6.1.2",
+    "@codemirror/view": "^6.43.14",
     "@huggingface/transformers": "3.8.1",
+    "codemirror": "^6.0.1",
     "express": "^5.2.1",
     "google-auth-library": "^10.9.1",
     "react": "18.3.1",
