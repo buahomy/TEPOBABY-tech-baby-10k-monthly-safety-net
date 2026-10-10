@@ -107,16 +107,6 @@
       ]
     },
     {
-      "name": "Hispanic Scholarship Fund",
-      "domain": "hsf.net",
-      "url": "https://www.hsf.net/",
-      "who": "Scholarships plus career services and company partners",
-      "for": [
-        "hispanic_latino"
-      ],
-      "logo": "https://prod-hsf4-cms.s3-us-west-1.amazonaws.com/public/directus/hsf/originals/80cac959-d0af-4312-bfb9-bd082677ea76.png"
-    },
-    {
       "name": "SACNAS",
       "domain": "sacnas.org",
       "url": "https://www.sacnas.org/",
@@ -275,28 +265,6 @@
       ]
     },
     {
-      "name": "Google Tech Exchange",
-      "domain": "google.com",
-      "url": "https://buildyourfuture.withgoogle.com/programs/tech-exchange",
-      "who": "Google CS courses for students at HBCUs and Hispanic-Serving Institutions",
-      "for": [
-        "black",
-        "hispanic_latino"
-      ]
-    },
-    {
-      "name": "Generation Google Scholarship",
-      "domain": "google.com",
-      "url": "https://buildyourfuture.withgoogle.com/scholarships/generation-google-scholarship",
-      "who": "Google scholarship for CS students from groups underrepresented in tech",
-      "for": [
-        "black",
-        "hispanic_latino",
-        "two_or_more",
-        "women_nonbinary"
-      ]
-    },
-    {
       "name": "UNCF",
       "domain": "uncf.org",
       "url": "https://uncf.org/",
@@ -445,7 +413,8 @@
       "who": "National Association of Asian American Professionals: leadership and career events",
       "for": [
         "asian"
-      ]
+      ],
+      "logo": "https://www.naaap.org/wp-content/uploads/2020/04/NAAAP-favicon-300x300.png"
     },
     {
       "name": "Out in Tech",
