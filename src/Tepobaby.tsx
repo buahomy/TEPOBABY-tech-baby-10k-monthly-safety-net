@@ -3,6 +3,7 @@ import Main from "./pages/Main";
 import Mess01 from "./pages/Mess01";
 import Questions from "./pages/Questions";
 import { User, getCurrentUser, signOut } from "./utils/auth";
+import { clearGuestSavedJobs, moveGuestSavedJobsToAccount } from "./utils/savedJobs";
 import {
   Profile,
   clearGuestProfile,
@@ -37,7 +38,11 @@ export default function Tepobaby() {
   const enterAsUser = async (user: User) => {
     setStage({ name: "loading" });
     try {
-      setStage(route({ kind: "user", user }, await moveGuestAnswersToAccount()));
+      const [profile] = await Promise.all([
+        moveGuestAnswersToAccount(),
+        moveGuestSavedJobsToAccount().catch(() => {}), // device copy stays if this fails
+      ]);
+      setStage(route({ kind: "user", user }, profile));
     } catch {
       setStage({ name: "welcome", error: "Signed in, but couldn't load your answers. Please refresh." });
     }
@@ -84,7 +89,7 @@ export default function Tepobaby() {
           onSignOut={() =>
             who.kind === "user"
               ? signOut().then(() => setStage({ name: "welcome" }))
-              : (clearGuestProfile(), setStage({ name: "welcome" }))
+              : (clearGuestProfile(), clearGuestSavedJobs(), setStage({ name: "welcome" }))
           }
         />
       );

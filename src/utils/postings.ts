@@ -62,6 +62,7 @@ export function timeAgo(iso: string, approx = false): string {
     const days = Math.floor(mins / 1440);
     return days === 0 ? "today" : `${days}d ago`;
   }
+  if (mins < 1) return "just now";
   if (mins < 60) return `${mins}m ago`;
   const hours = Math.floor(mins / 60);
   if (hours < 24) return `${hours}h ago`;

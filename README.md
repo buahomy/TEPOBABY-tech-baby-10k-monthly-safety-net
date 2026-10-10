@@ -41,7 +41,8 @@ After the questions, you land on **Home**. The bar at the bottom has **Home**, *
 - **Job postings** (live): switch between **Underclassmen Programs**, **Internship** and **Entry-level**, and between **Last 48–72h** and **This week**. Tepobaby opens on the level that fits your answers, and if you need visa sponsorship you can hide roles that say they don't sponsor.
 - **Company tiers**: big tech and quant companies ranked by interview difficulty, as a launchpad of logos. Tap a logo to open that company's careers page (see below).
 - **Contractor & startup roles**: job boards for startup and contract work. These roles rarely show up on the big job lists, because small teams often post only on their own sites and a few niche boards, and the roles are very specific. Going straight to these sites is the best way to find them.
-- **Profile**: see all your answers, review them, or sign out.
+- **Save jobs with ♥**: tap the heart on any job posting to save it. Saved jobs appear under **My jobs** on your Profile, with **Saved** and **Applied** tabs; tap **Mark applied** to track where you've applied. Each saved job keeps its details, so it stays there after the posting leaves the 7-day feed. When signed in, saved jobs are stored on your account; as a guest, they stay on your device and move to your account when you sign in.
+- **Profile**: your saved and applied jobs, all your answers, a button to review them, and sign out.
 
 Interview, Connect and image uploads are coming soon.
 
@@ -126,6 +127,8 @@ How I built the job postings feed and the rest of the app (with Claude Code), wh
 - **Ranking interview difficulty is subjective.** → I base tiers on what students report (Glassdoor, LeetCode Discuss, Reddit) and fact-check borderline companies. That moved Tesla, Bloomberg and Akuna Capital up to Hard LC, because reports describe medium-hard to hard problems. NVIDIA, Point72 and DRW stayed in Medium LC, because reports describe mostly medium problems plus systems or data questions. Everything is in `src/data/tiers.json`, so it's easy to adjust.
 - **Job lists lag behind company sites.** → The tier list doubles as a launchpad of careers-page shortcuts, so checking target companies daily is one tap each.
 
+- **Saved jobs would disappear with the feed.** Postings only stay for 7 days. → Each saved job keeps its own copy of the details (company, title, link, logo), so your Saved and Applied lists last. Guests' saved jobs stay on the device and move into the account at sign-in, the same way answers do.
+
 **Rest of the app**
 - **Google sign-in didn't come back from the popup** in some browsers (in-editor browsers, the iPhone Home Screen app). → Sign-in uses a full-page redirect.
 - **A .edu check in the browser could be bypassed.** → The server verifies Google's ID token and only accepts verified emails ending in `.edu`.
@@ -164,6 +167,8 @@ API routes (the Vite dev server forwards `/api` to the auth server):
 | `GET /api/auth/me` | Current user, or `401` if signed out |
 | `POST /api/auth/logout` | Sign out |
 | `GET` / `PUT /api/profile` | Read / save the signed-in student's own answers |
+| `GET` / `PUT /api/saved`, `DELETE /api/saved/:id` | Read / save or update / remove the signed-in student's saved and applied jobs |
+| `POST /api/saved/import` | Move jobs a guest saved on the device into their account after sign-in |
 | `GET /api/postings?level=&window=&visa=` | Live job postings (public). `level`: `underclassmen`, `internship` or `entry`; `window`: `fresh` (72h) or `week` |
 | `GET /api/postings/stream` | Live updates (Server-Sent Events): sends `update` when the morning update brings new postings |
 | `GET /api/logo/:domain` | A company's logo, cached by the server (only for companies in current postings or the tier list) |

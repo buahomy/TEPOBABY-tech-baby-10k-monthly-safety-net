@@ -3,6 +3,7 @@ import BottomNav, { Tab } from "../components/BottomNav";
 import PhoneShell from "../components/PhoneShell";
 import { User } from "../utils/auth";
 import { Profile } from "../utils/profile";
+import { useSavedJobs } from "../utils/savedJobs";
 import ComingSoonTab from "./tabs/ComingSoonTab";
 import HomeTab from "./tabs/HomeTab";
 import ProfileTab from "./tabs/ProfileTab";
@@ -25,6 +26,7 @@ export default function Main({ user, profile, onEdit, onSignIn, onSignOut }: Pro
   const fileInput = useRef<HTMLInputElement>(null);
   const scroller = useRef<HTMLDivElement>(null);
   const firstName = user?.name.split(" ")[0] || "there";
+  const saved = useSavedJobs(!!user);
 
   // Each tab opens at the top.
   useEffect(() => {
@@ -40,7 +42,7 @@ export default function Main({ user, profile, onEdit, onSignIn, onSignOut }: Pro
     <PhoneShell label="tepobaby" className="phone-frame--flex">
       <div className="main">
         <div className="main-scroll" ref={scroller}>
-          {tab === "home" && <HomeTab firstName={firstName} profile={profile} />}
+          {tab === "home" && <HomeTab firstName={firstName} profile={profile} saved={saved} />}
           {tab === "interview" && (
             <ComingSoonTab
               title="Interview"
@@ -62,7 +64,15 @@ export default function Main({ user, profile, onEdit, onSignIn, onSignOut }: Pro
             />
           )}
           {tab === "profile" && (
-            <ProfileTab user={user} profile={profile} onEdit={onEdit} onSignIn={onSignIn} onSignOut={onSignOut} />
+            <ProfileTab
+              user={user}
+              profile={profile}
+              saved={saved}
+              onBrowse={() => setTab("home")}
+              onEdit={onEdit}
+              onSignIn={onSignIn}
+              onSignOut={onSignOut}
+            />
           )}
         </div>
 

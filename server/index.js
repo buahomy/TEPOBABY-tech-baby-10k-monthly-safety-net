@@ -15,6 +15,7 @@ import { feedEvents, knownDomain, queryPostings, startJobFeed } from "./jobs/ind
 import { getLogo } from "./jobs/logos.js";
 import fs from "node:fs";
 import { getProfile, saveAnswers } from "./profileStore.js";
+import { importSaved, listSaved, removeSaved, upsertSaved } from "./savedJobsStore.js";
 
 const {
   GOOGLE_CLIENT_ID,
@@ -131,7 +132,8 @@ async function userFromCode(code, redirectUri) {
 const app = express();
 app.disable("x-powered-by");
 if (isProd) app.set("trust proxy", 1);
-app.use(express.json({ limit: "4kb" }));
+app.use("/api/saved/import", express.json({ limit: "512kb" })); // up to 500 saved jobs
+app.use(express.json({ limit: "8kb" }));
 app.use("/api", (_req, res, next) => {
   res.set("Cache-Control", "no-store");
   next();
@@ -210,6 +212,44 @@ app.put("/api/profile", requireXhr, requireUser, async (req, res) => {
     if (err?.status === 400) return res.status(400).json({ error: err.message });
     console.error("[profile] save failed:", err?.message);
     res.status(500).json({ error: "Couldn't save your answers. Please try again." });
+  }
+});
+
+// ---- Saved / applied jobs (signed-in users only, each user only sees their own) ----
+
+function sendStoreError(res, err, what) {
+  if (err?.status === 400) return res.status(400).json({ error: err.message });
+  console.error(`[saved] ${what} failed:`, err?.message);
+  res.status(500).json({ error: "Couldn't update your saved jobs. Please try again." });
+}
+
+app.get("/api/saved", requireUser, async (req, res) => {
+  res.json({ jobs: await listSaved(req.session.sub) });
+});
+
+app.put("/api/saved", requireXhr, requireUser, async (req, res) => {
+  try {
+    res.json({ job: await upsertSaved(req.session.sub, req.body?.job) });
+  } catch (err) {
+    sendStoreError(res, err, "save");
+  }
+});
+
+app.delete("/api/saved/:id", requireXhr, requireUser, async (req, res) => {
+  try {
+    await removeSaved(req.session.sub, String(req.params.id));
+    res.json({ ok: true });
+  } catch (err) {
+    sendStoreError(res, err, "remove");
+  }
+});
+
+// Guest → account: jobs saved on the device before signing in.
+app.post("/api/saved/import", requireXhr, requireUser, async (req, res) => {
+  try {
+    res.json({ jobs: await importSaved(req.session.sub, req.body?.jobs) });
+  } catch (err) {
+    sendStoreError(res, err, "import");
   }
 });
 

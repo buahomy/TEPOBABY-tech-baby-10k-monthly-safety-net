@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
 import CompanyLogo from "../../components/CompanyLogo";
-import Icon from "../../components/Icon";
+import HeartButton from "../../components/HeartButton";
 import TierLaunchpad from "../../components/TierLaunchpad";
 import { LEVELS, Level, RESOURCES, WINDOWS, WindowId } from "../../data/homeFeed";
 import { Posting, PostingsResponse, fetchPostings, subscribeToPostings, timeAgo } from "../../utils/postings";
 import { Profile } from "../../utils/profile";
+import { SavedJobsApi } from "../../utils/savedJobs";
 
 // Home tab: 1) job postings  2) company tier list by interview difficulty  3) contractor & startup roles.
 
-type Props = { firstName: string; profile: Profile };
+type Props = { firstName: string; profile: Profile; saved: SavedJobsApi };
 
 /** Starts on the level that fits the student: underclassmen programs, internships, or new grad roles. */
 function defaultLevel(profile: Profile): Level {
@@ -22,7 +23,7 @@ function defaultLevel(profile: Profile): Level {
 const PAGE = 25;
 const FALLBACK_REFRESH_MS = 10 * 60 * 1000;
 
-export default function HomeTab({ firstName, profile }: Props) {
+export default function HomeTab({ firstName, profile, saved }: Props) {
   const [level, setLevel] = useState<Level>(() => defaultLevel(profile));
   const [windowId, setWindowId] = useState<WindowId>("fresh");
   const needsSponsorship =
@@ -153,7 +154,7 @@ export default function HomeTab({ firstName, profile }: Props) {
         ) : (
           <ul className="posting-list">
             {postings.map((p) => (
-              <li key={p.id}>
+              <li key={p.id} className="posting-row">
                 <a className="posting" href={p.url} target="_blank" rel="noreferrer">
                   <CompanyLogo company={p.company} domain={p.domain} />
                   <span className="posting-copy">
@@ -166,12 +167,17 @@ export default function HomeTab({ firstName, profile }: Props) {
                       {p.sponsorship === "citizens" && <span className="chip-warn">U.S. citizens only</span>}
                     </span>
                   </span>
-                  <Icon name="arrow" />
                 </a>
+                <HeartButton
+                  saved={saved.isSaved(p.id)}
+                  label={`${p.title} at ${p.company}`}
+                  onToggle={() => saved.toggle(p)}
+                />
               </li>
             ))}
           </ul>
         )}
+        {saved.error && <p className="ob-error">{saved.error}</p>}
 
         {!loading && feed && postings.length < feed.total && (
           <button type="button" className="more-btn" onClick={loadMore} disabled={loadingMore}>
