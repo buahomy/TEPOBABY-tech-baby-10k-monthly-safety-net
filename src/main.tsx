@@ -3,7 +3,6 @@ import ReactDOM from "react-dom/client";
 import Tepobaby from "./Tepobaby";
 
 // Welcome screen → .edu sign-in → onboarding questions → home (see ./Tepobaby.tsx).
-// The earlier starter app (./App + ./styles.css) is kept in the repo but not rendered.
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
