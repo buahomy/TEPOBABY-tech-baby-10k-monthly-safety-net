@@ -6,7 +6,16 @@ import AppIcon from "./AppIcon";
 // Organizations, clubs, non-profits and programs matched to the student's answers, shown as a
 // launchpad of logo shortcuts. Answers are only used here in the app to choose what to show.
 
-type Org = { name: string; domain: string; url: string; who: string; for: string[]; tile?: string };
+type Org = {
+  name: string;
+  domain: string;
+  url: string;
+  who: string;
+  for: string[];
+  also?: string[];
+  tile?: string;
+  localLogo?: string;
+};
 type Group = { id: string; label: string };
 
 const GROUPS = communities.groups as Group[];
@@ -35,7 +44,13 @@ export default function CommunityLaunchpad({ answers }: { answers: Partial<Answe
   const shown = new Set<string>();
   const rows = groupIds
     .map((id) => {
-      const orgs = ORGS.filter((o) => o.for.includes(id) && !shown.has(o.name));
+      const orgs = ORGS.filter(
+        (o) =>
+          o.for.includes(id) &&
+          !shown.has(o.name) &&
+          // Programs with several requirements (e.g. Latinas in Tech) only show when all fit.
+          (showAll || (o.also ?? []).every((t) => mine.includes(t))),
+      );
       orgs.forEach((o) => shown.add(o.name));
       return { group: GROUPS.find((g) => g.id === id)!, orgs };
     })
@@ -55,7 +70,15 @@ export default function CommunityLaunchpad({ answers }: { answers: Partial<Answe
           <p className="community-label">{group.label}</p>
           <div className="community-apps">
             {orgs.map((o) => (
-              <AppIcon key={o.name} name={o.name} domain={o.domain} href={o.url} title={`${o.name}: ${o.who}`} tile={o.tile} />
+              <AppIcon
+                key={o.name}
+                name={o.name}
+                domain={o.domain}
+                href={o.url}
+                title={`${o.name}: ${o.who}`}
+                tile={o.tile}
+                logo={o.localLogo}
+              />
             ))}
           </div>
         </div>

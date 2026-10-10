@@ -268,20 +268,21 @@ app.get("/api/postings", (req, res) => {
 });
 
 // Launchpad logos: companies in "Company tiers" (src/data/tiers.json) and the programs &
-// organizations suggested on Profile (src/data/communities.json).
+// organizations suggested on Profile (src/data/communities.json). Organizations use their own
+// website's icon (or an explicit `logo`) before the favicon services.
 const readData = (file) => JSON.parse(fs.readFileSync(new URL(`../src/data/${file}`, import.meta.url), "utf8"));
-const LAUNCHPAD_DOMAINS = new Set([
-  ...readData("tiers.json").tiers.flatMap((t) => t.companies.map((c) => c.domain)),
-  ...readData("communities.json").orgs.map((o) => o.domain),
+const LAUNCHPAD = new Map([
+  ...readData("tiers.json").tiers.flatMap((t) => t.companies.map((c) => [c.domain, {}])),
+  ...readData("communities.json").orgs.map((o) => [o.domain, { site: o.url, logo: o.logo }]),
 ]);
 
 // Company logo, fetched once and cached (see server/jobs/logos.js). Only domains that appear in
 // current postings or a launchpad are served, so this can't be used as an open proxy.
 app.get("/api/logo/:domain", async (req, res) => {
   const domain = String(req.params.domain).toLowerCase();
-  if (!knownDomain(domain) && !LAUNCHPAD_DOMAINS.has(domain)) return res.status(404).end();
+  if (!knownDomain(domain) && !LAUNCHPAD.has(domain)) return res.status(404).end();
   try {
-    const logo = await getLogo(domain);
+    const logo = await getLogo(domain, LAUNCHPAD.get(domain));
     if (!logo) {
       res.set("Cache-Control", "public, max-age=86400");
       return res.status(404).end();
@@ -321,7 +322,7 @@ app.get("/api/postings/stream", (_req, res) => {
 
 startJobFeed();
 // Warm the logo cache so launchpads load instantly.
-Promise.allSettled([...LAUNCHPAD_DOMAINS].map((d) => getLogo(d)));
+Promise.allSettled([...LAUNCHPAD].map(([d, opts]) => getLogo(d, opts)));
 
 app.listen(Number(PORT), "127.0.0.1", () => {
   console.log(`[auth] listening on http://127.0.0.1:${PORT} (redirect URI ${REDIRECT_URI})`);
