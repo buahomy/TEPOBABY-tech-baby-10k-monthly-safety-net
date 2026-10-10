@@ -1,18 +1,103 @@
+import { useState } from "react";
+import CompanyLogo from "../../components/CompanyLogo";
+import HeartButton from "../../components/HeartButton";
 import Icon from "../../components/Icon";
 import { User } from "../../utils/auth";
+import { timeAgo } from "../../utils/postings";
 import { Profile, SECTIONS, STEPS, labelFor } from "../../utils/profile";
+import { JobStatus, SavedJobsApi } from "../../utils/savedJobs";
 
-// Profile tab: account, every onboarding answer grouped by section, and edit / sign-out actions.
+// Profile tab: account, saved / applied jobs, every onboarding answer grouped by section,
+// and edit / sign-out actions.
 
 type Props = {
   user: User | null; // null = guest
   profile: Profile;
+  saved: SavedJobsApi;
+  onBrowse: () => void;
   onEdit: () => void;
   onSignIn: () => void;
   onSignOut: () => void;
 };
 
-export default function ProfileTab({ user, profile, onEdit, onSignIn, onSignOut }: Props) {
+function MyJobs({ saved, onBrowse, signedIn }: { saved: SavedJobsApi; onBrowse: () => void; signedIn: boolean }) {
+  const [tab, setTab] = useState<JobStatus>("saved");
+  const counts = {
+    saved: saved.jobs.filter((j) => j.status === "saved").length,
+    applied: saved.jobs.filter((j) => j.status === "applied").length,
+  };
+  const list = saved.jobs.filter((j) => j.status === tab);
+
+  return (
+    <section className="block" aria-labelledby="h-myjobs">
+      <div className="block-head">
+        <h2 id="h-myjobs">My jobs</h2>
+        <span className="block-sub">{signedIn ? "saved to your account" : "saved on this device"}</span>
+      </div>
+
+      <div className="segmented" role="tablist" aria-label="My jobs">
+        {(["saved", "applied"] as const).map((t) => (
+          <button
+            key={t}
+            type="button"
+            role="tab"
+            aria-selected={tab === t}
+            className={tab === t ? "is-active" : ""}
+            onClick={() => setTab(t)}
+          >
+            {t === "saved" ? "♥ Saved" : "✓ Applied"} · {counts[t]}
+          </button>
+        ))}
+      </div>
+
+      {list.length === 0 ? (
+        <p className="empty">
+          {tab === "saved" ? (
+            <>
+              Tap the ♥ on any job posting to save it here.{" "}
+              <button type="button" className="text-link" onClick={onBrowse}>
+                Browse postings
+              </button>
+            </>
+          ) : (
+            "Mark a saved job as applied to track it here."
+          )}
+        </p>
+      ) : (
+        <ul className="posting-list">
+          {list.map((j) => (
+            <li key={j.id} className="posting-row">
+              <div className="posting posting--saved">
+                <a className="saved-main" href={j.url} target="_blank" rel="noreferrer">
+                  <CompanyLogo company={j.company} domain={j.domain} />
+                  <span className="posting-copy">
+                    <span className="posting-company">{j.company}</span>
+                    <span className="posting-title">{j.title}</span>
+                    <span className="posting-meta">
+                      <span className="posting-loc">{j.location}</span> ·{" "}
+                      {j.status === "applied" && j.appliedAt ? `applied ${timeAgo(j.appliedAt)}` : `saved ${timeAgo(j.savedAt)}`}
+                    </span>
+                  </span>
+                </a>
+                <button
+                  type="button"
+                  className={`status-btn${j.status === "applied" ? " is-applied" : ""}`}
+                  onClick={() => saved.setStatus(j.id, j.status === "applied" ? "saved" : "applied")}
+                >
+                  {j.status === "applied" ? "✓ Applied" : "Mark applied"}
+                </button>
+              </div>
+              <HeartButton saved label={`${j.title} at ${j.company}`} onToggle={() => saved.remove(j.id)} />
+            </li>
+          ))}
+        </ul>
+      )}
+      {saved.error && <p className="ob-error">{saved.error}</p>}
+    </section>
+  );
+}
+
+export default function ProfileTab({ user, profile, saved, onBrowse, onEdit, onSignIn, onSignOut }: Props) {
   const name = user?.name || "Guest";
 
   return (
@@ -28,6 +113,8 @@ export default function ProfileTab({ user, profile, onEdit, onSignIn, onSignOut 
           </p>
         </div>
       </header>
+
+      <MyJobs saved={saved} onBrowse={onBrowse} signedIn={!!user} />
 
       {SECTIONS.map((section) => (
         <section className="block" key={section.id} aria-label={section.title}>
@@ -61,7 +148,7 @@ export default function ProfileTab({ user, profile, onEdit, onSignIn, onSignOut 
             </button>{" "}
             ·{" "}
             <button type="button" className="text-link" onClick={onSignOut}>
-              Clear my answers
+              Clear my data
             </button>
           </>
         )}
