@@ -169,7 +169,7 @@ Ask Gemini uses **Gemini 3.8 Flash** through Google's Interactions API. It tries
 
 
 ### Interview: behavioral voice practice
-In **Interview → Behavioral**, pick who interviews you: **Generic**, **Google**, **Amazon** or **Meta**. Then tap the big round button and answer out loud. **Alex, a Senior Software Engineer** at that company, interviews you in real time, powered by the OpenAI Realtime API over WebRTC.
+In **Interview → Behavioral**, pick who interviews you: **Generic**, **Google**, **Amazon** or **Meta**. Then tap the big round button and answer out loud. **North West, a Senior Software Engineer** at that company, interviews you in real time, powered by the OpenAI Realtime API over WebRTC.
 
 | Interviewer | Focus |
 | --- | --- |
@@ -178,17 +178,23 @@ In **Interview → Behavioral**, pick who interviews you: **Generic**, **Google*
 | Amazon | Leadership Principles, evaluated like a Principal Engineer: Customer Obsession, Ownership, Bias for Action, Dive Deep, Deliver Results. Follows up when you don't show bias for action or quantifiable business metrics |
 | Meta | Move fast & impact: rapid execution, personal engineering ownership, pragmatism over over-engineering |
 
-The persona, company context, interview rigor and evaluation criteria are set with system instructions in the Realtime session. Alex keeps turns to 1–3 sentences so you do most of the talking, asks one question at a time, and follows up naturally when a STAR part is missing. For example: *"Thanks for detailing those steps! Before we move on, what was the actual impact after you shipped that?"*
+The persona, company context, interview rigor and evaluation criteria are set with system instructions in the Realtime session. North West keeps turns to 1–3 sentences so you do most of the talking, asks one question at a time, and follows up naturally when a STAR part is missing. For example: *"Thanks for detailing those steps! Before we move on, what was the actual impact after you shipped that?"*
 
 **Live STAR feedback.** Four boxes, **S · T · A · R**, update as you talk:
 - 🟩 **green**: that part passed;
-- 🟨 **yellow**: needs clarification (Alex follows up);
+- 🟨 **yellow**: needs clarification (North West follows up);
 - 🟥 **red**: needs revision, so redo that part.
 
-Alex grades each part by calling the `update_star_progress` tool (phase, status and a short note like "No quantifiable metric provided"). The note shows under the boxes. A second tool, `start_new_question`, resets the boxes and shows each new question on screen.
+North West grades each part by calling the `update_star_progress` tool (phase, status and a short note like "No quantifiable metric provided"). The note shows under the boxes. A second tool, `start_new_question`, resets the boxes and shows each new question on screen.
+
+**Camera panel & AI agent badge.**
+- **Layout:** the S · T · A · R boxes stand in a column on the left, with a camera panel to their right.
+- **Camera:** when you tap the round button (it shows the OpenAI logo), Tepobaby asks for camera access and shows a mirrored self-view with a LIVE tag, like a real video interview.
+- **Agent badge:** in the panel's top-left corner, an OpenAI badge shows "North West · speaking / listening". It wiggles, with a pulsing ring and sound bars, while North West talks, the way AI voice agents usually show they're speaking.
+- **If you skip the camera:** you can say no to camera access and keep practicing audio-only.
 
 **Privacy & cost.**
-- **Audio:** your voice goes straight from your browser to OpenAI; Tepobaby doesn't record or store it.
+- **Audio & video:** your voice goes straight from your browser to OpenAI. Your camera is only shown to you on screen and is never sent anywhere. Tepobaby doesn't record or store either one.
 - **Key safety:** the server mints a short-lived client secret for each session, so the OpenAI key never reaches the browser.
 - **Limits:** sessions end automatically after 15 minutes, and each user can start up to 10 sessions an hour.
 - **Credits:** the Realtime API has no free tier, so the OpenAI account needs credits; if it runs out, the app says so instead of failing silently.
@@ -387,7 +393,7 @@ How I built Tepobaby (with Claude Code): each decision, why I made it, and the p
 - **OpenAI Realtime API over WebRTC, with a short-lived client secret from the server.**
   - *Why:* WebRTC gives low-latency, two-way voice straight from the browser, with echo cancellation. The server keeps `OPENAI_API_KEY` and only hands out a per-session secret, with the instructions, voice, turn detection and tools baked in.
   - *Pain point:* a voice agent needs real-time audio, but the API key must never reach the browser. The GA Realtime API also changed from beta (`/v1/realtime/client_secrets` and `/v1/realtime/calls`, model `gpt-realtime-2.1`).
-- **Company personas as system instructions** (Generic, Google, Amazon, Meta), with "Alex, Senior Software Engineer at (company)".
+- **Company personas as system instructions** (Generic, Google, Amazon, Meta), with "North West, Senior Software Engineer at (company)".
   - *Why:* each company grades behavioral answers differently: Google on scale and "I" vs. "we", Amazon on Leadership Principles and metrics, Meta on speed and ownership.
   - *Pain point:* generic mock interviews don't prepare students for company-specific bars.
 - **STAR feedback through function calling** (`update_star_progress`), shown as four S / T / A / R boxes.
@@ -398,9 +404,19 @@ How I built Tepobaby (with Claude Code): each decision, why I made it, and the p
   - *Pain point:* without it, the boxes from the last answer would bleed into the next one.
 - **Explain OpenAI credit problems in plain words.**
   - *Why:* "connection failed" doesn't tell anyone what to fix.
-  - *Pain point:* the Realtime API has no free tier. In testing, creating the session worked (that step is free), but the WebRTC connection returned 429 `insufficient_quota` because the account had no credits. A full live conversation still needs to be verified once credits are added.
+  - *Pain point:* the Realtime API has no free tier. At first, creating the session worked (that step is free), but the WebRTC connection returned 429 `insufficient_quota` because the account had no credits. After credits were added, a live session worked end to end: North West greeted the candidate, asked a question, called `start_new_question` so it showed on screen, and live captions and the speaking indicator updated. STAR box colors still need checking with a real spoken answer; a headless test browser's fake microphone only plays a beep.
+- **A camera self-view next to the STAR boxes, kept on the device.**
+  - *Why:* practicing on camera feels like a real video interview (eye contact, posture), and the camera never leaves the browser.
+  - *Pain point:* privacy, plus a timing bug. The camera and the voice session start in parallel, so if the session ended while the camera was still turning on, the camera came on afterwards and stayed on. It now checks it's still wanted before turning on, and every way of ending a session turns it off.
+- **An OpenAI badge that wiggles while the agent talks**, and the OpenAI logo on the start button.
+  - *Why:* students can see at a glance when the interviewer is speaking versus listening, like familiar AI voice agents.
+  - *Pain point:* OpenAI's favicon is a black mark on a solid white square, which looked wrong on the purple button. I turned it into transparent white and black versions (`public/logos/openai-white.png` and `openai.png`).
+- **The interviewer is named North West.**
+  - *Why:* a consistent, friendly name makes the practice feel like talking to a real interviewer.
+  - *Pain point:* none; the name is set in the system instructions and the on-screen labels.
+
 - **Short turns, semantic turn detection, and a 15-minute cap.**
-  - *Why:* students should do most of the talking, Alex shouldn't cut them off mid-thought, and voice sessions cost money.
+  - *Why:* students should do most of the talking, North West shouldn't cut them off mid-thought, and voice sessions cost money.
   - *Pain point:* voice agents tend to ramble and interrupt, and an open session can run up API usage.
 
 #### Platform & tooling
