@@ -6,21 +6,9 @@ This is only for U.S. college students who need to lock in and get the job prosp
 
 **Try it:** [tepobaby.vercel.app](https://tepobaby.vercel.app) works on any phone or computer. On iPhone, tap Share → **Add to Home Screen** to install it like an app.
 
-### Gemini Usage
-Ginny's Gemini features (Ask Gemini and tailored rewrites) currently run on the author's personal free API key. To unlock them in your own copy, grab your own API key from [Google AI Studio](https://aistudio.google.com/app/apikey), which is free. Then add it to `.env.local` as `GEMINI_API_KEY=...` and restart the server.
+**Contents:** [Questionnaire](#getting-to-know-you-questionnaire) · [Sign-in](#sign-in-with-your-edu-google-account) · [Home](#home) · [Interview](#interview) · [＋ Ginny](#-ginny-ats--ask-gemini) · [Connect](#connect-alumni--recruiters-on-linkedin) · [Profile & organizations](#profile--organizations) · [Design decisions](#design-decisions--pain-points) · [Deployment](#deployment-vercel)
 
-
-### Sign in with your .edu Google account
-Tap **Get Started with .edu Email** and sign in with your school Google account. You'll come right back to the app and start a few quick questions.
-
-Safety Assurance: You sign in on Google's own page, so I never see or store your password. Only verified school emails ending in .edu are let in, and this check happens on the server, so no one can skip it. After Google confirms who you are, the app only keeps your name, email and profile picture, and throws away the access Google gave it. You stay signed in for 7 days with a secure, locked login that other websites can't read or change, and you can sign out at any time.
-
-
-### Just browsing?
-Tap **I'll just browse around** to use Tepobaby without signing in. You'll answer the same questions, and your answers are saved on your device only. If you sign in with your .edu email later, your answers come with you, so you can pick up where you left off.
-
-
-### Getting to know you
+## Getting to know you (questionnaire)
 Before your home page, Tepobaby asks 4 short sections, one page each:
 1. **Year of Study**: your class standing and graduation date
 2. **What role are you looking for?**: the types of positions you want (select all that apply) and your target start term
@@ -31,19 +19,47 @@ Your answers are used to recommend postings, resources, organizations, clubs and
 
 Safety Assurance: Your answers are saved to your own account, and no other student can see them. Identity answers are optional, only used to recommend things for you, and never shared with employers. If you browse as a guest, your answers stay on your device until you sign in.
 
+## Sign in with your .edu Google account
+Tap **Get Started with .edu Email** and sign in with your school Google account. You'll come right back to the app and start a few quick questions.
 
-### Your home page
-After the questions, you land on **Home**. The bar at the bottom has **Home**, **Interview**, a big **+** for uploading an image, **Connect** and **Profile**.
+Safety Assurance: You sign in on Google's own page, so I never see or store your password. Only verified school emails ending in .edu are let in, and this check happens on the server, so no one can skip it. After Google confirms who you are, the app only keeps your name, email and profile picture, and throws away the access Google gave it. You stay signed in for 7 days with a secure, locked login that other websites can't read or change, and you can sign out at any time.
 
-- **Job postings** (live): switch between **Underclassmen Programs**, **Internship** and **Entry-level**, and between **Last 48–72h** and **This week**. Tepobaby opens on the level that fits your answers, and if you need visa sponsorship you can hide roles that say they don't sponsor.
-- **Company tiers**: big tech and quant companies ranked by interview difficulty, as a launchpad of logos. Tap a logo to open that company's careers page (see below).
-- **Contractor & startup roles**: job boards for startup and contract work. These roles rarely show up on the big job lists, because small teams often post only on their own sites and a few niche boards, and the roles are very specific. Going straight to these sites is the best way to find them.
-- **Save jobs with ♥**: tap the heart on any job posting to save it. Saved jobs appear under **My jobs** on your Profile, with **Saved** and **Applied** tabs; tap **Mark applied** to track where you've applied. Each saved job keeps its details, so it stays there after the posting leaves the 7-day feed. When signed in, saved jobs are stored on your account; as a guest, they stay on your device and move to your account when you sign in.
-- **Track your applications**: in **My jobs → Applied**, tap a job's stage to update it: **Applied → OA → Phone → On-site → Final → Team match → Offer**, or **Ghosted** / **Not proceeding**. A pipeline summary shows how many jobs are at each stage, and each job shows when its stage last changed. Applied jobs stay until you remove them: the daily job update never touches this list, and changing a stage never reshuffles it (it's ordered by when you applied).
-- **Profile**: your saved and applied jobs, all your answers, programs and organizations picked for you, a button to review your answers, and sign out.
-- **＋ (Ginny)**: pick one saved job, then run an ATS match analysis or ask Gemini about it (see below).
-- **Interview**: two tabs side by side, **Behavioral** (a live AI voice interviewer) and **Technical** (the NeetCode 150 as a Card Game and a concept Roadmap). Both are described below.
-- **Connect**: pick a job, then find alumni from your school and technical recruiters at that company on LinkedIn, with ready-to-copy messages (see below).
+### Just browsing?
+Tap **I'll just browse around** to use Tepobaby without signing in. You'll answer the same questions, and your answers are saved on your device only. If you sign in with your .edu email later, your answers come with you, so you can pick up where you left off.
+
+## Home
+After the questions, you land on **Home**. The bar at the bottom has **Home**, **Interview**, a big **＋** (Ginny), **Connect** and **Profile**. Home has three sections: live job postings, company tiers, and contractor & startup roles.
+
+### Job postings
+Live postings for students: switch between **Underclassmen Programs**, **Internship** and **Entry-level**, and between **Last 48–72h** and **This week**. Tepobaby opens on the level that fits your answers, and if you need visa sponsorship you can hide roles that say they don't sponsor.
+
+Postings update **once a day, every morning at 7:00 AM Eastern Time (ET)**, so 30–31 times a month. The time follows daylight saving, and if the server was off at 7:00 AM it catches up as soon as it starts. Each morning the server checks every source in parallel in the background, keeps only roles posted in the last 7 days, removes duplicates, and pushes the new postings to the app as soon as each source finishes.
+
+| Source | What it adds |
+| --- | --- |
+| [SimplifyJobs Summer 2027 Internships](https://github.com/SimplifyJobs/Summer2027-Internships) + [New Grad Positions](https://github.com/SimplifyJobs/New-Grad-Positions) | Most internships and new grad roles, with exact posting times |
+| [speedyapply 2027 SWE College Jobs](https://github.com/speedyapply/2027-SWE-College-Jobs) | More SWE internships and new grad roles (age in days only) |
+| [Pitt CSC](https://github.com/pittcsc/Summer2027-Internships), [vanshb03](https://github.com/vanshb03/Summer2027-Internships) | Extra community-curated internships |
+| Company job boards: [Greenhouse](https://developers.greenhouse.io/job-board.html), [Lever](https://github.com/lever/postings-api), [Ashby](https://developers.ashbyhq.com/docs/public-job-posting-api) | Early-career roles straight from about 80 companies (Stripe, Figma, OpenAI, Ramp, Palantir…). Add more in [server/jobs/companies.json](server/jobs/companies.json) |
+| [Hacker News "Who is hiring?"](https://github.com/HackerNews/API) | Startup posts that mention internships, new grad or junior roles |
+| [Google Jobs via SerpApi](https://serpapi.com/google-jobs-api) | Roles indexed from LinkedIn, Indeed, Glassdoor and company sites. Runs when `SERPAPI_KEY` is set (see below) |
+
+**Google Jobs (SerpApi)**: each morning Tepobaby runs 4 searches ("software engineer intern", "software engineer new grad", "entry level software engineer", "data science intern"), about 120–124 searches a month. That fits [SerpApi's free plan](https://serpapi.com/pricing) of 250 searches a month. Each result links to the best place to apply: the company's own site first, then its hiring platform (like Greenhouse or Workday), then LinkedIn, Indeed or Glassdoor. To turn it on, create a free account at [serpapi.com](https://serpapi.com), copy your API key into `.env.local` as `SERPAPI_KEY=...`, and restart the server. Keep the key out of git and out of any `VITE_` variable.
+
+The Simplify.jobs site doesn't need its own scraper, because the SimplifyJobs GitHub lists above already carry its data.
+
+LinkedIn, Indeed, Glassdoor, Wellfound, Y Combinator's Work at a Startup, RippleMatch, WayUp, Untapped and CodePath are not scraped directly, because their terms don't allow it or they need a login. Google Jobs through SerpApi covers much of LinkedIn, Indeed and Glassdoor legitimately.
+
+**On your Home page**
+- Each level tab shows how many postings it has, and **Last 48–72h** / **This week** filter by real posting times.
+- Newest first, with a **Live** badge and when the last morning update ran. New postings appear on their own, and **Show more** loads the next batch.
+- Each posting shows the company's logo: the site's icon via [Google's favicon service](https://www.google.com/s2/favicons) (with [DuckDuckGo's](https://icons.duckduckgo.com) as a backup), fetched and cached by our server, so your browser never contacts them. The company's website comes from the job list, the apply link, or a name lookup that has to match the company exactly. If there's no confident match, you see the company's first letter instead of a wrong logo.
+- Each posting's level comes from the list it was found in and its title (like "intern" or "new grad"). Senior roles are left out.
+
+**Good to know**
+- **Visa sponsorship is often unknown.** Many sources don't say whether a role sponsors. If you need sponsorship, the toggle hides roles that say they don't, and **Sponsors visa** only shows when a source confirms it.
+- **Underclassmen Programs is often empty.** Programs for freshmen and sophomores (like Microsoft Explore) are rare and mostly open August–October. When none are new, Tepobaby suggests the Internship tab, since many internships accept every class year.
+- **Each link opens the original application** on the company's site or job board.
 
 ### Company tiers
 I rank big tech and quant companies by how hard their interviews are for **college internships and new grad roles**. There are 4 tiers, hardest at the top, based on what students report on Glassdoor, LeetCode Discuss, Reddit and other reliable sources:
@@ -66,27 +82,87 @@ Wherever a company has one, the link goes to its student or early-career page. L
 
 The tiers, careers links and logo websites all live in [src/data/tiers.json](src/data/tiers.json), so they're easy to update.
 
+### Contractor & startup roles
+Job boards for startup and contract work. These roles rarely show up on the big job lists, because small teams often post only on their own sites and a few niche boards, and the roles are very specific. Going straight to these sites is the best way to find them.
 
-### Programs & organizations for you
-On your **Profile**, inside **Demographic & Identity Information**, Tepobaby suggests organizations, clubs, non-profits and programs you can join, based on your answers. For example, first-gen and low-income students see programs like Career Pathways Initiative (founded by Ken Lang), America Needs You and Braven, and Black students see ColorStack, NSBE and Code2040. Every program is something **U.S. college students** can join: no high school or college-admissions programs. A few professional networks (/dev/color, NAAAP, Blacks In Technology, Out in Tech, Lesbians Who Tech, Latinas in Tech) are included too, because joining early builds the network you'll use when you start working. Like the company tiers, each one shows as its logo, and tapping it opens the site so you can join. **Show all programs** lists every one, so students who chose "Prefer not to say" can browse too.
+## Interview
+Two tabs side by side: **Behavioral** (a live AI voice interviewer) and **Technical** (the NeetCode 150 as a Card Game and a concept Roadmap).
 
-**Why join:** these organizations open the door to elite connections in the industry. Members get exclusive company partners, recruiter events and referrals that fast-track them to interviews, and often to offers.
+### Behavioral: voice practice
+In **Interview → Behavioral**, pick who interviews you: **Generic**, **Google**, **Amazon** or **Meta**. Then tap the big round button and answer out loud. **North West, a Senior Software Engineer** at that company, interviews you in real time, powered by the OpenAI Realtime API over WebRTC.
 
-| Who it's for | Programs |
+| Interviewer | Focus |
 | --- | --- |
-| Because you're first-gen | [SEO Career](https://career.seo-usa.org/), [America Needs You](https://americaneedsyou.org/), [Braven](https://braven.org/), [CodePath](https://www.codepath.org/), [Career Pathways Initiative](https://www.careerpathwaysinitiative.com/) |
-| For Black students | [ColorStack](https://www.colorstack.org/), [Code2040](https://www.code2040.org/), [NSBE](https://nsbe.org/), [MLT](https://mlt.org/), [SEO Career](https://career.seo-usa.org/), [UNCF](https://uncf.org/), [Thurgood Marshall College Fund](https://tmcf.org/), [Black in AI](https://www.blackinai.org/), [/dev/color](https://devcolor.org/), [Blacks In Technology](https://blacksintechnology.org/) |
-| For Hispanic & Latino students | [ColorStack](https://www.colorstack.org/), [Code2040](https://www.code2040.org/), [MLT](https://mlt.org/), [SEO Career](https://career.seo-usa.org/), [SHPE](https://shpe.org/), [HACE](https://haceonline.org/), [SACNAS](https://www.sacnas.org/), [Hispanic Heritage Foundation](https://hispanicheritage.org/), [LatinX in AI](https://www.latinxinai.org/), [Latinas in Tech](https://latinasintech.org/) |
-| For Asian students | [SASE](https://www.saseconnect.org/), [Ascend](https://ascendleadership.org/), [APIA Scholars](https://apiascholars.org/), [NAAAP](https://www.naaap.org/) |
-| For multiracial students | [Code2040](https://www.code2040.org/), [MLT](https://mlt.org/), [SEO Career](https://career.seo-usa.org/), [SACNAS](https://www.sacnas.org/), [AISES](https://aises.org/), [American Indian College Fund](https://collegefund.org/) |
-| For women & non-binary students | [Break Through Tech](https://www.breakthroughtech.org/), [Rewriting the Code](https://rewritingthecode.org/), [SWE](https://swe.org/), [AnitaB.org](https://anitab.org/), [WiCyS](https://www.wicys.org/), [Girls Who Code](https://girlswhocode.com/), [Latinas in Tech](https://latinasintech.org/) |
-| For LGBTQ+ students | [oSTEM](https://ostem.org/), [Point Foundation](https://pointfoundation.org/), [Out for Undergrad](https://www.outforundergrad.org/), [Queer in AI](https://www.queerinai.com/), [Out in Tech](https://outintech.com/), [Lesbians Who Tech](https://lesbianswhotech.org/) |
-| Open to everyone | [CodePath](https://www.codepath.org/), [MLH Fellowship](https://fellowship.mlh.com/), [Tapia Conference](https://tapiaconference.cmd-it.org/), [Forage](https://www.theforage.com/), [ACM](https://www.acm.org/) |
+| Generic | Classic behavioral questions: teamwork, conflict, failure, ambiguity, ownership |
+| Google | Scale & complexity: billions of requests, system trade-offs, edge cases, and "Googleyness" (collaboration, handling ambiguity). Listens for "I" vs. "we" |
+| Amazon | Leadership Principles, evaluated like a Principal Engineer: Customer Obsession, Ownership, Bias for Action, Dive Deep, Deliver Results. Follows up when you don't show bias for action or quantifiable business metrics |
+| Meta | Move fast & impact: rapid execution, personal engineering ownership, pragmatism over over-engineering |
 
-Each logo comes from the organization's own website (its app icon or site icon), with Google's favicon service as a backup, and every program in the list has a real logo. The list lives in [src/data/communities.json](src/data/communities.json), so adding a program is one entry. Your answers are only used inside the app to choose what to show; nothing extra is sent anywhere.
+The persona, company context, interview rigor and evaluation criteria are set with system instructions in the Realtime session. North West keeps turns to 1–3 sentences so you do most of the talking, asks one question at a time, and follows up naturally when a STAR part is missing. For example: *"Thanks for detailing those steps! Before we move on, what was the actual impact after you shipped that?"*
 
+**Live STAR feedback.** Four boxes, **S · T · A · R**, update as you talk:
+- 🟩 **green**: that part passed;
+- 🟨 **yellow**: needs clarification (North West follows up);
+- 🟥 **red**: needs revision, so redo that part.
 
-### Ginny ✨ (the ＋ button)
+North West grades each part by calling the `update_star_progress` tool (phase, status and a short note like "No quantifiable metric provided"). The note shows under the boxes. A second tool, `start_new_question`, resets the boxes and shows each new question on screen.
+
+**Camera panel & AI agent badge.**
+- **Layout:** the S · T · A · R boxes stand in a column on the left, with a camera panel to their right.
+- **Camera:** when you tap the round button (it shows the OpenAI logo), Tepobaby asks for camera access and shows a mirrored self-view with a LIVE tag, like a real video interview.
+- **Agent badge:** in the panel's top-left corner, an OpenAI badge shows "North West · speaking / listening". It wiggles, with a pulsing ring and sound bars, while North West talks, the way AI voice agents usually show they're speaking.
+- **If you skip the camera:** you can say no to camera access and keep practicing audio-only.
+
+**Privacy & cost.**
+- **Audio & video:** your voice goes straight from your browser to OpenAI. Your camera is only shown to you on screen and is never sent anywhere. Tepobaby doesn't record or store either one.
+- **Key safety:** the server mints a short-lived client secret for each session, so the OpenAI key never reaches the browser.
+- **Limits:** sessions end automatically after 15 minutes, and each user can start up to 10 sessions an hour.
+- **Credits:** the Realtime API has no free tier, so the OpenAI account needs credits; if it runs out, the app says so instead of failing silently.
+
+### Technical: NeetCode 150
+**Interview → Technical** is built entirely on the [NeetCode 150](https://neetcode.io/practice), with two sub-tabs side by side: **Card Game** and **Roadmap**.
+
+**🃏 Card Game**
+1. **Flip a card.** 150 face-down cards are numbered 1–150, and each hides a random NeetCode 150 question (shuffled per device). Tap one, or **Flip a random card**, and it flips over to reveal the question.
+2. **Read the question.** A pop-up shows the full problem statement, scraped from LeetCode with its examples, images and constraints.
+3. **Guess the concepts.** Pick every approach you think applies from the 18 concepts on the roadmap (Arrays & Hashing, Two Pointers, …, Bit Manipulation), then tap **Answer**.
+   - Correct picks turn green, wrong ones red, and missed ones get a dashed green outline.
+   - A one-line explanation says why each approach works (e.g. Trapping Rain Water: Two Pointers, or a monotonic Stack).
+4. **Let's code.** This opens a NeetCode-style coding screen:
+   - **Layout:** the question sits on the left; on the right are a code editor (Python 3 or JavaScript) and the test cases.
+   - **Run** runs the example test cases, which you can edit, or add your own.
+   - **Submit** also runs hidden tests and gives LeetCode-style verdicts:
+     - **Accepted**, **Wrong Answer** (showing the failing input, your output and the expected output), **Runtime Error**, **Time Limit Exceeded**, and **Compile Error**.
+     - Each result also shows `print` / `console.log` output and the runtime.
+   - **💡 Hint: template** shows the skeleton code of the right concept as read-only text. It shows the pattern, not this problem's solution, and nothing is typed into your editor.
+   - Your code is saved as a draft for each problem and language; **Reset** brings back the starter code.
+   - **On a phone**, the question, code and tests become three tabs.
+5. Accepted cards turn green with a ✓, and the counters track solved cards, flipped cards and concepts you nailed.
+
+**🗺️ Roadmap**
+- **The diagram:** NeetCode's roadmap, with the same 18 concepts and dashed prerequisite lines, from Arrays & Hashing down to Math & Geometry. Each concept shows a progress bar of the problems you've solved in it.
+- **Opening a concept:** hover (or tap on a phone) to open its card:
+  - **Skeleton code** of the pattern (e.g. binary search, monotonic stack, Dijkstra).
+  - **Works on:** the input types it handles (sorted array, linked list, adjacency list, 2-D grid, two strings, …).
+  - **What it does**, in plain words.
+  - **Live walkthrough:** the algorithm runs on a small example. The data moves step by step, with arrays and their `l` / `m` / `r` pointers, hash maps, stacks, linked-list arrows, trees, trie and decision trees, graphs, DP tables, intervals and bits, while the matching line of code lights up. You can play or pause, step back and forward, or change the speed.
+  - **Runtime**: time and space complexity, and why.
+
+**Where the code runs.** Your code runs **in your own browser**, never on Tepobaby's server:
+- **JavaScript** runs in a sandboxed Web Worker. Like LeetCode's runtime, it has `ListNode`, `TreeNode` and `MinPriorityQueue` built in.
+- **Python 3** runs with [Pyodide](https://pyodide.org) (CPython compiled to WebAssembly). It loads from jsDelivr the first time you pick Python (about 10 MB, cached afterwards), with `typing`, `collections`, `heapq` and the other usual LeetCode imports ready.
+- **Infinite loops** hit a time limit (3 s per case for JavaScript, 8 s for Python), and the worker is restarted.
+
+**Where the tests come from.**
+- **Problems and examples:** the server fetches each problem's statement, example inputs, function signature and starter code from LeetCode's public GraphQL endpoint. It caches them in `server/data/neetcode.json` and refreshes them weekly, one request at a time.
+- **Expected answers:** I wrote a reference solution for all 150 problems ([server/neetcode/reference.js](server/neetcode/reference.js)). `npm run check:neetcode` verifies every one against the 357 example outputs on the problem pages.
+- **Hidden tests:** Submit also runs 3–5 hidden tests per problem (edge cases like empty input, a single item, duplicates, negatives, plus some bigger inputs), all within each problem's constraints.
+- **Custom test cases:** when you add or edit a case, the server computes its expected answer with the reference solution, in a worker thread with a 3-second limit.
+- **Problems with more than one right answer** are judged fairly: any order where the problem allows it (3Sum, Group Anagrams, Subsets, Permutations, …), any valid topological order for Course Schedule II and Alien Dictionary, any longest palindrome, and a 1e-5 tolerance for decimals.
+
+**Progress** (the card shuffle, flipped and solved cards, and code drafts) is saved on this device.
+
+## ＋ Ginny: ATS & Ask Gemini
 Tap the big **＋** in the middle of the bottom bar. A sheet opens with two tabs side by side:
 
 1. **Job**: pick **one** job from your saved (♥) jobs. Ginny uses it for everything.
@@ -94,7 +170,7 @@ Tap the big **＋** in the middle of the bottom bar. A sheet opens with two tabs
    - **ATS match analysis** (shown with the Voyage AI logo, the embeddings that power it): scores how well your resume fits the job.
    - **Ask Gemini** (shown with the Google Gemini logo): an interview FAQ chat about the job, so you can chancemaxx.
 
-**ATS match analysis**
+### ATS match analysis
 
 Upload your resume PDF once. Signed-in students' resumes are stored privately on their account; guests' stay on their device. After that, Ginny goes straight to the analysis. Every time you run an analysis, Ginny goes to the job posting's own website and fetches the full job description in real time, so you're matched against what the posting says right now. It reads Greenhouse, Lever, Ashby and Workday through their public APIs, and other career sites through their job data or page text. If it can't, it asks you to paste the description.
 
@@ -159,7 +235,7 @@ Why Voyage:
 - **Tuned for tech.** It's built for code, APIs and engineering terms, so it relates "Next.js" to "React", or "Forward Deployed Engineer" to "Solutions Architect".
 - **One shared vector space.** `voyage-4-large`, `voyage-4` and `voyage-4-lite` share it, so resumes can be indexed once and searched with the faster lite model.
 
-**Ask Gemini**
+### Ask Gemini
 
 A chat about your selected job, so you know what to expect. It opens with suggested questions, filled in automatically from the job and your profile, so you don't retype anything:
 - *"(role) at (company): how many interview rounds are there, and what are they?"*
@@ -168,84 +244,9 @@ A chat about your selected job, so you know what to expect. It opens with sugges
 
 Ask Gemini uses **Gemini 3.8 Flash** through Google's Interactions API. It tries Google Search first so company-specific answers come with sources. On the free tier, search can be over quota; then Gemini answers from what candidates have publicly reported and the answer says it has no live sources. If Gemini is overloaded, Tepobaby retries and falls back to Gemini 3.7 / 3.5 Flash. Chat only gets the role, company and non-identifying profile facts (class year, graduation date, visa status), never your resume, name or email.
 
+**Gemini key.** Ginny's Gemini features (Ask Gemini and tailored rewrites) currently run on the author's personal free API key. To unlock them in your own copy, grab your own API key from [Google AI Studio](https://aistudio.google.com/app/apikey), which is free. Then add it to `.env.local` as `GEMINI_API_KEY=...` and restart the server.
 
-### Interview: behavioral voice practice
-In **Interview → Behavioral**, pick who interviews you: **Generic**, **Google**, **Amazon** or **Meta**. Then tap the big round button and answer out loud. **North West, a Senior Software Engineer** at that company, interviews you in real time, powered by the OpenAI Realtime API over WebRTC.
-
-| Interviewer | Focus |
-| --- | --- |
-| Generic | Classic behavioral questions: teamwork, conflict, failure, ambiguity, ownership |
-| Google | Scale & complexity: billions of requests, system trade-offs, edge cases, and "Googleyness" (collaboration, handling ambiguity). Listens for "I" vs. "we" |
-| Amazon | Leadership Principles, evaluated like a Principal Engineer: Customer Obsession, Ownership, Bias for Action, Dive Deep, Deliver Results. Follows up when you don't show bias for action or quantifiable business metrics |
-| Meta | Move fast & impact: rapid execution, personal engineering ownership, pragmatism over over-engineering |
-
-The persona, company context, interview rigor and evaluation criteria are set with system instructions in the Realtime session. North West keeps turns to 1–3 sentences so you do most of the talking, asks one question at a time, and follows up naturally when a STAR part is missing. For example: *"Thanks for detailing those steps! Before we move on, what was the actual impact after you shipped that?"*
-
-**Live STAR feedback.** Four boxes, **S · T · A · R**, update as you talk:
-- 🟩 **green**: that part passed;
-- 🟨 **yellow**: needs clarification (North West follows up);
-- 🟥 **red**: needs revision, so redo that part.
-
-North West grades each part by calling the `update_star_progress` tool (phase, status and a short note like "No quantifiable metric provided"). The note shows under the boxes. A second tool, `start_new_question`, resets the boxes and shows each new question on screen.
-
-**Camera panel & AI agent badge.**
-- **Layout:** the S · T · A · R boxes stand in a column on the left, with a camera panel to their right.
-- **Camera:** when you tap the round button (it shows the OpenAI logo), Tepobaby asks for camera access and shows a mirrored self-view with a LIVE tag, like a real video interview.
-- **Agent badge:** in the panel's top-left corner, an OpenAI badge shows "North West · speaking / listening". It wiggles, with a pulsing ring and sound bars, while North West talks, the way AI voice agents usually show they're speaking.
-- **If you skip the camera:** you can say no to camera access and keep practicing audio-only.
-
-**Privacy & cost.**
-- **Audio & video:** your voice goes straight from your browser to OpenAI. Your camera is only shown to you on screen and is never sent anywhere. Tepobaby doesn't record or store either one.
-- **Key safety:** the server mints a short-lived client secret for each session, so the OpenAI key never reaches the browser.
-- **Limits:** sessions end automatically after 15 minutes, and each user can start up to 10 sessions an hour.
-- **Credits:** the Realtime API has no free tier, so the OpenAI account needs credits; if it runs out, the app says so instead of failing silently.
-
-
-### Interview: technical practice (NeetCode 150)
-**Interview → Technical** is built entirely on the [NeetCode 150](https://neetcode.io/practice), with two sub-tabs side by side: **Card Game** and **Roadmap**.
-
-**🃏 Card Game**
-1. **Flip a card.** 150 face-down cards are numbered 1–150, and each hides a random NeetCode 150 question (shuffled per device). Tap one, or **Flip a random card**, and it flips over to reveal the question.
-2. **Read the question.** A pop-up shows the full problem statement, scraped from LeetCode with its examples, images and constraints.
-3. **Guess the concepts.** Pick every approach you think applies from the 18 concepts on the roadmap (Arrays & Hashing, Two Pointers, …, Bit Manipulation), then tap **Answer**.
-   - Correct picks turn green, wrong ones red, and missed ones get a dashed green outline.
-   - A one-line explanation says why each approach works (e.g. Trapping Rain Water: Two Pointers, or a monotonic Stack).
-4. **Let's code.** This opens a NeetCode-style coding screen:
-   - **Layout:** the question sits on the left; on the right are a code editor (Python 3 or JavaScript) and the test cases.
-   - **Run** runs the example test cases, which you can edit, or add your own.
-   - **Submit** also runs hidden tests and gives LeetCode-style verdicts:
-     - **Accepted**, **Wrong Answer** (showing the failing input, your output and the expected output), **Runtime Error**, **Time Limit Exceeded**, and **Compile Error**.
-     - Each result also shows `print` / `console.log` output and the runtime.
-   - **💡 Hint: template** shows the skeleton code of the right concept as read-only text. It shows the pattern, not this problem's solution, and nothing is typed into your editor.
-   - Your code is saved as a draft for each problem and language; **Reset** brings back the starter code.
-   - **On a phone**, the question, code and tests become three tabs.
-5. Accepted cards turn green with a ✓, and the counters track solved cards, flipped cards and concepts you nailed.
-
-**🗺️ Roadmap**
-- **The diagram:** NeetCode's roadmap, with the same 18 concepts and dashed prerequisite lines, from Arrays & Hashing down to Math & Geometry. Each concept shows a progress bar of the problems you've solved in it.
-- **Opening a concept:** hover (or tap on a phone) to open its card:
-  - **Skeleton code** of the pattern (e.g. binary search, monotonic stack, Dijkstra).
-  - **Works on:** the input types it handles (sorted array, linked list, adjacency list, 2-D grid, two strings, …).
-  - **What it does**, in plain words.
-  - **Live walkthrough:** the algorithm runs on a small example. The data moves step by step, with arrays and their `l` / `m` / `r` pointers, hash maps, stacks, linked-list arrows, trees, trie and decision trees, graphs, DP tables, intervals and bits, while the matching line of code lights up. You can play or pause, step back and forward, or change the speed.
-  - **Runtime**: time and space complexity, and why.
-
-**Where the code runs.** Your code runs **in your own browser**, never on Tepobaby's server:
-- **JavaScript** runs in a sandboxed Web Worker. Like LeetCode's runtime, it has `ListNode`, `TreeNode` and `MinPriorityQueue` built in.
-- **Python 3** runs with [Pyodide](https://pyodide.org) (CPython compiled to WebAssembly). It loads from jsDelivr the first time you pick Python (about 10 MB, cached afterwards), with `typing`, `collections`, `heapq` and the other usual LeetCode imports ready.
-- **Infinite loops** hit a time limit (3 s per case for JavaScript, 8 s for Python), and the worker is restarted.
-
-**Where the tests come from.**
-- **Problems and examples:** the server fetches each problem's statement, example inputs, function signature and starter code from LeetCode's public GraphQL endpoint. It caches them in `server/data/neetcode.json` and refreshes them weekly, one request at a time.
-- **Expected answers:** I wrote a reference solution for all 150 problems ([server/neetcode/reference.js](server/neetcode/reference.js)). `npm run check:neetcode` verifies every one against the 357 example outputs on the problem pages.
-- **Hidden tests:** Submit also runs 3–5 hidden tests per problem (edge cases like empty input, a single item, duplicates, negatives, plus some bigger inputs), all within each problem's constraints.
-- **Custom test cases:** when you add or edit a case, the server computes its expected answer with the reference solution, in a worker thread with a 3-second limit.
-- **Problems with more than one right answer** are judged fairly: any order where the problem allows it (3Sum, Group Anagrams, Subsets, Permutations, …), any valid topological order for Course Schedule II and Alien Dictionary, any longest palindrome, and a 1e-5 tolerance for decimals.
-
-**Progress** (the card shuffle, flipped and solved cards, and code drafts) is saved on this device.
-
-
-### Connect: alumni & recruiters on LinkedIn
+## Connect: alumni & recruiters on LinkedIn
 Pick one of your saved (♥) jobs, or type any company, to get two sections.
 
 **1. Find alumni from your school at (company)**
@@ -269,40 +270,45 @@ Pick one of your saved (♥) jobs, or type any company, to get two sections.
 
 Tepobaby only builds links; it never signs in to LinkedIn or sees your LinkedIn account.
 
+## Profile & organizations
+Your **Profile** has your saved and applied jobs, all your answers, programs and organizations picked for you, a button to review your answers, and sign out.
 
-### Where job postings come from
-Postings update **once a day, every morning at 7:00 AM Eastern Time (ET)**, so 30–31 times a month. The time follows daylight saving, and if the server was off at 7:00 AM it catches up as soon as it starts. Each morning the server checks every source in parallel in the background, keeps only roles posted in the last 7 days, removes duplicates, and pushes the new postings to the app as soon as each source finishes.
+- **Save jobs with ♥**: tap the heart on any job posting to save it. Saved jobs appear under **My jobs** on your Profile, with **Saved** and **Applied** tabs; tap **Mark applied** to track where you've applied. Each saved job keeps its details, so it stays there after the posting leaves the 7-day feed. When signed in, saved jobs are stored on your account; as a guest, they stay on your device and move to your account when you sign in.
+- **Track your applications**: in **My jobs → Applied**, tap a job's stage to update it: **Applied → OA → Phone → On-site → Final → Team match → Offer**, or **Ghosted** / **Not proceeding**. A pipeline summary shows how many jobs are at each stage, and each job shows when its stage last changed. Applied jobs stay until you remove them: the daily job update never touches this list, and changing a stage never reshuffles it (it's ordered by when you applied).
 
-| Source | What it adds |
+### Programs & organizations for you
+On your **Profile**, inside **Demographic & Identity Information**, Tepobaby suggests organizations, clubs, non-profits and programs you can join, based on your answers. For example, first-gen and low-income students see programs like Career Pathways Initiative (founded by Ken Lang), America Needs You and Braven, and Black students see ColorStack, NSBE and Code2040. Every program is something **U.S. college students** can join: no high school or college-admissions programs. A few professional networks (/dev/color, NAAAP, Blacks In Technology, Out in Tech, Lesbians Who Tech, Latinas in Tech) are included too, because joining early builds the network you'll use when you start working. Like the company tiers, each one shows as its logo, and tapping it opens the site so you can join. **Show all programs** lists every one, so students who chose "Prefer not to say" can browse too.
+
+**Why join:** these organizations open the door to elite connections in the industry. Members get exclusive company partners, recruiter events and referrals that fast-track them to interviews, and often to offers.
+
+| Who it's for | Programs |
 | --- | --- |
-| [SimplifyJobs Summer 2027 Internships](https://github.com/SimplifyJobs/Summer2027-Internships) + [New Grad Positions](https://github.com/SimplifyJobs/New-Grad-Positions) | Most internships and new grad roles, with exact posting times |
-| [speedyapply 2027 SWE College Jobs](https://github.com/speedyapply/2027-SWE-College-Jobs) | More SWE internships and new grad roles (age in days only) |
-| [Pitt CSC](https://github.com/pittcsc/Summer2027-Internships), [vanshb03](https://github.com/vanshb03/Summer2027-Internships) | Extra community-curated internships |
-| Company job boards: [Greenhouse](https://developers.greenhouse.io/job-board.html), [Lever](https://github.com/lever/postings-api), [Ashby](https://developers.ashbyhq.com/docs/public-job-posting-api) | Early-career roles straight from about 80 companies (Stripe, Figma, OpenAI, Ramp, Palantir…). Add more in [server/jobs/companies.json](server/jobs/companies.json) |
-| [Hacker News "Who is hiring?"](https://github.com/HackerNews/API) | Startup posts that mention internships, new grad or junior roles |
-| [Google Jobs via SerpApi](https://serpapi.com/google-jobs-api) | Roles indexed from LinkedIn, Indeed, Glassdoor and company sites. Runs when `SERPAPI_KEY` is set (see below) |
+| Because you're first-gen | [SEO Career](https://career.seo-usa.org/), [America Needs You](https://americaneedsyou.org/), [Braven](https://braven.org/), [CodePath](https://www.codepath.org/), [Career Pathways Initiative](https://www.careerpathwaysinitiative.com/) |
+| For Black students | [ColorStack](https://www.colorstack.org/), [Code2040](https://www.code2040.org/), [NSBE](https://nsbe.org/), [MLT](https://mlt.org/), [SEO Career](https://career.seo-usa.org/), [UNCF](https://uncf.org/), [Thurgood Marshall College Fund](https://tmcf.org/), [Black in AI](https://www.blackinai.org/), [/dev/color](https://devcolor.org/), [Blacks In Technology](https://blacksintechnology.org/) |
+| For Hispanic & Latino students | [ColorStack](https://www.colorstack.org/), [Code2040](https://www.code2040.org/), [MLT](https://mlt.org/), [SEO Career](https://career.seo-usa.org/), [SHPE](https://shpe.org/), [HACE](https://haceonline.org/), [SACNAS](https://www.sacnas.org/), [Hispanic Heritage Foundation](https://hispanicheritage.org/), [LatinX in AI](https://www.latinxinai.org/), [Latinas in Tech](https://latinasintech.org/) |
+| For Asian students | [SASE](https://www.saseconnect.org/), [Ascend](https://ascendleadership.org/), [APIA Scholars](https://apiascholars.org/), [NAAAP](https://www.naaap.org/) |
+| For multiracial students | [Code2040](https://www.code2040.org/), [MLT](https://mlt.org/), [SEO Career](https://career.seo-usa.org/), [SACNAS](https://www.sacnas.org/), [AISES](https://aises.org/), [American Indian College Fund](https://collegefund.org/) |
+| For women & non-binary students | [Break Through Tech](https://www.breakthroughtech.org/), [Rewriting the Code](https://rewritingthecode.org/), [SWE](https://swe.org/), [AnitaB.org](https://anitab.org/), [WiCyS](https://www.wicys.org/), [Girls Who Code](https://girlswhocode.com/), [Latinas in Tech](https://latinasintech.org/) |
+| For LGBTQ+ students | [oSTEM](https://ostem.org/), [Point Foundation](https://pointfoundation.org/), [Out for Undergrad](https://www.outforundergrad.org/), [Queer in AI](https://www.queerinai.com/), [Out in Tech](https://outintech.com/), [Lesbians Who Tech](https://lesbianswhotech.org/) |
+| Open to everyone | [CodePath](https://www.codepath.org/), [MLH Fellowship](https://fellowship.mlh.com/), [Tapia Conference](https://tapiaconference.cmd-it.org/), [Forage](https://www.theforage.com/), [ACM](https://www.acm.org/) |
 
-**Google Jobs (SerpApi)**: each morning Tepobaby runs 4 searches ("software engineer intern", "software engineer new grad", "entry level software engineer", "data science intern"), about 120–124 searches a month. That fits [SerpApi's free plan](https://serpapi.com/pricing) of 250 searches a month. Each result links to the best place to apply: the company's own site first, then its hiring platform (like Greenhouse or Workday), then LinkedIn, Indeed or Glassdoor. To turn it on, create a free account at [serpapi.com](https://serpapi.com), copy your API key into `.env.local` as `SERPAPI_KEY=...`, and restart the server. Keep the key out of git and out of any `VITE_` variable.
+Each logo comes from the organization's own website (its app icon or site icon), with Google's favicon service as a backup, and every program in the list has a real logo. The list lives in [src/data/communities.json](src/data/communities.json), so adding a program is one entry. Your answers are only used inside the app to choose what to show; nothing extra is sent anywhere.
 
-The Simplify.jobs site doesn't need its own scraper, because the SimplifyJobs GitHub lists above already carry its data.
-
-LinkedIn, Indeed, Glassdoor, Wellfound, Y Combinator's Work at a Startup, RippleMatch, WayUp, Untapped and CodePath are not scraped directly, because their terms don't allow it or they need a login. Google Jobs through SerpApi covers much of LinkedIn, Indeed and Glassdoor legitimately.
-
-**On your Home page**
-- Each level tab shows how many postings it has, and **Last 48–72h** / **This week** filter by real posting times.
-- Newest first, with a **Live** badge and when the last morning update ran. New postings appear on their own, and **Show more** loads the next batch.
-- Each posting shows the company's logo: the site's icon via [Google's favicon service](https://www.google.com/s2/favicons) (with [DuckDuckGo's](https://icons.duckduckgo.com) as a backup), fetched and cached by our server, so your browser never contacts them. The company's website comes from the job list, the apply link, or a name lookup that has to match the company exactly. If there's no confident match, you see the company's first letter instead of a wrong logo.
-- Each posting's level comes from the list it was found in and its title (like "intern" or "new grad"). Senior roles are left out.
-
-**Good to know**
-- **Visa sponsorship is often unknown.** Many sources don't say whether a role sponsors. If you need sponsorship, the toggle hides roles that say they don't, and **Sponsors visa** only shows when a source confirms it.
-- **Underclassmen Programs is often empty.** Programs for freshmen and sophomores (like Microsoft Explore) are rare and mostly open August–October. When none are new, Tepobaby suggests the Internship tab, since many internships accept every class year.
-- **Each link opens the original application** on the company's site or job board.
-
-
-### Design decisions & pain points
+## Design decisions & pain points
 How I built Tepobaby (with Claude Code): each decision, why I made it, and the pain point behind it.
 
+### Sign-in & onboarding
+- **Google sign-in with a full-page redirect.**
+  - *Why:* it works in every browser.
+  - *Pain point:* the popup never came back in in-editor browsers or the iPhone Home Screen app.
+- **Check `.edu` on the server.**
+  - *Why:* a browser check can be bypassed.
+  - *Pain point:* security. The server verifies Google's ID token.
+- **Clean up answers when questions change.**
+  - *Why:* students shouldn't redo everything.
+  - *Pain point:* questions changed after students had already answered, so now they only answer the new section.
+
+### Job postings feed
 **Job postings workflow**
 1. Most postings come from the community GitHub repos listed above. I read each repo's structured `listings.json` (exact posting times, sponsorship, whether the role is open). speedyapply has no JSON, so I parse its Markdown table.
 2. I add early-career roles straight from about 80 companies through the public Greenhouse, Lever and Ashby job-board APIs.
@@ -310,7 +316,6 @@ How I built Tepobaby (with Claude Code): each decision, why I made it, and the p
 4. I add Google Jobs results through SerpApi.
 5. Every morning all sources run in parallel. I keep the last 7 days, label each role Underclassmen / Internship / Entry-level, drop senior roles, remove duplicates, and push new postings to the app.
 
-#### Job postings feed
 - **Read each repo's `listings.json` instead of scraping its README table.**
   - *Why:* it has exact timestamps for the 48–72h filter, sponsorship info, and an "active" flag.
   - *Pain point:* the README tables mix HTML and Markdown, use "↳" rows for repeated companies and emoji for sponsorship, and have no exact dates.
@@ -351,7 +356,7 @@ How I built Tepobaby (with Claude Code): each decision, why I made it, and the p
   - *Why:* small teams post on their own sites and niche boards.
   - *Pain point:* these roles rarely show up on the big lists.
 
-#### Logos
+### Logos
 - **Proxy and cache every logo on my server**, and serve only domains that are in Tepobaby's data.
   - *Why:* students' browsers never contact third parties, and the logo route can't be used as an open proxy.
   - *Pain point:* privacy, plus abuse risk.
@@ -362,7 +367,7 @@ How I built Tepobaby (with Claude Code): each decision, why I made it, and the p
   - *Why:* the site's own icon is the real logo.
   - *Pain point:* favicon services returned tiny, generic or missing icons. A few needed an image from the organization's site (ACM), the icon from its browser tab (NAAAP), a cropped bundled copy (Tapia), or a dark tile for a white logo (/dev/color).
 
-#### Company tiers
+### Company tiers
 - **Rank companies by reported intern / new grad interview difficulty and fact-check borderline ones.**
   - *Why:* students prep differently for system design vs. easy LeetCode.
   - *Pain point:* it's subjective. Checking reports moved Tesla, Bloomberg and Akuna Capital up to Hard LC, while NVIDIA, Point72 and DRW stayed in Medium LC. Everything is in `src/data/tiers.json`.
@@ -370,96 +375,7 @@ How I built Tepobaby (with Claude Code): each decision, why I made it, and the p
   - *Why:* roles often go live on company sites before any list picks them up.
   - *Pain point:* job lists lag behind company sites.
 
-#### Saved jobs
-- **Each saved job keeps its own copy of the details.**
-  - *Why:* Saved and Applied lists should outlast the feed.
-  - *Pain point:* postings only stay for 7 days.
-- **Guests' saved jobs and answers stay on the device and move into the account at sign-in.**
-  - *Why:* students shouldn't lose progress when they decide to sign in.
-  - *Pain point:* guests have no account to save to.
-
-- **Hiring stages for applied jobs** (Applied, OA, Phone, On-site, Final, Team match, Offer, Ghosted, Not proceeding), set with a tap-to-open toggle.
-  - *Why:* "applied" alone doesn't tell students where they stand, and a pipeline view shows what needs follow-up.
-  - *Pain point:* students track this in spreadsheets today. The server only accepts these 9 stages, and records when the stage last changed.
-- **The Applied list never refreshes or reshuffles.**
-  - *Why:* applications take weeks, and a list that jumps around is hard to track.
-  - *Pain point:* saving used to move the job to the top, so changing a stage would have reshuffled the list. Updates now replace the job in place, and Applied is ordered by when you applied. The daily job update never touches saved or applied jobs.
-
-#### Programs & organizations
-- **Match programs inside the app, and keep "Show all programs".**
-  - *Why:* nobody has to share identity data to see the full list.
-  - *Pain point:* race, gender, LGBTQ+ and first-gen answers are sensitive.
-- **Only programs U.S. college students can join**, plus professional networks students can join early.
-  - *Why:* Tepobaby is for U.S. college students, and early networking pays off at recruiting time.
-  - *Pain point:* the first list mixed in high school and admissions programs (Posse, QuestBridge and others), which I removed.
-- **Check every link before adding a program.**
-  - *Why:* a dead link wastes a student's time.
-  - *Pain point:*
-    - Basta's and Rising First's sites are gone, Jopwell redirects elsewhere, and others had moved.
-    - Several organizations share the name "Career Pathways Initiative"; I added the one founded by Ken Lang.
-- **Programs can require more than one group** (Latinas in Tech: Latina *and* a woman).
-  - *Why:* students should only see programs they can join.
-  - *Pain point:* a Hispanic man was shown Latinas in Tech, and an LGBTQ+ man Lesbians Who Tech.
-- **Keep the list to organizations students join.**
-  - *Why:* Google's own programs only showed Google's logo, and Hispanic Scholarship Fund is mainly a scholarship.
-  - *Pain point:* a launchpad full of company programs and scholarships blurs its purpose.
-
-#### Ginny: ATS match analysis
-- **Fetch the job description in real time from the posting's own website on every analysis.**
-  - *Why:* roles get edited or closed, so the resume should be compared against what the posting says right now.
-  - *Pain point:* saved jobs don't include a description. Each site is different, so I use the Greenhouse, Lever, Ashby and Workday APIs, schema.org JobPosting data or page text, and let students paste it when none work.
-- **Read requirements and skills only from qualifications and responsibilities sections.**
-  - *Why:* that's what the job actually asks for.
-  - *Pain point:* "Solomon Graf experience as a 2026 intern" and "Semgrep, the leader in code security…" were read as requirements, and "we support Ruby, PHP" counted as required skills.
-- **Stage 1: Voyage AI `voyage-4` embeddings** (`input_type="document"` for resume lines, `"query"` for the job).
-  - *Why:* it's tuned for code and engineering terms ("Next.js" ↔ "React"), its 200M free tokens need no card, and the voyage-4 models share one vector space.
-  - *Pain point:* it's a hosted API, so resumes need PII protection, and it needs a key. Without one, analysis still runs with stages 1.1 and 2, re-weighted.
-- **Stage 1.1: BM25 with a tech-skills dictionary.**
-  - *Why:* recruiters' ATS filters look for exact strings like "Kubernetes" or "C++".
-  - *Pain point:* false positives from "go to", "the rest of", "node the tree", and "C" inside "Objective-C". Short names now only count in their usual capitalization, and hyphens count as part of a word.
-- **Stage 2: a local cross-encoder** (ms-marco MiniLM, FlashRank's model family) via ONNX Runtime.
-  - *Why:* reranking runs on my own CPU with no external API, so no extra data leaves the server.
-  - *Pain point:*
-    - FlashRank is a Python library and my server is Node.
-    - It runs about 10–27 ms per resume line on my Intel Mac, not under 20 ms per batch.
-    - Its raw scores needed calibration (relevant ≈ −4…+2, unrelated ≈ −10).
-- **Redact PII locally, keep only Experience / Projects / Skills / Education, and store the PDF separately.**
-  - *Why:* sending raw resumes to a hosted API creates GDPR/CCPA risk.
-  - *Pain point:* resumes are full of personal info. Signed-in PDFs stay in private storage, and guests' never leave their device except in memory for one request.
-- **A "what to improve" checklist computed on the server**, prioritized and with point estimates.
-  - *Why:* a score alone doesn't tell a student what to do next. The checklist uses the same evidence as the score, so it's instant, free and private.
-  - *Pain point:* students need practical next steps (which keywords, which bullets, what numbers), not generic advice.
-- **Gemini bullet rewrites only when the student opts in.**
-  - *Why:* rewriting needs the resume text, and students should decide whether it goes to Google. The button says exactly what gets sent.
-  - *Pain point:* in testing, a rewrite added a claim the original didn't make ("improving database throughput"). Rewrites are shown next to the originals, with unknown numbers as [placeholders] and a reminder to keep only what's true.
-- **Eightfold's 4 tier names with my own weights and cutoffs.**
-  - *Why:* students know those labels from real portals.
-  - *Pain point:* Eightfold's formula isn't public, so the report says it's my calibration. Test jobs scored Strong 80, Weak 22 and Weak 2.
-
-#### Ginny: Ask Gemini
-- **Show each tool with the logo of the AI behind it** (Voyage AI on ATS match analysis, Google Gemini on Ask Gemini), bundled in `public/logos/`.
-  - *Why:* students can see at a glance which AI does what.
-  - *Pain point:* Voyage's site favicon now shows MongoDB's leaf (MongoDB acquired Voyage AI), so I used Voyage's own "V" icon, and Gemini's official sparkle from Google.
-- **Gemini 3.8 Flash through the Interactions API** (`POST /v1beta/interactions`).
-  - *Why:* it's the current free Flash model, and Google now serves new models through this API.
-  - *Pain point:* Gemini 1.5 Flash was retired in 2025, Gemini 2.5 Flash came back "no longer available to new users", and newer models returned 404 on the old `generateContent` endpoint.
-- **Try Google Search grounding, fall back to an answer without it.**
-  - *Why:* sources make company-specific answers trustworthy, and Gemini can't log in to Glassdoor.
-  - *Pain point:* on this free key, every model returned "quota exceeded" with search turned on. Answers without search say they have no live sources.
-- **Retry overloaded models, then fall back to Gemini 3.7 / 3.5 Flash.**
-  - *Why:* students shouldn't see a failure because of a temporary demand spike.
-  - *Pain point:* Gemini 3.8 Flash often replied "currently experiencing high demand" (503).
-- **Render chat answers with a small, safe Markdown formatter** (bold, bullets, headings as React elements, no raw HTML).
-  - *Why:* Gemini answers in Markdown, and showing raw `**` and `*` was hard to read.
-  - *Pain point:* readability, without opening an HTML-injection hole.
-- **Suggested questions auto-filled from the selected job and profile.**
-  - *Why:* students shouldn't retype role, company and visa type.
-  - *Pain point:* typing the same details again and again.
-- **Send Gemini only role, company and non-identifying profile facts.**
-  - *Why:* it doesn't need the resume, name or email to answer.
-  - *Pain point:* privacy.
-
-#### Interview: behavioral voice practice
+### Interview: behavioral voice practice
 - **OpenAI Realtime API over WebRTC, with a short-lived client secret from the server.**
   - *Why:* WebRTC gives low-latency, two-way voice straight from the browser, with echo cancellation. The server keeps `OPENAI_API_KEY` and only hands out a per-session secret, with the instructions, voice, turn detection and tools baked in.
   - *Pain point:* a voice agent needs real-time audio, but the API key must never reach the browser. The GA Realtime API also changed from beta (`/v1/realtime/client_secrets` and `/v1/realtime/calls`, model `gpt-realtime-2.1`).
@@ -489,7 +405,7 @@ How I built Tepobaby (with Claude Code): each decision, why I made it, and the p
   - *Why:* students should do most of the talking, North West shouldn't cut them off mid-thought, and voice sessions cost money.
   - *Pain point:* voice agents tend to ramble and interrupt, and an open session can run up API usage.
 
-#### Interview: technical practice (NeetCode 150)
+### Interview: technical practice (NeetCode 150)
 - **Fetch problem statements from LeetCode's public GraphQL endpoint and cache them on the server**, the same way the job feed works.
   - *Why:* students get the real statements, examples and starter code, and LeetCode is asked once a week at most (one request at a time), not on every card flip.
   - *Pain point:* 7 of the 150 are LeetCode Premium (Encode and Decode Strings, Walls and Gates, Graph Valid Tree, Number of Connected Components, Alien Dictionary, Meeting Rooms I & II). For those the API returns test inputs and signatures but no statement, so I wrote my own statements and starter code (`server/neetcode/premium.js`).
@@ -521,7 +437,62 @@ How I built Tepobaby (with Claude Code): each decision, why I made it, and the p
 - **Keep the disk free during browser tests.**
   - *Pain point:* the Mac's disk filled up while I was testing (headless Chrome caches, plus Pyodide). I now run tests with caching off and delete the browser profile afterwards.
 
-#### Connect
+### Ginny: ATS match analysis
+- **Fetch the job description in real time from the posting's own website on every analysis.**
+  - *Why:* roles get edited or closed, so the resume should be compared against what the posting says right now.
+  - *Pain point:* saved jobs don't include a description. Each site is different, so I use the Greenhouse, Lever, Ashby and Workday APIs, schema.org JobPosting data or page text, and let students paste it when none work.
+- **Read requirements and skills only from qualifications and responsibilities sections.**
+  - *Why:* that's what the job actually asks for.
+  - *Pain point:* "Solomon Graf experience as a 2026 intern" and "Semgrep, the leader in code security…" were read as requirements, and "we support Ruby, PHP" counted as required skills.
+- **Stage 1: Voyage AI `voyage-4` embeddings** (`input_type="document"` for resume lines, `"query"` for the job).
+  - *Why:* it's tuned for code and engineering terms ("Next.js" ↔ "React"), its 200M free tokens need no card, and the voyage-4 models share one vector space.
+  - *Pain point:* it's a hosted API, so resumes need PII protection, and it needs a key. Without one, analysis still runs with stages 1.1 and 2, re-weighted.
+- **Stage 1.1: BM25 with a tech-skills dictionary.**
+  - *Why:* recruiters' ATS filters look for exact strings like "Kubernetes" or "C++".
+  - *Pain point:* false positives from "go to", "the rest of", "node the tree", and "C" inside "Objective-C". Short names now only count in their usual capitalization, and hyphens count as part of a word.
+- **Stage 2: a local cross-encoder** (ms-marco MiniLM, FlashRank's model family) via ONNX Runtime.
+  - *Why:* reranking runs on my own CPU with no external API, so no extra data leaves the server.
+  - *Pain point:*
+    - FlashRank is a Python library and my server is Node.
+    - It runs about 10–27 ms per resume line on my Intel Mac, not under 20 ms per batch.
+    - Its raw scores needed calibration (relevant ≈ −4…+2, unrelated ≈ −10).
+- **Redact PII locally, keep only Experience / Projects / Skills / Education, and store the PDF separately.**
+  - *Why:* sending raw resumes to a hosted API creates GDPR/CCPA risk.
+  - *Pain point:* resumes are full of personal info. Signed-in PDFs stay in private storage, and guests' never leave their device except in memory for one request.
+- **A "what to improve" checklist computed on the server**, prioritized and with point estimates.
+  - *Why:* a score alone doesn't tell a student what to do next. The checklist uses the same evidence as the score, so it's instant, free and private.
+  - *Pain point:* students need practical next steps (which keywords, which bullets, what numbers), not generic advice.
+- **Gemini bullet rewrites only when the student opts in.**
+  - *Why:* rewriting needs the resume text, and students should decide whether it goes to Google. The button says exactly what gets sent.
+  - *Pain point:* in testing, a rewrite added a claim the original didn't make ("improving database throughput"). Rewrites are shown next to the originals, with unknown numbers as [placeholders] and a reminder to keep only what's true.
+- **Eightfold's 4 tier names with my own weights and cutoffs.**
+  - *Why:* students know those labels from real portals.
+  - *Pain point:* Eightfold's formula isn't public, so the report says it's my calibration. Test jobs scored Strong 80, Weak 22 and Weak 2.
+
+### Ginny: Ask Gemini
+- **Show each tool with the logo of the AI behind it** (Voyage AI on ATS match analysis, Google Gemini on Ask Gemini), bundled in `public/logos/`.
+  - *Why:* students can see at a glance which AI does what.
+  - *Pain point:* Voyage's site favicon now shows MongoDB's leaf (MongoDB acquired Voyage AI), so I used Voyage's own "V" icon, and Gemini's official sparkle from Google.
+- **Gemini 3.8 Flash through the Interactions API** (`POST /v1beta/interactions`).
+  - *Why:* it's the current free Flash model, and Google now serves new models through this API.
+  - *Pain point:* Gemini 1.5 Flash was retired in 2025, Gemini 2.5 Flash came back "no longer available to new users", and newer models returned 404 on the old `generateContent` endpoint.
+- **Try Google Search grounding, fall back to an answer without it.**
+  - *Why:* sources make company-specific answers trustworthy, and Gemini can't log in to Glassdoor.
+  - *Pain point:* on this free key, every model returned "quota exceeded" with search turned on. Answers without search say they have no live sources.
+- **Retry overloaded models, then fall back to Gemini 3.7 / 3.5 Flash.**
+  - *Why:* students shouldn't see a failure because of a temporary demand spike.
+  - *Pain point:* Gemini 3.8 Flash often replied "currently experiencing high demand" (503).
+- **Render chat answers with a small, safe Markdown formatter** (bold, bullets, headings as React elements, no raw HTML).
+  - *Why:* Gemini answers in Markdown, and showing raw `**` and `*` was hard to read.
+  - *Pain point:* readability, without opening an HTML-injection hole.
+- **Suggested questions auto-filled from the selected job and profile.**
+  - *Why:* students shouldn't retype role, company and visa type.
+  - *Pain point:* typing the same details again and again.
+- **Send Gemini only role, company and non-identifying profile facts.**
+  - *Why:* it doesn't need the resume, name or email to answer.
+  - *Pain point:* privacy.
+
+### Connect
 - **Link to LinkedIn's People tab with a `keywords` filter instead of scraping LinkedIn.**
   - *Why:* LinkedIn's terms don't allow scraping, and students need to be signed in to their own LinkedIn to message people anyway. A link that opens the filtered People tab gets them there in one tap.
   - *Pain point:* the link only works with the company's LinkedIn page name, which often differs from the company name (Jane Street → `jane-street-global-trading`, Gusto → `zenpayroll`, Tesla → `tesla-motors`). I listed the page names for the companies Tepobaby tracks, guess the rest from the name, and let students fix a wrong page or fall back to LinkedIn search.
@@ -534,7 +505,41 @@ How I built Tepobaby (with Claude Code): each decision, why I made it, and the p
 - **End with the referral question, styled as a quote.**
   - *Why:* asking a stranger for a referral up front rarely works. Asking to reach out again about roles that fit is a softer way to set up a referral later, and the quote styling makes it stand out as the one line to remember.
 
-#### Deploying to Vercel
+### Saved jobs
+- **Each saved job keeps its own copy of the details.**
+  - *Why:* Saved and Applied lists should outlast the feed.
+  - *Pain point:* postings only stay for 7 days.
+- **Guests' saved jobs and answers stay on the device and move into the account at sign-in.**
+  - *Why:* students shouldn't lose progress when they decide to sign in.
+  - *Pain point:* guests have no account to save to.
+
+- **Hiring stages for applied jobs** (Applied, OA, Phone, On-site, Final, Team match, Offer, Ghosted, Not proceeding), set with a tap-to-open toggle.
+  - *Why:* "applied" alone doesn't tell students where they stand, and a pipeline view shows what needs follow-up.
+  - *Pain point:* students track this in spreadsheets today. The server only accepts these 9 stages, and records when the stage last changed.
+- **The Applied list never refreshes or reshuffles.**
+  - *Why:* applications take weeks, and a list that jumps around is hard to track.
+  - *Pain point:* saving used to move the job to the top, so changing a stage would have reshuffled the list. Updates now replace the job in place, and Applied is ordered by when you applied. The daily job update never touches saved or applied jobs.
+
+### Programs & organizations
+- **Match programs inside the app, and keep "Show all programs".**
+  - *Why:* nobody has to share identity data to see the full list.
+  - *Pain point:* race, gender, LGBTQ+ and first-gen answers are sensitive.
+- **Only programs U.S. college students can join**, plus professional networks students can join early.
+  - *Why:* Tepobaby is for U.S. college students, and early networking pays off at recruiting time.
+  - *Pain point:* the first list mixed in high school and admissions programs (Posse, QuestBridge and others), which I removed.
+- **Check every link before adding a program.**
+  - *Why:* a dead link wastes a student's time.
+  - *Pain point:*
+    - Basta's and Rising First's sites are gone, Jopwell redirects elsewhere, and others had moved.
+    - Several organizations share the name "Career Pathways Initiative"; I added the one founded by Ken Lang.
+- **Programs can require more than one group** (Latinas in Tech: Latina *and* a woman).
+  - *Why:* students should only see programs they can join.
+  - *Pain point:* a Hispanic man was shown Latinas in Tech, and an LGBTQ+ man Lesbians Who Tech.
+- **Keep the list to organizations students join.**
+  - *Why:* Google's own programs only showed Google's logo, and Hispanic Scholarship Fund is mainly a scholarship.
+  - *Pain point:* a launchpad full of company programs and scholarships blurs its purpose.
+
+### Deploying to Vercel
 - **Keep Express, and run it as one Vercel Function.**
   - *Why:* one codebase for local and production. `server/index.js` exports the app, and [api/index.js](api/index.js) hands it to Vercel.
   - *Pain point:* the server was built as a long-running process. It saved data to files, ran a 7 AM timer, held live connections open, and warmed caches at startup. Vercel functions have none of that: no lasting disk, no background timers, and a time limit per request.
@@ -553,7 +558,7 @@ How I built Tepobaby (with Claude Code): each decision, why I made it, and the p
 - **Google sign-in needs the new address.**
   - *Pain point:* Google only sends students back to addresses listed in the OAuth client, so `https://tepobaby.vercel.app/api/auth/google/callback` has to be added in Google Cloud Console. That step can't be automated.
 
-#### Platform & tooling
+### Platform & tooling
 - **Pin `@huggingface/transformers` 3.8.1** (ONNX Runtime 1.21), and add a `Promise.try` polyfill for `unpdf`.
   - *Why:* my Intel Mac runs Node 20.
   - *Pain point:* the newest ONNX Runtime dropped Intel Macs, and the PDF library needed Node 22.
@@ -567,19 +572,7 @@ How I built Tepobaby (with Claude Code): each decision, why I made it, and the p
   - *Why:* free API quotas can be drained.
   - *Pain point:* shared free tiers.
 
-#### Sign-in & onboarding
-- **Google sign-in with a full-page redirect.**
-  - *Why:* it works in every browser.
-  - *Pain point:* the popup never came back in in-editor browsers or the iPhone Home Screen app.
-- **Check `.edu` on the server.**
-  - *Why:* a browser check can be bypassed.
-  - *Pain point:* security. The server verifies Google's ID token.
-- **Clean up answers when questions change.**
-  - *Why:* students shouldn't redo everything.
-  - *Pain point:* questions changed after students had already answered, so now they only answer the new section.
-
-
-### Deployment (Vercel)
+## Deployment (Vercel)
 The app is live at **https://tepobaby.vercel.app**, deployed on Vercel's free Hobby plan.
 
 - **Frontend:** the Vite build (`dist/`) is served from Vercel's CDN. Every non-API path falls back to `index.html`.
@@ -601,7 +594,7 @@ To deploy your own copy:
    - your site under **Authorized JavaScript origins**;
    - `https://<your-site>/api/auth/google/callback` under **Authorized redirect URIs**.
 
-### Environment variables
+## Environment variables
 | Variable | Used by | Value |
 | --- | --- | --- |
 | `VITE_GOOGLE_CLIENT_ID` | Browser | Your OAuth client ID |
@@ -627,7 +620,7 @@ To deploy your own copy:
 
 `.env.local` is git-ignored. Never commit real values.
 
-### How it works
+## How it works
 - **Google Identity Services** (authorization code flow, redirect mode) sends the page to Google's account picker, and Google sends the browser back with a one-time code. A random `state` value is checked so forged sign-ins are rejected.
 - **A small Node.js/Express server** ([server/index.js](server/index.js)) exchanges the code with Google and verifies the ID token with the official `google-auth-library`. It checks the signature, that the token was issued for this app, the issuer, and the expiry.
 - The server only accepts accounts whose email is **verified and ends in `.edu`**.
