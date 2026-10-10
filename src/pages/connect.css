@@ -1,0 +1,283 @@
+/* Connect tab: job picker, LinkedIn buttons, copyable messages, the referral quote.
+   Built on the mess01.css tokens. */
+
+.m01 .cx-jobs {
+  display: flex;
+  max-height: 212px;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.m01 .cx-job {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--stroke);
+  border-radius: 12px;
+  background: var(--surface-raised);
+  text-align: left;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+.m01 .cx-job.is-active {
+  border-color: var(--indigo-bright);
+  background: var(--indigo-soft);
+}
+
+.m01 .cx-job-text {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.m01 .cx-job-text strong {
+  color: var(--text);
+  font-size: 13px;
+}
+
+.m01 .cx-job-text small {
+  overflow: hidden;
+  color: var(--text-tertiary);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.m01 .cx-field {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--text-tertiary);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.m01 .cx-field input {
+  height: 38px;
+  padding: 0 11px;
+  border: 1px solid var(--stroke-strong);
+  border-radius: 11px;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.m01 .cx-field input:focus {
+  border-color: var(--indigo-bright);
+  outline: none;
+}
+
+.m01 .cx-me {
+  display: flex;
+  gap: 8px;
+}
+
+.m01 .cx-hint {
+  color: var(--text-tertiary);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.m01 .cx-link-btn {
+  color: #a5b4fc;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.m01 .cx-linkedin {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  color: white;
+  background: linear-gradient(135deg, #0a66c2, #004182);
+  box-shadow: 0 10px 24px rgba(10, 102, 194, 0.3);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: transform 140ms ease;
+}
+
+.m01 .cx-linkedin:active {
+  transform: scale(0.985);
+}
+
+.m01 .cx-linkedin span {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.m01 .cx-linkedin small {
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.m01 .cx-li {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  border-radius: 6px;
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.6);
+}
+
+.m01 .cx-page {
+  color: var(--text-tertiary);
+  font-size: 11.5px;
+}
+
+.m01 .cx-page code {
+  color: var(--text-secondary);
+  font-family: "SF Mono", Menlo, monospace;
+}
+
+.m01 .cx-page a,
+.m01 .cx-fallback {
+  color: #a5b4fc;
+  font-size: 11.5px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.m01 .cx-page-edit {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: "SF Mono", Menlo, monospace;
+}
+
+.m01 .cx-page-edit input {
+  min-width: 0;
+  flex: 1;
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--indigo-bright);
+  border-radius: 8px;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.05);
+  font: inherit;
+}
+
+.m01 .cx-page-edit button {
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 8px;
+  color: white;
+  background: var(--indigo);
+  font-weight: 700;
+}
+
+.m01 .cx-card,
+.m01 .cx-sub {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--stroke);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.m01 .cx-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.m01 .cx-card h3,
+.m01 .cx-sub h3 {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.m01 .cx-msg {
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  user-select: text;
+}
+
+.m01 .cx-count {
+  color: var(--text-tertiary);
+  font-size: 10.5px;
+}
+
+.m01 .cx-count.is-long {
+  color: #fbbf24;
+}
+
+.m01 .cx-copy {
+  align-self: flex-start;
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--stroke-strong);
+  border-radius: 9px;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.07);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: background 150ms ease, color 150ms ease;
+}
+
+.m01 .cx-copy.is-done {
+  border-color: transparent;
+  color: #052e16;
+  background: #4ade80;
+}
+
+.m01 .cx-questions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-left: 20px;
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  line-height: 1.45;
+  list-style: decimal;
+}
+
+.m01 .cx-quote {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 16px 14px 18px;
+  border-left: 4px solid var(--emerald);
+  border-radius: 6px 14px 14px 6px;
+  background: linear-gradient(135deg, rgba(52, 211, 153, 0.14), rgba(99, 102, 241, 0.08));
+}
+
+.m01 .cx-quote blockquote {
+  color: var(--text);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 16.5px;
+  font-style: italic;
+  line-height: 1.45;
+}
+
+.m01 .cx-quote figcaption {
+  color: var(--text-secondary);
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+
+.m01 .cx-quote figcaption strong {
+  color: #6ee7b7;
+}

@@ -19,6 +19,7 @@ import { importSaved, listSaved, removeSaved, upsertSaved } from "./savedJobsSto
 import { ginnyRoutes } from "./ginny/routes.js";
 import { companyOptions, createSession, realtimeEnabled } from "./interview/realtime.js";
 import { customExpected, getProblem, problemList, warmCache } from "./neetcode/index.js";
+import { schoolForDomain } from "./connect/schools.js";
 
 const {
   GOOGLE_CLIENT_ID,
@@ -291,6 +292,13 @@ app.post("/api/interview/session", requireXhr, express.json({ limit: "4kb" }), a
     console.error("[interview] session failed:", err.message);
     res.status(err.status === 401 ? 503 : 502).json({ error: "Couldn't start a voice session. Please try again." });
   }
+});
+
+// ---- Connect: the signed-in student's school, from their .edu email domain ----
+
+app.get("/api/connect/school", requireUser, async (req, res) => {
+  const domain = String(req.session.email || "").split("@")[1] || "";
+  res.json({ domain, school: await schoolForDomain(domain) });
 });
 
 // ---- Technical: NeetCode 150 (public: guests can practice too) ----

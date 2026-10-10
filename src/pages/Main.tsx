@@ -6,7 +6,7 @@ import { User } from "../utils/auth";
 import { Profile } from "../utils/profile";
 import { useSavedJobs } from "../utils/savedJobs";
 import GinnySheet from "./GinnySheet";
-import ComingSoonTab from "./tabs/ComingSoonTab";
+import ConnectTab from "./tabs/ConnectTab";
 import HomeTab from "./tabs/HomeTab";
 import InterviewTab from "./tabs/InterviewTab";
 import ProfileTab from "./tabs/ProfileTab";
@@ -43,13 +43,16 @@ export default function Main({ user, profile, onEdit, onSignIn, onSignOut }: Pro
           {tab === "home" && <HomeTab firstName={firstName} profile={profile} saved={saved} />}
           {tab === "interview" && <InterviewTab profile={profile} />}
           {tab === "connect" && (
-            <ComingSoonTab
-              title="Connect"
-              points={[
-                "Find alumni from your school at each company",
-                "Informational interview question templates",
-                "Clubs and organizations picked for you",
-              ]}
+            <ConnectTab
+              user={user}
+              profile={profile}
+              saved={saved}
+              selectedId={selectedJobId}
+              onSelect={(id) => {
+                setSelectedJobId(id);
+                saveSelectedJobId(id);
+              }}
+              onBrowse={() => setTab("home")}
             />
           )}
           {tab === "profile" && (
