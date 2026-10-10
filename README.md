@@ -55,7 +55,9 @@ Postings update **once a day, every morning at 7:00 AM Eastern Time (ET)**, so 3
 | [Pitt CSC](https://github.com/pittcsc/Summer2027-Internships), [vanshb03](https://github.com/vanshb03/Summer2027-Internships) | Extra community-curated internships |
 | Company job boards: [Greenhouse](https://developers.greenhouse.io/job-board.html), [Lever](https://github.com/lever/postings-api), [Ashby](https://developers.ashbyhq.com/docs/public-job-posting-api) | Early-career roles straight from about 80 companies (Stripe, Figma, OpenAI, Ramp, Palantir…). Add more in [server/jobs/companies.json](server/jobs/companies.json) |
 | [Hacker News "Who is hiring?"](https://github.com/HackerNews/API) | Startup posts that mention internships, new grad or junior roles |
-| [Google Jobs via SerpApi](https://serpapi.com/google-jobs-api) (optional) | Roles indexed from LinkedIn, Indeed, Glassdoor and company sites. Needs a paid `SERPAPI_KEY` |
+| [Google Jobs via SerpApi](https://serpapi.com/google-jobs-api) | Roles indexed from LinkedIn, Indeed, Glassdoor and company sites. Runs when `SERPAPI_KEY` is set (see below) |
+
+**Google Jobs (SerpApi)**: each morning Tepobaby runs 4 searches ("software engineer intern", "software engineer new grad", "entry level software engineer", "data science intern"), about 120–124 searches a month. That fits [SerpApi's free plan](https://serpapi.com/pricing) of 250 searches a month. Each result links to the best place to apply: the company's own site first, then its hiring platform (like Greenhouse or Workday), then LinkedIn, Indeed or Glassdoor. To turn it on, create a free account at [serpapi.com](https://serpapi.com), copy your API key into `.env.local` as `SERPAPI_KEY=...`, and restart the server. Keep the key out of git and out of any `VITE_` variable.
 
 The Simplify.jobs site doesn't need its own scraper, because the SimplifyJobs GitHub lists above already carry its data.
 
@@ -73,6 +75,38 @@ LinkedIn, Indeed, Glassdoor, Wellfound, Y Combinator's Work at a Startup, Ripple
 - **Each link opens the original application** on the company's site or job board.
 
 
+### Design decisions & pain points
+How I built the job postings feed and the rest of the app (with Claude Code), what was hard, and what I chose.
+
+**Job postings workflow**
+1. Most postings come from the community GitHub repos listed above. Instead of scraping their README tables, I read each repo's structured `listings.json`, which has exact posting timestamps, sponsorship info and whether the role is still open. speedyapply has no JSON, so I parse its Markdown table (it only gives age in days).
+2. I add early-career roles straight from about 80 companies through the public Greenhouse, Lever and Ashby job-board APIs.
+3. I add startup roles from Hacker News "Who is hiring?" through the official Firebase API.
+4. I add Google Jobs results through SerpApi.
+5. Every source runs in parallel. I keep the last 7 days, label each role Underclassmen / Internship / Entry-level, drop senior roles, remove duplicates across sources, and push new postings to the app.
+
+**Pain points → decisions**
+- **GitHub README tables are messy.** They mix HTML and Markdown, use "↳" rows for repeated companies, use emoji for sponsorship, and have no exact dates. → I read the JSON data behind the tables when it exists, and parse Markdown only as a fallback.
+- **Not every repo is alive.** The cvrve repos no longer exist, and Pitt CSC hasn't added a posting since August. → I keep the live ones and show where each posting came from.
+- **The big lists are huge.** SimplifyJobs' file is about 13 MB. → The server asks GitHub "has this changed?" (ETag), so an unchanged file downloads 0 bytes.
+- **There's no master list of company job boards.** Guessed board names often don't exist. → I tested 93 candidates and kept the 80 that respond, in `server/jobs/companies.json`.
+- **Hacker News posts are free text.** → I keep posts that mention intern, new grad or junior roles, and read the "Company | Role | Location" first line that most posts follow.
+- **Google Jobs is a different workflow.** It's search-based, so I have to choose keywords that match what I'm looking for, and SerpApi's free plan allows 250 searches a month. → 4 searches each morning (about 124 a month). Google also changed where it puts the posting age, so I read both places.
+- **Google Jobs "company site" links were often reposting sites** like BeBee or ClearanceJobs rather than real company pages. → I re-rank apply links: official careers site first, then Greenhouse / Lever / Ashby / Workday pages, then major job boards (LinkedIn, Indeed, Glassdoor), with reposting sites last. Logos only come from a site that matches the company's name.
+- **Some sites can't be scraped.** LinkedIn, Indeed, Glassdoor, Wellfound, YC Work at a Startup, RippleMatch, WayUp, Untapped and CodePath forbid it or need a login. → I skip them; Google Jobs through SerpApi covers much of LinkedIn, Indeed and Glassdoor legitimately.
+- **"Real-time" vs. being polite.** I started by checking sources every few minutes. The lists only change a few times a day, so I moved to one update every morning at 7:00 AM ET (30–31 a month). It follows daylight saving and catches up if the server was off. When new postings land, the app updates instantly through a live connection (Server-Sent Events).
+- **Live updates silently didn't arrive at first.** The server dropped each listener the moment it connected, because Node fires the request's "close" event early. → I listen for the response's "close" instead and tested it end to end.
+- **Logos.** Apply links usually point to hiring platforms, not the company's site, and a name lookup matched "Meter" to the wrong company (metergroup.com). → I only accept a website when the name matches exactly and the website looks like the company's own. Otherwise I show the company's first letter, because a wrong logo is worse than none. Logos are cached on my server, so students' browsers never contact third parties, and only companies in current postings are served.
+- **Sponsorship data is mostly missing.** Most sources don't say whether a role sponsors visas. → The toggle only hides roles that say they don't, and "Sponsors visa" shows only when a source confirms it.
+- **Underclassmen programs are rare.** → The tab says so and points to Internship, instead of showing made-up programs.
+- **Startup and contract roles rarely appear on job lists.** → A separate section links straight to the boards where they're posted.
+
+**Rest of the app**
+- **Google sign-in didn't come back from the popup** in some browsers (in-editor browsers, the iPhone Home Screen app). → Sign-in uses a full-page redirect.
+- **A .edu check in the browser could be bypassed.** → The server verifies Google's ID token and only accepts verified emails ending in `.edu`.
+- **Questions changed after students had already answered.** → Students only answer the new section, and old answers are cleaned up automatically.
+
+
 ### Environment variables
 | Variable | Used by | Value |
 | --- | --- | --- |
@@ -81,7 +115,7 @@ LinkedIn, Indeed, Glassdoor, Wellfound, Y Combinator's Work at a Startup, Ripple
 | `GOOGLE_CLIENT_SECRET` | Server | Your OAuth client secret. Never put this in a `VITE_` variable. |
 | `SESSION_SECRET` | Server | Random string of 32+ characters: `openssl rand -base64 48` |
 | `APP_ORIGIN` | Server | Public URL of the app, no trailing slash. `http://localhost:5173` locally. |
-| `SERPAPI_KEY` | Server | Optional. Adds Google Jobs results through SerpApi. |
+| `SERPAPI_KEY` | Server | Optional. Your SerpApi key; adds Google Jobs results (4 searches each morning, about 124 a month). |
 | `JOBS_FEED` | Server | Optional. Set to `off` to stop checking job sources. |
 | `JOBS_DAILY_TIME` | Server | Optional. Daily update time in Eastern Time, `HH:MM` (default `07:00`). |
 
