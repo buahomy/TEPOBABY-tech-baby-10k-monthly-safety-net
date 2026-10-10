@@ -42,7 +42,7 @@ After the questions, you land on **Home**. The bar at the bottom has **Home**, *
 - **Company tiers**: big tech and quant companies ranked by interview difficulty, as a launchpad of logos. Tap a logo to open that company's careers page (see below).
 - **Contractor & startup roles**: job boards for startup and contract work. These roles rarely show up on the big job lists, because small teams often post only on their own sites and a few niche boards, and the roles are very specific. Going straight to these sites is the best way to find them.
 - **Save jobs with ♥**: tap the heart on any job posting to save it. Saved jobs appear under **My jobs** on your Profile, with **Saved** and **Applied** tabs; tap **Mark applied** to track where you've applied. Each saved job keeps its details, so it stays there after the posting leaves the 7-day feed. When signed in, saved jobs are stored on your account; as a guest, they stay on your device and move to your account when you sign in.
-- **Profile**: your saved and applied jobs, all your answers, a button to review them, and sign out.
+- **Profile**: your saved and applied jobs, all your answers, programs and organizations picked for you, a button to review your answers, and sign out.
 
 Interview, Connect and image uploads are coming soon.
 
@@ -66,6 +66,25 @@ Wherever a company has one, the link goes to its student or early-career page. L
 **Why check careers sites yourself.** The job feed updates once a morning, and the community lists only add a role after someone finds it. New roles often go live on a company's own site first, and some never reach the lists at all. Checking the companies you care about every day, straight from these shortcuts, gets your application in early, while fewer people have applied.
 
 The tiers, careers links and logo websites all live in [src/data/tiers.json](src/data/tiers.json), so they're easy to update.
+
+
+### Programs & organizations for you
+On your **Profile**, inside **Demographic & Identity Information**, Tepobaby suggests organizations, clubs, non-profits and programs you can join, based on your answers. For example, first-gen students see programs like America Needs You and Braven, and Black students see ColorStack, NSBE and Code2040. Like the company tiers, each one shows as its logo, and tapping it opens the site so you can join. **Show all programs** lists every one, so students who chose "Prefer not to say" can browse too.
+
+**Why join:** these organizations open the door to elite connections in the industry. Members get exclusive company partners, recruiter events and referrals that fast-track them to interviews, and often to offers.
+
+| Who it's for | Programs |
+| --- | --- |
+| Because you're first-gen | [SEO Career](https://career.seo-usa.org/), [America Needs You](https://americaneedsyou.org/), [Braven](https://braven.org/), [QuestBridge](https://www.questbridge.org/), [CodePath](https://www.codepath.org/) |
+| For Black students | [ColorStack](https://www.colorstack.org/), [Code2040](https://www.code2040.org/), [NSBE](https://nsbe.org/), [/dev/color](https://devcolor.org/), [MLT](https://mlt.org/), [SEO Career](https://career.seo-usa.org/) |
+| For Hispanic & Latino students | [ColorStack](https://www.colorstack.org/), [Code2040](https://www.code2040.org/), [MLT](https://mlt.org/), [SEO Career](https://career.seo-usa.org/), [SHPE](https://shpe.org/), [HACE](https://haceonline.org/), [Hispanic Scholarship Fund](https://www.hsf.net/), [SACNAS](https://www.sacnas.org/) |
+| For Asian students | [SASE](https://www.saseconnect.org/), [Ascend](https://ascendleadership.org/) |
+| For multiracial students | [Code2040](https://www.code2040.org/), [MLT](https://mlt.org/), [SEO Career](https://career.seo-usa.org/), [SACNAS](https://www.sacnas.org/), [AISES](https://aises.org/) |
+| For women & non-binary students | [Break Through Tech](https://www.breakthroughtech.org/), [Rewriting the Code](https://rewritingthecode.org/), [SWE](https://swe.org/), [AnitaB.org](https://anitab.org/), [WiCyS](https://www.wicys.org/), [Girls Who Code](https://girlswhocode.com/) |
+| For LGBTQ+ students | [oSTEM](https://ostem.org/), [Out in Tech](https://outintech.com/), [Lesbians Who Tech](https://lesbianswhotech.org/) |
+| Open to everyone | [CodePath](https://www.codepath.org/), [MLH Fellowship](https://fellowship.mlh.com/), [Tapia Conference](https://tapiaconference.cmd-it.org/) |
+
+The list lives in [src/data/communities.json](src/data/communities.json), so adding a program is one entry. Your answers are only used inside the app to choose what to show; nothing extra is sent anywhere.
 
 
 ### Where job postings come from
@@ -129,6 +148,11 @@ How I built the job postings feed and the rest of the app (with Claude Code), wh
 
 - **Saved jobs would disappear with the feed.** Postings only stay for 7 days. → Each saved job keeps its own copy of the details (company, title, link, logo), so your Saved and Applied lists last. Guests' saved jobs stay on the device and move into the account at sign-in, the same way answers do.
 
+- **Matching programs without exposing identity data.** Race, gender, LGBTQ+ and first-gen answers are sensitive. → Matching happens inside the app from answers you already gave, and identity questions keep "Prefer not to say". **Show all programs** means nobody has to share anything to see the full list.
+- **Program links go stale.** Organizations rebrand or shut down. → I checked every link before adding it. Basta's site no longer exists and Jopwell now redirects to a different company, so both were left out. Braven, SEO and the MLH Fellowship had moved, so I use their new addresses.
+- **Putting each program in the right group.** Some are easy to mix up; for example, Break Through Tech is for women and non-binary students, not specifically first-gen. → Each program lists who it's for, and it appears once, in the first group that fits you.
+- **Some logos are white or missing.** /dev/color's white logo disappeared on a white tile, and Hispanic Scholarship Fund's site has no usable icon. → A program can set a dark tile, and missing logos show the program's first letter.
+
 **Rest of the app**
 - **Google sign-in didn't come back from the popup** in some browsers (in-editor browsers, the iPhone Home Screen app). → Sign-in uses a full-page redirect.
 - **A .edu check in the browser could be bypassed.** → The server verifies Google's ID token and only accepts verified emails ending in `.edu`.
@@ -171,4 +195,4 @@ API routes (the Vite dev server forwards `/api` to the auth server):
 | `POST /api/saved/import` | Move jobs a guest saved on the device into their account after sign-in |
 | `GET /api/postings?level=&window=&visa=` | Live job postings (public). `level`: `underclassmen`, `internship` or `entry`; `window`: `fresh` (72h) or `week` |
 | `GET /api/postings/stream` | Live updates (Server-Sent Events): sends `update` when the morning update brings new postings |
-| `GET /api/logo/:domain` | A company's logo, cached by the server (only for companies in current postings or the tier list) |
+| `GET /api/logo/:domain` | A logo, cached by the server (only for companies in current postings, the tier list, or suggested programs) |

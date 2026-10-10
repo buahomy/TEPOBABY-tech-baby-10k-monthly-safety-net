@@ -1,0 +1,302 @@
+{
+  "_note": "Organizations, clubs, non-profits and programs suggested on Profile under Demographic & Identity Information. `for` tags: everyone, first_gen, black, hispanic_latino, asian, two_or_more, women_nonbinary, lgbtq. Edit freely. Optional `tile`: background color for logos that are white.",
+  "groups": [
+    {
+      "id": "first_gen",
+      "label": "Because you're first-gen"
+    },
+    {
+      "id": "black",
+      "label": "For Black students"
+    },
+    {
+      "id": "hispanic_latino",
+      "label": "For Hispanic & Latino students"
+    },
+    {
+      "id": "asian",
+      "label": "For Asian students"
+    },
+    {
+      "id": "two_or_more",
+      "label": "For multiracial students (check each program's eligibility)"
+    },
+    {
+      "id": "women_nonbinary",
+      "label": "For women & non-binary students"
+    },
+    {
+      "id": "lgbtq",
+      "label": "For LGBTQ+ students"
+    },
+    {
+      "id": "everyone",
+      "label": "Open to everyone"
+    }
+  ],
+  "orgs": [
+    {
+      "name": "ColorStack",
+      "domain": "colorstack.org",
+      "url": "https://www.colorstack.org/",
+      "who": "Free community for Black & Latinx CS students: mentorship, conferences and company partners",
+      "for": [
+        "black",
+        "hispanic_latino"
+      ]
+    },
+    {
+      "name": "Code2040",
+      "domain": "code2040.org",
+      "url": "https://www.code2040.org/",
+      "who": "Fellows program for Black & Latinx students in tech, with internship placement",
+      "for": [
+        "black",
+        "hispanic_latino",
+        "two_or_more"
+      ]
+    },
+    {
+      "name": "NSBE",
+      "domain": "nsbe.org",
+      "url": "https://nsbe.org/",
+      "who": "National Society of Black Engineers: chapters, convention career fair",
+      "for": [
+        "black"
+      ]
+    },
+    {
+      "name": "/dev/color",
+      "domain": "devcolor.org",
+      "url": "https://devcolor.org/",
+      "who": "Community of Black software engineers",
+      "for": [
+        "black"
+      ],
+      "tile": "#111827"
+    },
+    {
+      "name": "MLT",
+      "domain": "mlt.org",
+      "url": "https://mlt.org/",
+      "who": "Management Leadership for Tomorrow: Career Prep coaching for Black, Latinx & Native American students",
+      "for": [
+        "black",
+        "hispanic_latino",
+        "two_or_more"
+      ]
+    },
+    {
+      "name": "SEO Career",
+      "domain": "seo-usa.org",
+      "url": "https://career.seo-usa.org/",
+      "who": "Sponsors for Educational Opportunity: internship programs for students of color, including tech",
+      "for": [
+        "first_gen",
+        "black",
+        "hispanic_latino",
+        "two_or_more"
+      ]
+    },
+    {
+      "name": "SHPE",
+      "domain": "shpe.org",
+      "url": "https://shpe.org/",
+      "who": "Society of Hispanic Professional Engineers: chapters and national career fair",
+      "for": [
+        "hispanic_latino"
+      ]
+    },
+    {
+      "name": "HACE",
+      "domain": "haceonline.org",
+      "url": "https://haceonline.org/",
+      "who": "Hispanic Alliance for Career Enhancement: mentoring and early-career programs",
+      "for": [
+        "hispanic_latino"
+      ]
+    },
+    {
+      "name": "Hispanic Scholarship Fund",
+      "domain": "hsf.net",
+      "url": "https://www.hsf.net/",
+      "who": "Scholarships plus career services and company partners",
+      "for": [
+        "hispanic_latino"
+      ]
+    },
+    {
+      "name": "SACNAS",
+      "domain": "sacnas.org",
+      "url": "https://www.sacnas.org/",
+      "who": "Chicanos/Hispanics & Native Americans in STEM: national conference",
+      "for": [
+        "hispanic_latino",
+        "two_or_more"
+      ]
+    },
+    {
+      "name": "AISES",
+      "domain": "aises.org",
+      "url": "https://aises.org/",
+      "who": "Native American & Indigenous students in STEM",
+      "for": [
+        "two_or_more"
+      ]
+    },
+    {
+      "name": "SASE",
+      "domain": "saseconnect.org",
+      "url": "https://www.saseconnect.org/",
+      "who": "Society of Asian Scientists and Engineers: chapters and career fair",
+      "for": [
+        "asian"
+      ]
+    },
+    {
+      "name": "Ascend",
+      "domain": "ascendleadership.org",
+      "url": "https://ascendleadership.org/",
+      "who": "Pan-Asian professional organization with student chapters",
+      "for": [
+        "asian"
+      ]
+    },
+    {
+      "name": "America Needs You",
+      "domain": "americaneedsyou.org",
+      "url": "https://americaneedsyou.org/",
+      "who": "Two-year career fellowship for first-gen college students",
+      "for": [
+        "first_gen"
+      ]
+    },
+    {
+      "name": "Braven",
+      "domain": "braven.org",
+      "url": "https://braven.org/",
+      "who": "Career course and mentoring for first-gen and Pell Grant students",
+      "for": [
+        "first_gen"
+      ]
+    },
+    {
+      "name": "QuestBridge",
+      "domain": "questbridge.org",
+      "url": "https://www.questbridge.org/",
+      "who": "Scholars network with career partners for high-achieving, low-income students",
+      "for": [
+        "first_gen"
+      ]
+    },
+    {
+      "name": "Break Through Tech",
+      "domain": "breakthroughtech.org",
+      "url": "https://www.breakthroughtech.org/",
+      "who": "AI program and paid internships for women & non-binary students",
+      "for": [
+        "women_nonbinary"
+      ]
+    },
+    {
+      "name": "Rewriting the Code",
+      "domain": "rewritingthecode.org",
+      "url": "https://rewritingthecode.org/",
+      "who": "Community of college women & non-binary students in tech, with company partners",
+      "for": [
+        "women_nonbinary"
+      ]
+    },
+    {
+      "name": "SWE",
+      "domain": "swe.org",
+      "url": "https://swe.org/",
+      "who": "Society of Women Engineers: chapters and the largest women-in-engineering career fair",
+      "for": [
+        "women_nonbinary"
+      ]
+    },
+    {
+      "name": "AnitaB.org",
+      "domain": "anitab.org",
+      "url": "https://anitab.org/",
+      "who": "Grace Hopper Celebration: scholarships and a huge tech career fair",
+      "for": [
+        "women_nonbinary"
+      ]
+    },
+    {
+      "name": "WiCyS",
+      "domain": "wicys.org",
+      "url": "https://www.wicys.org/",
+      "who": "Women in Cybersecurity: conference and student chapters",
+      "for": [
+        "women_nonbinary"
+      ]
+    },
+    {
+      "name": "Girls Who Code",
+      "domain": "girlswhocode.com",
+      "url": "https://girlswhocode.com/",
+      "who": "College Loops and career programs for women & non-binary students",
+      "for": [
+        "women_nonbinary"
+      ]
+    },
+    {
+      "name": "oSTEM",
+      "domain": "ostem.org",
+      "url": "https://ostem.org/",
+      "who": "LGBTQ+ people in STEM: chapters and annual conference with recruiters",
+      "for": [
+        "lgbtq"
+      ]
+    },
+    {
+      "name": "Out in Tech",
+      "domain": "outintech.com",
+      "url": "https://outintech.com/",
+      "who": "LGBTQ+ tech community with mentorship programs",
+      "for": [
+        "lgbtq"
+      ]
+    },
+    {
+      "name": "Lesbians Who Tech",
+      "domain": "lesbianswhotech.org",
+      "url": "https://lesbianswhotech.org/",
+      "who": "LGBTQ+ women, non-binary and trans people in tech: summit and job board",
+      "for": [
+        "lgbtq"
+      ]
+    },
+    {
+      "name": "CodePath",
+      "domain": "codepath.org",
+      "url": "https://www.codepath.org/",
+      "who": "Free technical interview prep courses and career support",
+      "for": [
+        "everyone",
+        "first_gen"
+      ]
+    },
+    {
+      "name": "MLH Fellowship",
+      "domain": "mlh.io",
+      "url": "https://fellowship.mlh.com/",
+      "who": "Remote, paid open-source fellowship for students",
+      "for": [
+        "everyone"
+      ]
+    },
+    {
+      "name": "Tapia Conference",
+      "domain": "cmd-it.org",
+      "url": "https://tapiaconference.cmd-it.org/",
+      "who": "Celebration of diversity in computing, with a career fair",
+      "for": [
+        "everyone"
+      ]
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import CommunityLaunchpad from "../../components/CommunityLaunchpad";
 import CompanyLogo from "../../components/CompanyLogo";
 import HeartButton from "../../components/HeartButton";
 import Icon from "../../components/Icon";
@@ -129,6 +130,7 @@ export default function ProfileTab({ user, profile, saved, onBrowse, onEdit, onS
               </div>
             ))}
           </dl>
+          {section.id === "identity" && <CommunityLaunchpad answers={profile.answers} />}
         </section>
       ))}
 
