@@ -227,8 +227,7 @@
 
 /* Postings */
 .m01 .posting-list,
-.m01 .resource-list,
-.m01 .soon-list {
+.m01 .resource-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -752,14 +751,6 @@
   color: var(--text-tertiary);
   font-size: 12px;
   text-align: center;
-}
-
-.m01 .soon-list li {
-  padding: 12px 14px;
-  border-radius: 12px;
-  color: var(--text-secondary);
-  background: rgba(255, 255, 255, 0.03);
-  font-size: 13px;
 }
 
 /* Bottom navigation */

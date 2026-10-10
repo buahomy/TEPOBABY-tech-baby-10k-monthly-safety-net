@@ -41,8 +41,7 @@ After the questions, you land on **Home**. The bar at the bottom has **Home**, *
 - **Profile**: your saved and applied jobs, all your answers, programs and organizations picked for you, a button to review your answers, and sign out.
 - **＋ (Ginny)**: pick one saved job, then run an ATS match analysis or ask Gemini about it (see below).
 - **Interview**: two tabs side by side, **Behavioral** (a live AI voice interviewer) and **Technical** (the NeetCode 150 as a Card Game and a concept Roadmap). Both are described below.
-
-Connect is coming soon.
+- **Connect**: pick a job, then find alumni from your school and technical recruiters at that company on LinkedIn, with ready-to-copy messages (see below).
 
 ### Company tiers
 I rank big tech and quant companies by how hard their interviews are for **college internships and new grad roles**. There are 4 tiers, hardest at the top, based on what students report on Glassdoor, LeetCode Discuss, Reddit and other reliable sources:
@@ -242,6 +241,31 @@ North West grades each part by calling the `update_star_progress` tool (phase, s
 - **Problems with more than one right answer** are judged fairly: any order where the problem allows it (3Sum, Group Anagrams, Subsets, Permutations, …), any valid topological order for Course Schedule II and Alien Dictionary, any longest palindrome, and a 1e-5 tolerance for decimals.
 
 **Progress** (the card shuffle, flipped and solved cards, and code drafts) is saved on this device.
+
+
+### Connect: alumni & recruiters on LinkedIn
+Pick one of your saved (♥) jobs, or type any company, to get two sections.
+
+**1. Find alumni from your school at (company)**
+- **LinkedIn button:** opens the company's LinkedIn **People** tab, filtered by your school. For a role at Google, Whitman College students get `https://www.linkedin.com/company/google/people/?keywords=Whitman%20College`.
+  - **Your school:** looked up from your `.edu` email domain (`whitman.edu` → Whitman College) in the open [university-domains list](https://github.com/Hipo/university-domains-list).
+  - **Editing:** you can edit it, and guests type it in.
+- **Message to send** with a **Copy** button, filled in from your profile: your name, school, class year (from your graduation date) and the company. It's kept under LinkedIn's 300-character connection-note limit, and a counter shows the length:
+  > Hi! My name is Alex Rivera, and I also go to Whitman College (Class of 2027). I'd love a quick 30-min chat about breaking into the tech industry and to ask about your work at Google. Could you share your availability and the best email to schedule a time? Thank you!
+- **Informational interview questions**: eight starter questions (a typical day, the team, how they got there, what the company looks for in interns and new grads, …), with **Copy questions**.
+- **The referral question**, shown as a quote to end every chat with. It sets up a referral later without asking for one outright:
+  > “Would it be okay if I reached out to you again if I find any interesting roles that I think fit my experience?”
+
+**2. Connect with recruiters at (company)**
+- **LinkedIn button:** the same People tab, filtered by `technical recruiter` (e.g. `https://www.linkedin.com/company/google/people/?keywords=technical%20recruiter`).
+- **Message:** a short copyable note to the recruiter that names the role you picked.
+
+**About company pages.** A company's LinkedIn page name is set by the company and doesn't always match its name. For example, Jane Street's is `jane-street-global-trading`. So:
+- **Known pages:** Tepobaby knows the page names for the companies it tracks (the tier list and the job boards).
+- **Other companies:** it makes a best guess from the name, shows the page name with an **Edit** button, and links to a plain LinkedIn people search as a fallback.
+- **Edits are saved:** fixes and your name/school edits are remembered on your device.
+
+Tepobaby only builds links; it never signs in to LinkedIn or sees your LinkedIn account.
 
 
 ### Where job postings come from
@@ -495,6 +519,19 @@ How I built Tepobaby (with Claude Code): each decision, why I made it, and the p
 - **Keep the disk free during browser tests.**
   - *Pain point:* the Mac's disk filled up while I was testing (headless Chrome caches, plus Pyodide). I now run tests with caching off and delete the browser profile afterwards.
 
+#### Connect
+- **Link to LinkedIn's People tab with a `keywords` filter instead of scraping LinkedIn.**
+  - *Why:* LinkedIn's terms don't allow scraping, and students need to be signed in to their own LinkedIn to message people anyway. A link that opens the filtered People tab gets them there in one tap.
+  - *Pain point:* the link only works with the company's LinkedIn page name, which often differs from the company name (Jane Street → `jane-street-global-trading`, Gusto → `zenpayroll`, Tesla → `tesla-motors`). I listed the page names for the companies Tepobaby tracks, guess the rest from the name, and let students fix a wrong page or fall back to LinkedIn search.
+- **Look up the school name from the `.edu` domain on the server.**
+  - *Why:* LinkedIn filters by the school's name ("Whitman College"), but sign-in only gives an email (`@whitman.edu`).
+  - *Pain point:* there's no official domain-to-school list. The open Hipo university-domains list covers U.S. schools well; the server keeps just the U.S. ones (about 100 KB), refreshes monthly, and handles subdomains (`cs.stanford.edu`). Campus suffixes are trimmed ("University of Michigan - Ann Arbor" → "University of Michigan"), since that's how most LinkedIn profiles list it. If a school isn't found, the student can type it.
+- **Keep messages under 300 characters.**
+  - *Why:* LinkedIn caps connection-request notes at 300 characters (fewer on free accounts), and a cut-off message looks careless.
+  - *Pain point:* the first draft of the outreach message ran about 310 characters with a typical name. I tightened the wording, and a live counter warns when a long name or school pushes it over.
+- **End with the referral question, styled as a quote.**
+  - *Why:* asking a stranger for a referral up front rarely works. Asking to reach out again about roles that fit is a softer way to set up a referral later, and the quote styling makes it stand out as the one line to remember.
+
 #### Platform & tooling
 - **Pin `@huggingface/transformers` 3.8.1** (ONNX Runtime 1.21), and add a `Promise.try` polyfill for `unpdf`.
   - *Why:* my Intel Mac runs Node 20.
@@ -571,6 +608,7 @@ API routes (the Vite dev server forwards `/api` to the auth server):
 | `POST /api/ginny/ats` | ATS match analysis for one job (guests send their PDF with the request) |
 | `GET /api/interview/status` | Whether voice practice is set up, and the interviewer options |
 | `POST /api/interview/session` | Short-lived OpenAI Realtime client secret for one behavioral interview (company persona + STAR tools baked in) |
+| `GET /api/connect/school` | The signed-in student's school name, from their `.edu` email domain |
 | `GET /api/neetcode` | The NeetCode 150 list (number, title, difficulty, category) and the 18 concepts |
 | `GET /api/neetcode/problem/:slug` | One problem: statement (from LeetCode, cached), signature, starter code, accepted concepts, example tests and hidden tests with expected answers |
 | `POST /api/neetcode/expected` | Expected answer for a custom test input, from the reference solution (3-second limit, 40 a minute per IP) |
