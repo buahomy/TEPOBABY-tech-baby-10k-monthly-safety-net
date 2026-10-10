@@ -1,9 +1,13 @@
-import { useEffect, useRef, useState } from "react";
+import { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { Profile } from "../../utils/profile";
 import { StarPhase, StarStatus, getInterviewStatus, startVoiceInterview } from "../../utils/realtime";
 import "../interview.css";
 
-// Interview tab: Behavioral (live AI voice interviewer, STAR tracker) and Technical (coming soon).
+// Interview tab: Behavioral (live AI voice interviewer, STAR tracker) and Technical (NeetCode 150
+// Card Game + concept Roadmap).
+
+// Loaded on first use: the code editor and concept walkthroughs are most of its size.
+const TechnicalPractice = lazy(() => import("../technical/TechnicalPractice"));
 
 type Props = { profile: Profile };
 type Mode = "behavioral" | "technical";
@@ -43,23 +47,14 @@ export default function InterviewTab({ profile }: Props) {
           </button>
         ))}
       </div>
-      {mode === "behavioral" ? <Behavioral profile={profile} /> : <Technical />}
+      {mode === "behavioral" ? (
+        <Behavioral profile={profile} />
+      ) : (
+        <Suspense fallback={<div className="nc-loading">Loading technical practice…</div>}>
+          <TechnicalPractice />
+        </Suspense>
+      )}
     </div>
-  );
-}
-
-function Technical() {
-  return (
-    <section className="block">
-      <div className="block-head">
-        <h2>Technical practice</h2>
-        <span className="block-tag">Coming soon</span>
-      </div>
-      <p className="block-note">
-        Live coding mock interviews with an AI interviewer, NeetCode-style pattern drills, and company-specific question
-        sets based on the Company tiers.
-      </p>
-    </section>
   );
 }
 

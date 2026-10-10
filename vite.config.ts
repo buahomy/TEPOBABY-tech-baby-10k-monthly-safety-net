@@ -7,6 +7,7 @@ const api = { "/api": { target: "http://127.0.0.1:8787", changeOrigin: false } }
 
 export default defineConfig({
   plugins: [react()],
+  worker: { format: "es" }, // the code runners are module workers (Technical tab)
   server: { port: 5173, proxy: api },
   preview: { proxy: api },
 });

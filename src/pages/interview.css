@@ -47,6 +47,13 @@
   opacity: 0.5;
 }
 
+.m01 .nc-loading {
+  padding: 40px 0;
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
 /* Stage: STAR column + camera panel */
 .m01 .iv-stage {
   display: grid;

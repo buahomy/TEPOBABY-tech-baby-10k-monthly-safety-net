@@ -40,7 +40,7 @@ After the questions, you land on **Home**. The bar at the bottom has **Home**, *
 - **Track your applications**: in **My jobs → Applied**, tap a job's stage to update it: **Applied → OA → Phone → On-site → Final → Team match → Offer**, or **Ghosted** / **Not proceeding**. A pipeline summary shows how many jobs are at each stage, and each job shows when its stage last changed. Applied jobs stay until you remove them: the daily job update never touches this list, and changing a stage never reshuffles it (it's ordered by when you applied).
 - **Profile**: your saved and applied jobs, all your answers, programs and organizations picked for you, a button to review your answers, and sign out.
 - **＋ (Ginny)**: pick one saved job, then run an ATS match analysis or ask Gemini about it (see below).
-- **Interview**: two tabs side by side, **Behavioral** (a live AI voice interviewer, see below) and **Technical** (coming soon).
+- **Interview**: two tabs side by side, **Behavioral** (a live AI voice interviewer) and **Technical** (the NeetCode 150 as a Card Game and a concept Roadmap). Both are described below.
 
 Connect is coming soon.
 
@@ -198,6 +198,50 @@ North West grades each part by calling the `update_star_progress` tool (phase, s
 - **Key safety:** the server mints a short-lived client secret for each session, so the OpenAI key never reaches the browser.
 - **Limits:** sessions end automatically after 15 minutes, and each user can start up to 10 sessions an hour.
 - **Credits:** the Realtime API has no free tier, so the OpenAI account needs credits; if it runs out, the app says so instead of failing silently.
+
+
+### Interview: technical practice (NeetCode 150)
+**Interview → Technical** is built entirely on the [NeetCode 150](https://neetcode.io/practice), with two sub-tabs side by side: **Card Game** and **Roadmap**.
+
+**🃏 Card Game**
+1. **Flip a card.** 150 face-down cards are numbered 1–150, and each hides a random NeetCode 150 question (shuffled per device). Tap one, or **Flip a random card**, and it flips over to reveal the question.
+2. **Read the question.** A pop-up shows the full problem statement, scraped from LeetCode with its examples, images and constraints.
+3. **Guess the concepts.** Pick every approach you think applies from the 18 concepts on the roadmap (Arrays & Hashing, Two Pointers, …, Bit Manipulation), then tap **Answer**.
+   - Correct picks turn green, wrong ones red, and missed ones get a dashed green outline.
+   - A one-line explanation says why each approach works (e.g. Trapping Rain Water: Two Pointers, or a monotonic Stack).
+4. **Let's code.** This opens a NeetCode-style coding screen:
+   - **Layout:** the question sits on the left; on the right are a code editor (Python 3 or JavaScript) and the test cases.
+   - **Run** runs the example test cases, which you can edit, or add your own.
+   - **Submit** also runs hidden tests and gives LeetCode-style verdicts:
+     - **Accepted**, **Wrong Answer** (showing the failing input, your output and the expected output), **Runtime Error**, **Time Limit Exceeded**, and **Compile Error**.
+     - Each result also shows `print` / `console.log` output and the runtime.
+   - **💡 Hint: template** shows the skeleton code of the right concept as read-only text. It shows the pattern, not this problem's solution, and nothing is typed into your editor.
+   - Your code is saved as a draft for each problem and language; **Reset** brings back the starter code.
+   - **On a phone**, the question, code and tests become three tabs.
+5. Accepted cards turn green with a ✓, and the counters track solved cards, flipped cards and concepts you nailed.
+
+**🗺️ Roadmap**
+- **The diagram:** NeetCode's roadmap, with the same 18 concepts and dashed prerequisite lines, from Arrays & Hashing down to Math & Geometry. Each concept shows a progress bar of the problems you've solved in it.
+- **Opening a concept:** hover (or tap on a phone) to open its card:
+  - **Skeleton code** of the pattern (e.g. binary search, monotonic stack, Dijkstra).
+  - **Works on:** the input types it handles (sorted array, linked list, adjacency list, 2-D grid, two strings, …).
+  - **What it does**, in plain words.
+  - **Live walkthrough:** the algorithm runs on a small example. The data moves step by step, with arrays and their `l` / `m` / `r` pointers, hash maps, stacks, linked-list arrows, trees, trie and decision trees, graphs, DP tables, intervals and bits, while the matching line of code lights up. You can play or pause, step back and forward, or change the speed.
+  - **Runtime**: time and space complexity, and why.
+
+**Where the code runs.** Your code runs **in your own browser**, never on Tepobaby's server:
+- **JavaScript** runs in a sandboxed Web Worker. Like LeetCode's runtime, it has `ListNode`, `TreeNode` and `MinPriorityQueue` built in.
+- **Python 3** runs with [Pyodide](https://pyodide.org) (CPython compiled to WebAssembly). It loads from jsDelivr the first time you pick Python (about 10 MB, cached afterwards), with `typing`, `collections`, `heapq` and the other usual LeetCode imports ready.
+- **Infinite loops** hit a time limit (3 s per case for JavaScript, 8 s for Python), and the worker is restarted.
+
+**Where the tests come from.**
+- **Problems and examples:** the server fetches each problem's statement, example inputs, function signature and starter code from LeetCode's public GraphQL endpoint. It caches them in `server/data/neetcode.json` and refreshes them weekly, one request at a time.
+- **Expected answers:** I wrote a reference solution for all 150 problems ([server/neetcode/reference.js](server/neetcode/reference.js)). `npm run check:neetcode` verifies every one against the 357 example outputs on the problem pages.
+- **Hidden tests:** Submit also runs 3–5 hidden tests per problem (edge cases like empty input, a single item, duplicates, negatives, plus some bigger inputs), all within each problem's constraints.
+- **Custom test cases:** when you add or edit a case, the server computes its expected answer with the reference solution, in a worker thread with a 3-second limit.
+- **Problems with more than one right answer** are judged fairly: any order where the problem allows it (3Sum, Group Anagrams, Subsets, Permutations, …), any valid topological order for Course Schedule II and Alien Dictionary, any longest palindrome, and a 1e-5 tolerance for decimals.
+
+**Progress** (the card shuffle, flipped and solved cards, and code drafts) is saved on this device.
 
 
 ### Where job postings come from
@@ -419,6 +463,38 @@ How I built Tepobaby (with Claude Code): each decision, why I made it, and the p
   - *Why:* students should do most of the talking, North West shouldn't cut them off mid-thought, and voice sessions cost money.
   - *Pain point:* voice agents tend to ramble and interrupt, and an open session can run up API usage.
 
+#### Interview: technical practice (NeetCode 150)
+- **Fetch problem statements from LeetCode's public GraphQL endpoint and cache them on the server**, the same way the job feed works.
+  - *Why:* students get the real statements, examples and starter code, and LeetCode is asked once a week at most (one request at a time), not on every card flip.
+  - *Pain point:* 7 of the 150 are LeetCode Premium (Encode and Decode Strings, Walls and Gates, Graph Valid Tree, Number of Connected Components, Alien Dictionary, Meeting Rooms I & II). For those the API returns test inputs and signatures but no statement, so I wrote my own statements and starter code (`server/neetcode/premium.js`).
+- **Run students' code in the browser, not on the server.**
+  - *Why:* running untrusted code on our server is a security risk and costs money. In the browser it's sandboxed in a Web Worker, free, and works for guests.
+  - *Pain point:* LeetCode is mostly Python, and browsers don't run Python. Pyodide fixes that but weighs about 10 MB, so it loads only when Python is picked, from a CDN, and is cached afterwards. A harness written in both Python and JavaScript builds `ListNode` / `TreeNode` inputs and turns answers back into plain JSON.
+- **Write a reference solution for every problem, and check them against LeetCode's own examples.**
+  - *Why:* LeetCode's API gives example inputs but not the answers, and Submit needs hidden tests whose answers nobody types in by hand.
+  - *Pain point:* a wrong reference would wrongly fail students. `npm run check:neetcode` reads the example outputs on every problem page (357 of them, including my Premium write-ups) and checks each reference against them; all pass.
+- **Special judges for the tricky problems.**
+  - *Why:* several problems don't have one exact right answer, or need special setup:
+    - any-order lists, plus topological orders (Course Schedule II, Alien Dictionary) and Longest Palindromic Substring ("bab" or "aba");
+    - in-place `void` problems (Rotate Image, Reorder List);
+    - a cycle built from `pos` (Linked List Cycle) and node arguments (LCA of a BST);
+    - deep copies (Copy List with Random Pointer, Clone Graph), checked so they don't reuse the original nodes;
+    - round trips (Serialize/Deserialize, Encode/Decode);
+    - the 9 design classes (LRU Cache, Min Stack, Twitter, …).
+  - *Pain point:* a plain equality check would mark correct answers wrong. I tested both harnesses with LeetCode-style solutions in Python and JavaScript for each special case.
+- **Hidden tests sized for a browser.**
+  - *Why:* Pyodide's Python has a smaller recursion limit than LeetCode's, so a deep recursive DFS on a huge grid could crash even though it's correct.
+  - *Pain point:* I kept hidden tests to edge cases plus moderately sized inputs (e.g. 20×20 grids, lists of up to 1,000), removed tests whose answers could overflow, and checked every test against the problem's constraints. For example, Reverse Bits now requires even numbers, and K Closest Points had a tie.
+- **A "Hint: template" that shows the concept's skeleton but doesn't write the code.**
+  - *Why:* students should learn to adapt the pattern themselves, not paste it.
+- **Concept walkthroughs that run the real algorithm.**
+  - *Why:* each animation comes from actually running the concept's skeleton on a small example and recording every step, so the picture, the highlighted line and the numbers always agree.
+  - *Pain point:* 18 different shapes of data (arrays with pointers, linked-list arrows, trees, tries, decision trees, graphs, DP tables, intervals, bits) needed their own renderers, and the Roadmap had to fit NeetCode's wide diagram on a phone screen.
+- **Lazy-load the Technical tab.**
+  - *Why:* the code editor and walkthroughs added about 620 KB, which would have nearly quadrupled the app's first download (229 KB). The rest of the app stays the same size; the Technical tab downloads when it's opened.
+- **Keep the disk free during browser tests.**
+  - *Pain point:* the Mac's disk filled up while I was testing (headless Chrome caches, plus Pyodide). I now run tests with caching off and delete the browser profile afterwards.
+
 #### Platform & tooling
 - **Pin `@huggingface/transformers` 3.8.1** (ONNX Runtime 1.21), and add a `Promise.try` polyfill for `unpdf`.
   - *Why:* my Intel Mac runs Node 20.
@@ -495,6 +571,9 @@ API routes (the Vite dev server forwards `/api` to the auth server):
 | `POST /api/ginny/ats` | ATS match analysis for one job (guests send their PDF with the request) |
 | `GET /api/interview/status` | Whether voice practice is set up, and the interviewer options |
 | `POST /api/interview/session` | Short-lived OpenAI Realtime client secret for one behavioral interview (company persona + STAR tools baked in) |
+| `GET /api/neetcode` | The NeetCode 150 list (number, title, difficulty, category) and the 18 concepts |
+| `GET /api/neetcode/problem/:slug` | One problem: statement (from LeetCode, cached), signature, starter code, accepted concepts, example tests and hidden tests with expected answers |
+| `POST /api/neetcode/expected` | Expected answer for a custom test input, from the reference solution (3-second limit, 40 a minute per IP) |
 | `POST /api/ginny/tailor` | Opt-in Gemini rewrites of the resume for the selected job (sends the redacted resume sections) |
 | `POST /api/ginny/chat` | Ask Gemini about the selected job |
 | `GET /api/logo/:domain` | A logo, cached by the server (only for companies in current postings, the tier list, or suggested programs) |
