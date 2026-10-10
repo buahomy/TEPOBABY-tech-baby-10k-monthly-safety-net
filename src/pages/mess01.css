@@ -3,6 +3,13 @@
 /* Ported 1:1 from the Figma Make file "TEPOBABY". Everything is scoped under .m01
    so it doesn't leak into the rest of the app (and global styles.css doesn't leak in). */
 
+/* Page base from the design (it is currently the whole site). */
+html,
+body {
+  margin: 0;
+  background: #090b14;
+}
+
 .m01 {
   /* Design tokens */
   --canvas: #090b14;
@@ -442,6 +449,30 @@
   color: var(--emerald);
 }
 
+.m01 .primary-action[aria-busy="true"] {
+  cursor: progress;
+  opacity: 0.85;
+}
+
+.m01 .primary-action[aria-disabled="true"]:not([aria-busy="true"]) {
+  cursor: default;
+}
+
+.m01 .auth-error {
+  color: #fca5a5;
+}
+
+.m01 .text-link {
+  color: var(--indigo-bright);
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}
+
+.m01 .text-link:hover {
+  text-decoration: underline;
+}
+
 .m01 .divider {
   display: flex;
   align-items: center;
@@ -507,6 +538,27 @@
   border-radius: 99px;
   background: rgba(255, 255, 255, 0.82);
   transform: translateX(-50%);
+}
+
+/* Launched from the Home Screen: iOS draws the real status bar and home indicator,
+   so drop the mock ones and fill the whole display, respecting the notch / Dynamic Island. */
+@media (display-mode: standalone) {
+  .m01 .phone-frame {
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .m01 .status-bar,
+  .m01 .home-indicator {
+    display: none;
+  }
+
+  .m01 .screen-content {
+    padding-top: 12px;
+  }
 }
 
 @media (min-width: 500px) and (min-height: 900px) {
