@@ -1,13 +1,14 @@
-// Fetches the full job description for a posting's apply link, so ATS analysis can compare the
-// resume against what the job actually asks for. Order:
+// Fetches the full job description in real time, straight from the job posting's own website, every
+// time an analysis runs, so the resume is compared against what the posting says right now (roles
+// get edited or closed). Order:
 //   Greenhouse / Lever / Ashby public APIs → Workday's public job API → schema.org JobPosting on
 //   the page → the page's main text. Returns null if nothing usable is found (the app then asks
 //   the student to paste the description).
 
 import { USER_AGENT } from "../jobs/classify.js";
 
-const cache = new Map(); // url → { text, at }
-const DAY = 24 * 3600e3;
+// Only identical requests already in flight are shared (e.g. a double tap); nothing is kept.
+const inflight = new Map(); // url → Promise<string | null>
 const UA = { "User-Agent": USER_AGENT, Accept: "application/json, text/html;q=0.9" };
 
 // cleanText collapses newlines; keep line structure for requirement extraction.
@@ -86,8 +87,13 @@ async function genericPage(url) {
   return text.length > 400 ? text.slice(0, 20000) : null;
 }
 
-/** Full job description text for a posting URL, or null. Cached for a day. */
-export async function fetchJobDescription(url) {
+/** Full job description text for a posting URL, fetched live from the posting's site, or null. */
+export function fetchJobDescription(url) {
+  if (!inflight.has(url)) inflight.set(url, fetchLive(url).finally(() => inflight.delete(url)));
+  return inflight.get(url);
+}
+
+async function fetchLive(url) {
   let u;
   try {
     u = new URL(url);
@@ -95,9 +101,6 @@ export async function fetchJobDescription(url) {
   } catch {
     return null;
   }
-  const hit = cache.get(url);
-  if (hit && Date.now() - hit.at < DAY) return hit.text;
-
   const host = u.hostname;
   const tries = [];
   if (/greenhouse\.io$/.test(host) || u.searchParams.get("gh_jid")) tries.push(() => greenhouse(u));
@@ -115,8 +118,6 @@ export async function fetchJobDescription(url) {
       // try the next way
     }
   }
-  text = text && text.length > 200 ? text.slice(0, 20000) : null;
-  cache.set(url, { text, at: Date.now() });
-  return text;
+  return text && text.length > 200 ? text.slice(0, 20000) : null;
 }
 

@@ -98,7 +98,7 @@ Tap the big **＋** in the middle of the bottom bar. A sheet opens with two tabs
 
 **ATS match analysis**
 
-Upload your resume PDF once. Signed-in students' resumes are stored privately on their account; guests' stay on their device. After that, Ginny goes straight to the analysis. It loads the job's full description automatically from Greenhouse, Lever, Ashby, Workday, or the posting page's job data. If it can't, it asks you to paste the description.
+Upload your resume PDF once. Signed-in students' resumes are stored privately on their account; guests' stay on their device. After that, Ginny goes straight to the analysis. Every time you run an analysis, Ginny goes to the job posting's own website and fetches the full job description in real time, so you're matched against what the posting says right now. It reads Greenhouse, Lever, Ashby and Workday through their public APIs, and other career sites through their job data or page text. If it can't, it asks you to paste the description.
 
 It then runs three stages:
 
@@ -125,6 +125,24 @@ The report also shows:
 
 The score blends hard skills (40%), semantic fit (35%) and evidence (25%). Eightfold's own formula isn't public, so these weights and cutoffs are Tepobaby's calibration.
 
+**What to improve.** Every report ends with a practical checklist, most important first, each item labeled high / medium / low:
+- **Missing required skills,** with about how many points each would add. Only add them if you've really used them; otherwise, a small project is the honest fix.
+- **Nice-to-have skills** you could mention, using the posting's exact spelling.
+- **Skills listed but never proven:** they're in your Skills list but never shown in a bullet.
+- **Requirements with no clear evidence,** each with a fill-in template.
+- **Bullets without numbers,** and weak openers like "Responsible for…".
+- **Long bullets,** role words from the job title your resume never uses, and missing standard sections.
+- **A projected score** if you add the required skills you actually have.
+
+This checklist is computed on our server from the same evidence as the score, so it's instant and sends nothing anywhere.
+
+**Tailor with Gemini (opt-in).** Tap **✨ Get tailored rewrites** and Gemini returns:
+- 3–5 of your own bullets rewritten for this job, each shown next to the original with the requirement it targets;
+- keywords to add, but only where they're true;
+- a 1–2 weekend project idea for your biggest gap.
+
+It never invents experience: unknown numbers become placeholders like [X%]. Because AI can still embellish, Tepobaby reminds you to keep only what's true. This is the only Ginny feature that sends resume text to Gemini (Experience, Projects, Skills and Education, with your name and contact info already removed), and it only runs when you tap the button.
+
 **Your privacy (PII mitigation).** Voyage AI is a hosted API, and sending raw resumes would create GDPR/CCPA risk. So before anything leaves our server:
 1. **Direct identifiers are redacted locally:** your name (the header line), email, phone, street address, and LinkedIn, GitHub and other links.
 2. **Only the useful sections are kept:** Work Experience, Projects, Skills and Education. Summary, objective, references and other header info are dropped.
@@ -150,7 +168,7 @@ A chat about your selected job, so you know what to expect. It opens with sugges
 - *"According to Glassdoor interviews at (company), what questions does (company) ask for (role)? List NeetCode 150 problems to practice."*
 - *"Does (company) sponsor (your visa type) for (role)?"* U.S. citizens get a citizenship / clearance question instead.
 
-Gemini uses Google Search for company-specific facts and shows its sources. It only gets the role, company and non-identifying profile facts (class year, graduation date, visa status), never your resume, name or email.
+Ask Gemini uses **Gemini 3.8 Flash** through Google's Interactions API. It tries Google Search first so company-specific answers come with sources. On the free tier, search can be over quota; then Gemini answers from what candidates have publicly reported and the answer says it has no live sources. If Gemini is overloaded, Tepobaby retries and falls back to Gemini 3.7 / 3.5 Flash. Chat only gets the role, company and non-identifying profile facts (class year, graduation date, visa status), never your resume, name or email.
 
 
 ### Where job postings come from
@@ -184,68 +202,178 @@ LinkedIn, Indeed, Glassdoor, Wellfound, Y Combinator's Work at a Startup, Ripple
 
 
 ### Design decisions & pain points
-How I built the job postings feed and the rest of the app (with Claude Code), what was hard, and what I chose.
+How I built Tepobaby (with Claude Code): each decision, why I made it, and the pain point behind it.
 
 **Job postings workflow**
-1. Most postings come from the community GitHub repos listed above. Instead of scraping their README tables, I read each repo's structured `listings.json`, which has exact posting timestamps, sponsorship info and whether the role is still open. speedyapply has no JSON, so I parse its Markdown table (it only gives age in days).
+1. Most postings come from the community GitHub repos listed above. I read each repo's structured `listings.json` (exact posting times, sponsorship, whether the role is open). speedyapply has no JSON, so I parse its Markdown table.
 2. I add early-career roles straight from about 80 companies through the public Greenhouse, Lever and Ashby job-board APIs.
-3. I add startup roles from Hacker News "Who is hiring?" through the official Firebase API.
+3. I add startup roles from Hacker News "Who is hiring?" through its official API.
 4. I add Google Jobs results through SerpApi.
-5. Every source runs in parallel. I keep the last 7 days, label each role Underclassmen / Internship / Entry-level, drop senior roles, remove duplicates across sources, and push new postings to the app.
+5. Every morning all sources run in parallel. I keep the last 7 days, label each role Underclassmen / Internship / Entry-level, drop senior roles, remove duplicates, and push new postings to the app.
 
-**Pain points → decisions**
-- **GitHub README tables are messy.** They mix HTML and Markdown, use "↳" rows for repeated companies, use emoji for sponsorship, and have no exact dates. → I read the JSON data behind the tables when it exists, and parse Markdown only as a fallback.
-- **Not every repo is alive.** The cvrve repos no longer exist, and Pitt CSC hasn't added a posting since August. → I keep the live ones and show where each posting came from.
-- **The big lists are huge.** SimplifyJobs' file is about 13 MB. → The server asks GitHub "has this changed?" (ETag), so an unchanged file downloads 0 bytes.
-- **There's no master list of company job boards.** Guessed board names often don't exist. → I tested 93 candidates and kept the 80 that respond, in `server/jobs/companies.json`.
-- **Hacker News posts are free text.** → I keep posts that mention intern, new grad or junior roles, and read the "Company | Role | Location" first line that most posts follow.
-- **Google Jobs is a different workflow.** It's search-based, so I have to choose keywords that match what I'm looking for, and SerpApi's free plan allows 250 searches a month. → 4 searches each morning (about 124 a month). Google also changed where it puts the posting age, so I read both places.
-- **Google Jobs "company site" links were often reposting sites** like BeBee or ClearanceJobs rather than real company pages. → I re-rank apply links: official careers site first, then Greenhouse / Lever / Ashby / Workday pages, then major job boards (LinkedIn, Indeed, Glassdoor), with reposting sites last. Logos only come from a site that matches the company's name.
-- **Some sites can't be scraped.** LinkedIn, Indeed, Glassdoor, Wellfound, YC Work at a Startup, RippleMatch, WayUp, Untapped and CodePath forbid it or need a login. → I skip them; Google Jobs through SerpApi covers much of LinkedIn, Indeed and Glassdoor legitimately.
-- **"Real-time" vs. being polite.** I started by checking sources every few minutes. The lists only change a few times a day, so I moved to one update every morning at 7:00 AM ET (30–31 a month). It follows daylight saving and catches up if the server was off. When new postings land, the app updates instantly through a live connection (Server-Sent Events).
-- **Live updates silently didn't arrive at first.** The server dropped each listener the moment it connected, because Node fires the request's "close" event early. → I listen for the response's "close" instead and tested it end to end.
-- **Logos.** Apply links usually point to hiring platforms, not the company's site, and a name lookup matched "Meter" to the wrong company (metergroup.com). → I only accept a website when the name matches exactly and the website looks like the company's own. Otherwise I show the company's first letter, because a wrong logo is worse than none. Logos are cached on my server, so students' browsers never contact third parties, and only companies in current postings are served.
-- **Sponsorship data is mostly missing.** Most sources don't say whether a role sponsors visas. → The toggle only hides roles that say they don't, and "Sponsors visa" shows only when a source confirms it.
-- **Underclassmen programs are rare.** → The tab says so and points to Internship, instead of showing made-up programs.
-- **Startup and contract roles rarely appear on job lists.** → A separate section links straight to the boards where they're posted.
+#### Job postings feed
+- **Read each repo's `listings.json` instead of scraping its README table.**
+  - *Why:* it has exact timestamps for the 48–72h filter, sponsorship info, and an "active" flag.
+  - *Pain point:* the README tables mix HTML and Markdown, use "↳" rows for repeated companies and emoji for sponsorship, and have no exact dates.
+- **Keep only repos that are alive, and show each posting's source.**
+  - *Why:* students should see where a role came from.
+  - *Pain point:* the cvrve repos no longer exist, and Pitt CSC hasn't added a posting since August.
+- **Ask GitHub "has this changed?" (ETag) before downloading.**
+  - *Why:* an unchanged list costs 0 bytes instead of about 13 MB.
+  - *Pain point:* the big lists are huge.
+- **A verified list of company job boards** (`server/jobs/companies.json`).
+  - *Why:* the Greenhouse, Lever and Ashby APIs are public and structured, so no HTML scraping.
+  - *Pain point:* there's no master list, and guessed board names often don't exist. I tested 93 and kept the 80 that respond.
+- **Keyword-filter Hacker News posts.**
+  - *Why:* "Who is hiring?" has real startup roles.
+  - *Pain point:* posts are free text. I keep ones that mention intern, new grad or junior roles, and read the "Company | Role | Location" first line most posts use.
+- **Google Jobs through SerpApi, 4 searches each morning.**
+  - *Why:* it's the legitimate way to reach roles indexed from LinkedIn, Indeed and Glassdoor, and 4 a day (about 124 a month) fits the free 250.
+  - *Pain point:* it's a different, search-based workflow, so I have to pick keywords that match what I'm looking for. Google also moved the posting age to a different field.
+- **Re-rank Google Jobs apply links:** official careers site → Greenhouse / Lever / Ashby / Workday → LinkedIn / Indeed / Glassdoor → reposting sites last.
+  - *Why:* students should apply where the company actually reviews applications.
+  - *Pain point:* the "company site" link was often a reposting site like BeBee or ClearanceJobs.
+- **Don't scrape sites that forbid it or need a login** (LinkedIn, Indeed, Glassdoor, Wellfound, YC Work at a Startup, RippleMatch, WayUp, Untapped, CodePath).
+  - *Why:* scraping them breaks their terms; SerpApi covers much of the same listings legitimately.
+  - *Pain point:* some of the best boards are closed to scraping.
+- **Update once every morning at 7:00 AM ET** (30–31 times a month), with instant push to the app (Server-Sent Events).
+  - *Why:* the lists only change a few times a day, so checking every few minutes was impolite and wasteful. It follows daylight saving and catches up if the server was off.
+  - *Pain point:* balancing "real-time" with being polite to the sources.
+- **Listen for the response's "close" event for live updates.**
+  - *Why:* Node fires the request's "close" event as soon as the request is read.
+  - *Pain point:* live updates silently never arrived at first.
+- **Only show sponsorship when a source states it.**
+  - *Why:* a wrong "sponsors visa" tag could mislead international students. The toggle only hides roles that say they don't.
+  - *Pain point:* most sources don't say.
+- **Explain empty Underclassmen results instead of filling them.**
+  - *Why:* made-up programs would waste students' time.
+  - *Pain point:* freshman and sophomore programs are rare and seldom appear within 7 days.
+- **A separate section for startup and contract job boards.**
+  - *Why:* small teams post on their own sites and niche boards.
+  - *Pain point:* these roles rarely show up on the big lists.
 
-- **Ranking interview difficulty is subjective.** → I base tiers on what students report (Glassdoor, LeetCode Discuss, Reddit) and fact-check borderline companies. That moved Tesla, Bloomberg and Akuna Capital up to Hard LC, because reports describe medium-hard to hard problems. NVIDIA, Point72 and DRW stayed in Medium LC, because reports describe mostly medium problems plus systems or data questions. Everything is in `src/data/tiers.json`, so it's easy to adjust.
-- **Job lists lag behind company sites.** → The tier list doubles as a launchpad of careers-page shortcuts, so checking target companies daily is one tap each.
+#### Logos
+- **Proxy and cache every logo on my server**, and serve only domains that are in Tepobaby's data.
+  - *Why:* students' browsers never contact third parties, and the logo route can't be used as an open proxy.
+  - *Pain point:* privacy, plus abuse risk.
+- **Find each company's website before fetching its logo** (job list link → apply link on the company's own site → known list → exact-name lookup that must match the website).
+  - *Why:* apply links usually point to hiring platforms.
+  - *Pain point:* a name lookup matched "Meter" to metergroup.com, and a wrong logo is worse than a letter.
+- **Organizations use their own website's icon first** (apple-touch-icon or largest site icon), then Google's and DuckDuckGo's favicon services.
+  - *Why:* the site's own icon is the real logo.
+  - *Pain point:* favicon services returned tiny, generic or missing icons. A few needed an image from the organization's site (ACM), the icon from its browser tab (NAAAP), a cropped bundled copy (Tapia), or a dark tile for a white logo (/dev/color).
 
-- **Saved jobs would disappear with the feed.** Postings only stay for 7 days. → Each saved job keeps its own copy of the details (company, title, link, logo), so your Saved and Applied lists last. Guests' saved jobs stay on the device and move into the account at sign-in, the same way answers do.
+#### Company tiers
+- **Rank companies by reported intern / new grad interview difficulty and fact-check borderline ones.**
+  - *Why:* students prep differently for system design vs. easy LeetCode.
+  - *Pain point:* it's subjective. Checking reports moved Tesla, Bloomberg and Akuna Capital up to Hard LC, while NVIDIA, Point72 and DRW stayed in Medium LC. Everything is in `src/data/tiers.json`.
+- **Make the tier list a launchpad of careers-page shortcuts.**
+  - *Why:* roles often go live on company sites before any list picks them up.
+  - *Pain point:* job lists lag behind company sites.
 
-- **Matching programs without exposing identity data.** Race, gender, LGBTQ+ and first-gen answers are sensitive. → Matching happens inside the app from answers you already gave, and identity questions keep "Prefer not to say". **Show all programs** means nobody has to share anything to see the full list.
-- **Program links go stale.** Organizations rebrand or shut down. → I checked every link before adding it. Basta's site no longer exists and Jopwell now redirects to a different company, so both were left out. Braven, SEO and the MLH Fellowship had moved, so I use their new addresses.
-- **Putting each program in the right group.** Some are easy to mix up; for example, Break Through Tech is for women and non-binary students, not specifically first-gen. → Each program lists who it's for, and it appears once, in the first group that fits you.
-- **Some programs have more than one requirement.** At first a Hispanic man saw Latinas in Tech, and an LGBTQ+ man saw Lesbians Who Tech. → A program can require every group it serves (Latina *and* a woman), and it only shows when all of them fit you. **Show all programs** still lists everything.
-- **Researching programs takes care.** Several organizations share the name "Career Pathways Initiative". → I added the one founded by Ken Lang (careerpathwaysinitiative.com), which supports first-gen, low-income students. Programs whose sites no longer respond or now point somewhere else (Rising First, Girls in Tech, Emerson FirstGen Internships, Women Techmakers) were left out.
-- **Not every program fits U.S. college students.** The first list mixed in high school and admissions programs (Posse, QuestBridge, Jack Kent Cooke, SMASH, Kode With Klossy, NCWIT, Hack Club, Honor Your Dreams). → I removed them, so every suggestion is something a college student can join now. I briefly removed professional networks too, then brought them back (/dev/color, NAAAP, Blacks In Technology, Out in Tech, Lesbians Who Tech, Latinas in Tech): students can join them early, and those connections pay off when recruiting starts. That's 42 programs in all.
-- **Favicon services gave weak or missing logos.** Some came back tiny or generic, and a few had none at all (Out for Undergrad), even though Career Pathways Initiative and others show their logo right on their website. → The server reads each organization's homepage and uses its own app icon or largest site icon first. When that's still unusable, I point to a logo image on the organization's site (ACM), use the icon from its browser tab (NAAAP), or bundle a cropped copy (Tapia). Any program without a real logo doesn't make the list.
+#### Saved jobs
+- **Each saved job keeps its own copy of the details.**
+  - *Why:* Saved and Applied lists should outlast the feed.
+  - *Pain point:* postings only stay for 7 days.
+- **Guests' saved jobs and answers stay on the device and move into the account at sign-in.**
+  - *Why:* students shouldn't lose progress when they decide to sign in.
+  - *Pain point:* guests have no account to save to.
 
-- **Keeping the list to real organizations.** Google Tech Exchange and Generation Google Scholarship are programs run by one company, so they only showed Google's logo, and Hispanic Scholarship Fund is mainly a scholarship rather than a community or career program. → I removed all three to keep the launchpad focused on organizations students join. Google is still in the company tiers.
+#### Programs & organizations
+- **Match programs inside the app, and keep "Show all programs".**
+  - *Why:* nobody has to share identity data to see the full list.
+  - *Pain point:* race, gender, LGBTQ+ and first-gen answers are sensitive.
+- **Only programs U.S. college students can join**, plus professional networks students can join early.
+  - *Why:* Tepobaby is for U.S. college students, and early networking pays off at recruiting time.
+  - *Pain point:* the first list mixed in high school and admissions programs (Posse, QuestBridge and others), which I removed.
+- **Check every link before adding a program.**
+  - *Why:* a dead link wastes a student's time.
+  - *Pain point:*
+    - Basta's and Rising First's sites are gone, Jopwell redirects elsewhere, and others had moved.
+    - Several organizations share the name "Career Pathways Initiative"; I added the one founded by Ken Lang.
+- **Programs can require more than one group** (Latinas in Tech: Latina *and* a woman).
+  - *Why:* students should only see programs they can join.
+  - *Pain point:* a Hispanic man was shown Latinas in Tech, and an LGBTQ+ man Lesbians Who Tech.
+- **Keep the list to organizations students join.**
+  - *Why:* Google's own programs only showed Google's logo, and Hispanic Scholarship Fund is mainly a scholarship.
+  - *Pain point:* a launchpad full of company programs and scholarships blurs its purpose.
 
-**Ginny (ATS analysis + Ask Gemini)**
-- **FlashRank is a Python library; Tepobaby's server is Node.** → I run the same kind of model FlashRank uses (an ms-marco MiniLM cross-encoder) in Node with ONNX Runtime, still fully local, with no external API.
-- **"Under 20 ms" depends on the CPU.** On my Intel Mac, reranking takes about 10–27 ms per resume line (for example, 120 pairs in 3.2 s). → Fast enough in practice; Apple Silicon or a server CPU is quicker. The report shows the real timing.
-- **The newest ONNX Runtime dropped Intel Macs, and a PDF library needed Node 22.** → I pinned `@huggingface/transformers` 3.8.1 (ONNX Runtime 1.21, which still ships Intel Mac builds), and added a one-line `Promise.try` polyfill so `unpdf` runs on Node 20. pdf.js runs with `isEvalSupported: false` for safety.
-- **The disk filled up mid-install**, leaving broken packages. → I cleared the npm cache and my scratch files, deleted `node_modules`, and reinstalled cleanly.
-- **Saved jobs don't include a job description.** → The server fetches it on demand from Greenhouse, Lever, Ashby and Workday APIs, or the page's schema.org JobPosting data, and caches it for a day. When none of that works, you paste it.
-- **Job descriptions are full of marketing and testimonials.** At first "Solomon Graf experience as a 2026 intern" and "Semgrep, the leader in code security…" were treated as requirements, and product language ("we support Ruby, PHP") counted as required skills. → Requirements and skills now come only from qualifications and responsibilities sections (Requirements, What you'll need, You will, Nice to have…). Benefits, about-us and testimonial links are skipped.
-- **Skill matching had false positives:** "go to", "the rest of", "node the tree", and "C" inside "Objective-C". → Short or common names only count in their usual capitalization (Go, REST, Node, C), and hyphens count as part of a word.
-- **Reranker scores needed calibration.** ms-marco scores clearly relevant lines around −4…+2 and unrelated ones around −10, so a plain 0–1 conversion called real evidence weak. → Evidence is now calibrated so −3 reads as solid and −10 as none. I checked it on good, partial and poor-fit jobs (Strong 80, Weak 22, Weak 2).
-- **Eightfold's real scoring isn't public.** → I use the same 4 tier names and meanings with my own weights and cutoffs, and say so in the report.
-- **Resumes are sensitive.** → Identifiers are redacted locally, only four sections are kept, and the PDF stays in private storage (guests: on their device). Only the sanitized text goes to Voyage.
-- **Without a Voyage key** the analysis would fail. → It still runs with BM25 + the local reranker, and the score is re-weighted. The report says semantic fit was skipped.
-- **Gemini 1.5 Flash is retired** (Google shut it down in 2025). → Ask Gemini uses Gemini 2.5 Flash on the free tier, and `GEMINI_MODEL` can change it.
-- **Gemini can't log in to Glassdoor.** → It uses Google Search grounding and shows sources, so answers about interview rounds, questions and sponsorship are based on what's public, not guesses.
-- **Typing the same details over and over is tedious.** → The suggested questions fill in the role, company and visa type from the selected job and your answers.
-- **The chat screen crashed on open.** Newer Chrome returns a Promise from `scrollIntoView()`, and a React effect returned it. → Effects never return values now.
-- **Free API quotas can be drained.** → Per-user/IP rate limits: 30 analyses and 40 questions per hour, and 20 resume uploads per hour.
+#### Ginny: ATS match analysis
+- **Fetch the job description in real time from the posting's own website on every analysis.**
+  - *Why:* roles get edited or closed, so the resume should be compared against what the posting says right now.
+  - *Pain point:* saved jobs don't include a description. Each site is different, so I use the Greenhouse, Lever, Ashby and Workday APIs, schema.org JobPosting data or page text, and let students paste it when none work.
+- **Read requirements and skills only from qualifications and responsibilities sections.**
+  - *Why:* that's what the job actually asks for.
+  - *Pain point:* "Solomon Graf experience as a 2026 intern" and "Semgrep, the leader in code security…" were read as requirements, and "we support Ruby, PHP" counted as required skills.
+- **Stage 1: Voyage AI `voyage-4` embeddings** (`input_type="document"` for resume lines, `"query"` for the job).
+  - *Why:* it's tuned for code and engineering terms ("Next.js" ↔ "React"), its 200M free tokens need no card, and the voyage-4 models share one vector space.
+  - *Pain point:* it's a hosted API, so resumes need PII protection, and it needs a key. Without one, analysis still runs with stages 1.1 and 2, re-weighted.
+- **Stage 1.1: BM25 with a tech-skills dictionary.**
+  - *Why:* recruiters' ATS filters look for exact strings like "Kubernetes" or "C++".
+  - *Pain point:* false positives from "go to", "the rest of", "node the tree", and "C" inside "Objective-C". Short names now only count in their usual capitalization, and hyphens count as part of a word.
+- **Stage 2: a local cross-encoder** (ms-marco MiniLM, FlashRank's model family) via ONNX Runtime.
+  - *Why:* reranking runs on my own CPU with no external API, so no extra data leaves the server.
+  - *Pain point:*
+    - FlashRank is a Python library and my server is Node.
+    - It runs about 10–27 ms per resume line on my Intel Mac, not under 20 ms per batch.
+    - Its raw scores needed calibration (relevant ≈ −4…+2, unrelated ≈ −10).
+- **Redact PII locally, keep only Experience / Projects / Skills / Education, and store the PDF separately.**
+  - *Why:* sending raw resumes to a hosted API creates GDPR/CCPA risk.
+  - *Pain point:* resumes are full of personal info. Signed-in PDFs stay in private storage, and guests' never leave their device except in memory for one request.
+- **A "what to improve" checklist computed on the server**, prioritized and with point estimates.
+  - *Why:* a score alone doesn't tell a student what to do next. The checklist uses the same evidence as the score, so it's instant, free and private.
+  - *Pain point:* students need practical next steps (which keywords, which bullets, what numbers), not generic advice.
+- **Gemini bullet rewrites only when the student opts in.**
+  - *Why:* rewriting needs the resume text, and students should decide whether it goes to Google. The button says exactly what gets sent.
+  - *Pain point:* in testing, a rewrite added a claim the original didn't make ("improving database throughput"). Rewrites are shown next to the originals, with unknown numbers as [placeholders] and a reminder to keep only what's true.
+- **Eightfold's 4 tier names with my own weights and cutoffs.**
+  - *Why:* students know those labels from real portals.
+  - *Pain point:* Eightfold's formula isn't public, so the report says it's my calibration. Test jobs scored Strong 80, Weak 22 and Weak 2.
 
-**Rest of the app**
-- **Google sign-in didn't come back from the popup** in some browsers (in-editor browsers, the iPhone Home Screen app). → Sign-in uses a full-page redirect.
-- **A .edu check in the browser could be bypassed.** → The server verifies Google's ID token and only accepts verified emails ending in `.edu`.
-- **Questions changed after students had already answered.** → Students only answer the new section, and old answers are cleaned up automatically.
+#### Ginny: Ask Gemini
+- **Gemini 3.8 Flash through the Interactions API** (`POST /v1beta/interactions`).
+  - *Why:* it's the current free Flash model, and Google now serves new models through this API.
+  - *Pain point:* Gemini 1.5 Flash was retired in 2025, Gemini 2.5 Flash came back "no longer available to new users", and newer models returned 404 on the old `generateContent` endpoint.
+- **Try Google Search grounding, fall back to an answer without it.**
+  - *Why:* sources make company-specific answers trustworthy, and Gemini can't log in to Glassdoor.
+  - *Pain point:* on this free key, every model returned "quota exceeded" with search turned on. Answers without search say they have no live sources.
+- **Retry overloaded models, then fall back to Gemini 3.7 / 3.5 Flash.**
+  - *Why:* students shouldn't see a failure because of a temporary demand spike.
+  - *Pain point:* Gemini 3.8 Flash often replied "currently experiencing high demand" (503).
+- **Render chat answers with a small, safe Markdown formatter** (bold, bullets, headings as React elements, no raw HTML).
+  - *Why:* Gemini answers in Markdown, and showing raw `**` and `*` was hard to read.
+  - *Pain point:* readability, without opening an HTML-injection hole.
+- **Suggested questions auto-filled from the selected job and profile.**
+  - *Why:* students shouldn't retype role, company and visa type.
+  - *Pain point:* typing the same details again and again.
+- **Send Gemini only role, company and non-identifying profile facts.**
+  - *Why:* it doesn't need the resume, name or email to answer.
+  - *Pain point:* privacy.
+
+#### Platform & tooling
+- **Pin `@huggingface/transformers` 3.8.1** (ONNX Runtime 1.21), and add a `Promise.try` polyfill for `unpdf`.
+  - *Why:* my Intel Mac runs Node 20.
+  - *Pain point:* the newest ONNX Runtime dropped Intel Macs, and the PDF library needed Node 22.
+- **Reinstall packages cleanly after the disk filled up.**
+  - *Why:* the half-finished install left broken packages.
+  - *Pain point:* the AI libraries are large, and the disk ran out of space mid-install.
+- **React effects never return values.**
+  - *Why:* newer Chrome returns a Promise from `scrollIntoView()`, and React treats any return as a cleanup function.
+  - *Pain point:* the chat screen crashed on open.
+- **Rate limits** (30 analyses, 15 tailored rewrites, 40 questions and 20 uploads per hour per user/IP).
+  - *Why:* free API quotas can be drained.
+  - *Pain point:* shared free tiers.
+
+#### Sign-in & onboarding
+- **Google sign-in with a full-page redirect.**
+  - *Why:* it works in every browser.
+  - *Pain point:* the popup never came back in in-editor browsers or the iPhone Home Screen app.
+- **Check `.edu` on the server.**
+  - *Why:* a browser check can be bypassed.
+  - *Pain point:* security. The server verifies Google's ID token.
+- **Clean up answers when questions change.**
+  - *Why:* students shouldn't redo everything.
+  - *Pain point:* questions changed after students had already answered, so now they only answer the new section.
 
 
 ### Environment variables
@@ -261,8 +389,9 @@ How I built the job postings feed and the rest of the app (with Claude Code), wh
 | `JOBS_DAILY_TIME` | Server | Optional. Daily update time in Eastern Time, `HH:MM` (default `07:00`). |
 | `VOYAGE_API_KEY` | Server | Voyage AI key for Ginny's semantic matching (free tier). Optional: without it, ATS analysis uses BM25 + the local reranker. |
 | `VOYAGE_MODEL` | Server | Optional. Default `voyage-4`. |
-| `GEMINI_API_KEY` | Server | Gemini key for Ask Gemini (free tier). Server-only, never sent to the browser. |
-| `GEMINI_MODEL` | Server | Optional. Default `gemini-2.5-flash` (Gemini 1.5 Flash is retired). |
+| `GEMINI_API_KEY` | Server | Gemini key for Ask Gemini and tailored rewrites (free tier). Server-only, never sent to the browser. |
+| `GEMINI_MODEL` | Server | Optional. Default `gemini-3.8-flash` (Interactions API). |
+| `GEMINI_FALLBACK_MODELS` | Server | Optional. Comma-separated models to try when the main one is overloaded. Default `gemini-3.7-flash,gemini-3.5-flash`. |
 
 `.env.local` is git-ignored. Never commit real values.
 
@@ -291,5 +420,6 @@ API routes (the Vite dev server forwards `/api` to the auth server):
 | `GET /api/ginny/status` | Which Ginny pieces are set up (Voyage, Gemini, reranker) and the tier cutoffs |
 | `GET` / `PUT` / `DELETE /api/ginny/resume` | The signed-in student's resume (PUT body = PDF bytes) |
 | `POST /api/ginny/ats` | ATS match analysis for one job (guests send their PDF with the request) |
+| `POST /api/ginny/tailor` | Opt-in Gemini rewrites of the resume for the selected job (sends the redacted resume sections) |
 | `POST /api/ginny/chat` | Ask Gemini about the selected job |
 | `GET /api/logo/:domain` | A logo, cached by the server (only for companies in current postings, the tier list, or suggested programs) |

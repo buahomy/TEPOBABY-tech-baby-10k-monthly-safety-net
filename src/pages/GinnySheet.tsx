@@ -10,7 +10,9 @@ import {
   askGemini,
   deleteResume,
   getResume,
+  TailorTips,
   getStatus,
+  getTailorTips,
   runAts,
   suggestedQuestions,
   uploadResume,
@@ -338,7 +340,7 @@ function AtsPanel({ user, job, status }: { user: User | null; job: SavedJob; sta
 
       {error && !busy && <p className="ob-error">{error}</p>}
 
-      {result && !busy && <AtsReport result={result} status={status} onRerun={() => analyze()} />}
+      {result && !busy && <AtsReport result={result} status={status} job={job} signedIn={signedIn} onRerun={() => analyze()} />}
     </>
   );
 }
@@ -355,8 +357,36 @@ function Bar({ label, value }: { label: string; value: number | null }) {
   );
 }
 
-function AtsReport({ result, status, onRerun }: { result: AtsResult; status: GinnyStatus | null; onRerun: () => void }) {
+function AtsReport({
+  result,
+  status,
+  job,
+  signedIn,
+  onRerun,
+}: {
+  result: AtsResult;
+  status: GinnyStatus | null;
+  job: SavedJob;
+  signedIn: boolean;
+  onRerun: () => void;
+}) {
   const r = result;
+  const [tips, setTips] = useState<TailorTips | null>(null);
+  const [tipsBusy, setTipsBusy] = useState(false);
+  const [tipsError, setTipsError] = useState("");
+
+  const loadTips = async () => {
+    setTipsBusy(true);
+    setTipsError("");
+    try {
+      setTips(await getTailorTips(signedIn, job, r));
+    } catch (e) {
+      setTipsError((e as Error).message);
+    } finally {
+      setTipsBusy(false);
+    }
+  };
+
   return (
     <div className="gs-report">
       <div className={`gs-tier gs-tier--${r.tier.id}`}>
@@ -364,11 +394,94 @@ function AtsReport({ result, status, onRerun }: { result: AtsResult; status: Gin
         <span className="gs-tier-score">{r.score}/100</span>
       </div>
       <p className="gs-hint">{r.tier.about}</p>
+      {r.projectedScore !== null && r.projectedScore > r.score && (
+        <p className="gs-projected">
+          📈 Up to about <strong>{r.projectedScore}/100</strong> if you add the required skills you've really used.
+        </p>
+      )}
 
       <div className="gs-bars">
         <Bar label="Hard skills" value={r.components.skills} />
         <Bar label="Semantic fit" value={r.components.semantic} />
         <Bar label="Evidence" value={r.components.evidence} />
+      </div>
+
+      {r.improvements.length > 0 && (
+        <>
+          <p className="gs-sub">What to improve, most important first</p>
+          <ol className="gs-improve">
+            {r.improvements.map((i) => (
+              <li key={i.title}>
+                <div className="gs-improve-head">
+                  <span className={`gs-prio gs-prio--${i.priority}`}>{i.priority}</span>
+                  <span className="gs-improve-cat">{i.category}</span>
+                  {!!i.impact && <span className="gs-impact">+{i.impact} pts</span>}
+                </div>
+                <p className="gs-req">{i.title}</p>
+                <p className="gs-proof">{i.detail}</p>
+                {i.examples && i.examples.length > 0 && (
+                  <ul className="gs-examples">
+                    {i.examples.map((x) => (
+                      <li key={x}>{x}</li>
+                    ))}
+                  </ul>
+                )}
+              </li>
+            ))}
+          </ol>
+        </>
+      )}
+
+      <div className="gs-tailor">
+        <p className="gs-sub">Tailor your bullets with Gemini</p>
+        {!tips && (
+          <>
+            <p className="gs-privacy">
+              Gemini rewrites your own bullets for this job and suggests a project for your biggest gap. This sends your
+              resume's Experience, Projects, Skills and Education to Google's Gemini API, with your name and contact info
+              already removed.
+            </p>
+            <button
+              type="button"
+              className="primary-action tab-cta"
+              onClick={loadTips}
+              disabled={tipsBusy || !status?.gemini}
+            >
+              <span>{tipsBusy ? "Gemini is writing…" : !status?.gemini ? "Needs a Gemini key on the server" : "✨ Get tailored rewrites"}</span>
+            </button>
+          </>
+        )}
+        {tipsError && <p className="ob-error">{tipsError}</p>}
+        {tips && (
+          <div className="gs-tips">
+            {tips.summary && <p className="gs-hint">{tips.summary}</p>}
+            {tips.rewrites.map((w) => (
+              <div key={w.original} className="gs-rewrite">
+                <p className="gs-before">Before: {w.original}</p>
+                <p className="gs-after">After: {w.improved}</p>
+                {(w.requirement || w.why) && (
+                  <p className="gs-proof">
+                    {w.requirement && <>Targets: {w.requirement}. </>}
+                    {w.why}
+                  </p>
+                )}
+              </div>
+            ))}
+            {tips.addKeywords.length > 0 && (
+              <p className="gs-proof">
+                <strong>Keywords to add (only if true):</strong> {tips.addKeywords.map((k) => `${k.keyword} (${k.where})`).join("; ")}
+              </p>
+            )}
+            {tips.projectIdea && (
+              <div className="gs-rewrite">
+                <p className="gs-after">💡 Project idea: {tips.projectIdea.title}</p>
+                <p className="gs-proof">{tips.projectIdea.description}</p>
+                {tips.projectIdea.skills.length > 0 && <p className="gs-proof">Skills: {tips.projectIdea.skills.join(", ")}</p>}
+              </div>
+            )}
+            <p className="gs-note">AI can embellish. Keep only what's true for you, and fill [placeholders] with real numbers.</p>
+          </div>
+        )}
       </div>
 
       {r.matchedSkills.length > 0 && (
@@ -464,7 +577,7 @@ function ChatPanel({ job, profile, status }: { job: SavedJob; profile: Profile; 
     setError("");
     try {
       const a = await askGemini(next, job, profile);
-      setMessages([...next, { role: "model", text: a.text, sources: a.sources }]);
+      setMessages([...next, { role: "model", text: a.text, sources: a.sources, grounded: a.grounded }]);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -493,7 +606,10 @@ function ChatPanel({ job, profile, status }: { job: SavedJob; profile: Profile; 
         )}
         {messages.map((m, i) => (
           <div key={i} className={`gs-msg gs-msg--${m.role}`}>
-            <div className="gs-msg-text">{m.text}</div>
+            <div className="gs-msg-text">{m.role === "model" ? <Markdownish text={m.text} /> : m.text}</div>
+            {m.role === "model" && m.grounded === false && (
+              <p className="gs-nosrc">No live web sources for this answer. Double-check details on the company's careers page.</p>
+            )}
             {m.sources && m.sources.length > 0 && (
               <div className="gs-sources">
                 Sources:{" "}
@@ -530,5 +646,34 @@ function ChatPanel({ job, profile, status }: { job: SavedJob; profile: Profile; 
         </button>
       </form>
     </div>
+  );
+}
+
+/** Minimal, safe Markdown for chat answers: **bold**, bullet lines and headings. No HTML is injected. */
+function Markdownish({ text }: { text: string }) {
+  const inline = (line: string) =>
+    line.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
+      part.startsWith("**") && part.endsWith("**") ? <strong key={i}>{part.slice(2, -2)}</strong> : <span key={i}>{part}</span>,
+    );
+  return (
+    <>
+      {text.split("\n").map((raw, i) => {
+        const indent = raw.match(/^\s*/)?.[0].length ?? 0;
+        const line = raw.trim();
+        if (!line) return <div key={i} className="md-gap" />;
+        const bullet = line.match(/^([*\-•]|\d+\.)\s+(.*)$/);
+        if (bullet) {
+          return (
+            <div key={i} className="md-li" style={{ paddingLeft: 10 + Math.min(indent, 8) * 4 }}>
+              <span className="md-dot">{/^\d/.test(bullet[1]) ? bullet[1] : "•"}</span>
+              <span>{inline(bullet[2])}</span>
+            </div>
+          );
+        }
+        const heading = line.match(/^#{1,4}\s+(.*)$/);
+        if (heading) return <p key={i} className="md-h">{inline(heading[1])}</p>;
+        return <p key={i}>{inline(line)}</p>;
+      })}
+    </>
   );
 }
