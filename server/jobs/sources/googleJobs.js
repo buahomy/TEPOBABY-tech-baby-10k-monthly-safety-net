@@ -1,0 +1,64 @@
+// Optional: Google Jobs via SerpApi (paid). Google Jobs indexes LinkedIn, Indeed, Glassdoor and
+// company sites, so this is the legitimate way to cover them (scraping those sites directly is
+// against their terms). Enabled only when SERPAPI_KEY is set.
+
+import { DAY, classify, cleanText, fetchJson, isTech, normalizeUrl } from "../classify.js";
+
+const QUERIES = [
+  "software engineer intern",
+  "software engineer new grad",
+  "entry level software engineer",
+  "data science intern",
+];
+
+/** "3 days ago" / "12 hours ago" → epoch ms (approximate). */
+function parseAgo(s = "") {
+  const m = s.match(/(\d+)\s*(hour|day|minute)/i);
+  if (!m) return null;
+  const n = Number(m[1]);
+  const unit = m[2].toLowerCase();
+  return Date.now() - n * (unit === "day" ? DAY : unit === "hour" ? 3600e3 : 60e3);
+}
+
+export async function fetchGoogleJobs() {
+  const key = process.env.SERPAPI_KEY;
+  if (!key) return [];
+
+  const postings = [];
+  const errors = [];
+  for (const q of QUERIES) {
+    try {
+      const params = new URLSearchParams({
+        engine: "google_jobs",
+        q,
+        location: "United States",
+        chips: "date_posted:week",
+        api_key: key,
+      });
+      const data = await fetchJson(`https://serpapi.com/search.json?${params}`, { timeoutMs: 30000 });
+      for (const j of data.jobs_results || []) {
+        const title = cleanText(j.title);
+        const posted = parseAgo(j.detected_extensions?.posted_at);
+        const url = j.apply_options?.[0]?.link || j.share_link;
+        if (!posted || !url || !isTech(title)) continue;
+        const level = classify(title, /intern/i.test(q) ? undefined : "entry");
+        if (!level) continue;
+        postings.push({
+          id: `gj:${j.job_id}`,
+          source: `Google Jobs${j.via ? ` (${cleanText(j.via).replace(/^via /i, "")})` : ""}`,
+          company: cleanText(j.company_name),
+          title,
+          location: cleanText(j.location) || "—",
+          url: normalizeUrl(url),
+          postedAt: new Date(posted).toISOString(),
+          postedApprox: true,
+          level,
+          sponsorship: null,
+        });
+      }
+    } catch (err) {
+      errors.push(err.message.replace(key, "***"));
+    }
+  }
+  return [{ name: "Google Jobs (SerpApi)", postings, error: errors[0] }];
+}

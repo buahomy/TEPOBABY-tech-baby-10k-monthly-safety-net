@@ -11,6 +11,7 @@
 import crypto from "node:crypto";
 import express from "express";
 import { OAuth2Client } from "google-auth-library";
+import { feedEvents, queryPostings, startJobFeed } from "./jobs/index.js";
 import { getProfile, saveAnswers } from "./profileStore.js";
 
 const {
@@ -209,6 +210,43 @@ app.put("/api/profile", requireXhr, requireUser, async (req, res) => {
     res.status(500).json({ error: "Couldn't save your answers. Please try again." });
   }
 });
+
+// ---- Job postings (public: guests see them too) ----
+
+const LEVELS = new Set(["underclassmen", "internship", "entry"]);
+
+app.get("/api/postings", (req, res) => {
+  const level = String(req.query.level || "internship");
+  if (!LEVELS.has(level)) return res.status(400).json({ error: "Unknown level." });
+  const maxHours = req.query.window === "week" ? 168 : 72;
+  const limit = Math.min(Math.max(Number.parseInt(req.query.limit, 10) || 30, 1), 100);
+  const offset = Math.max(Number.parseInt(req.query.offset, 10) || 0, 0);
+  res.set("Cache-Control", "public, max-age=60");
+  res.json(queryPostings({ level, maxHours, visaFriendly: req.query.visa === "1", limit, offset }));
+});
+
+// Server-Sent Events: pushes a message to open apps whenever the postings change.
+app.get("/api/postings/stream", (_req, res) => {
+  res.set({
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-store",
+    Connection: "keep-alive",
+    "X-Accel-Buffering": "no", // don't let proxies buffer the stream
+  });
+  res.flushHeaders();
+  res.write("retry: 10000\n\n");
+
+  const send = (data) => res.write(`event: update\ndata: ${JSON.stringify(data)}\n\n`);
+  const heartbeat = setInterval(() => res.write(": ping\n\n"), 25000);
+  feedEvents.on("update", send);
+  // res "close" = the client went away (req "close" fires as soon as the request is read).
+  res.on("close", () => {
+    clearInterval(heartbeat);
+    feedEvents.off("update", send);
+  });
+});
+
+startJobFeed();
 
 app.listen(Number(PORT), "127.0.0.1", () => {
   console.log(`[auth] listening on http://127.0.0.1:${PORT} (redirect URI ${REDIRECT_URI})`);

@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import Home from "./pages/Home";
+import Main from "./pages/Main";
 import Mess01 from "./pages/Mess01";
 import Questions from "./pages/Questions";
 import { User, getCurrentUser, signOut } from "./utils/auth";
 import {
   Profile,
   clearGuestProfile,
+  isComplete,
   loadGuestProfile,
   moveGuestAnswersToAccount,
   saveAnswersAsGuest,
@@ -14,7 +15,7 @@ import {
 } from "./utils/profile";
 
 // Signed out → welcome screen.
-// Signed in (.edu) → questions until finished → home. Answers saved to the account.
+// Signed in (.edu) → questions until finished → main app (Home tab + bottom nav). Answers saved to the account.
 // Guest ("I'll just browse around") → same questions → home. Answers saved on this device,
 // and moved into the account if the guest signs in later.
 
@@ -26,8 +27,9 @@ type Stage =
   | { name: "questions"; who: Who; profile: Profile | null; startAt?: number }
   | { name: "home"; who: Who; profile: Profile };
 
+// Finished students go home; anyone missing an answer (e.g. after questions change) resumes onboarding.
 const route = (who: Who, profile: Profile | null): Stage =>
-  profile?.completedAt ? { name: "home", who, profile } : { name: "questions", who, profile };
+  isComplete(profile) ? { name: "home", who, profile: profile! } : { name: "questions", who, profile };
 
 export default function Tepobaby() {
   const [stage, setStage] = useState<Stage>({ name: "loading" });
@@ -74,7 +76,7 @@ export default function Tepobaby() {
     case "home": {
       const { who, profile } = stage;
       return (
-        <Home
+        <Main
           user={who.kind === "user" ? who.user : null}
           profile={profile}
           onEdit={() => setStage({ name: "questions", who, profile, startAt: 0 })}

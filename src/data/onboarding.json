@@ -5,8 +5,8 @@
       "title": "Year of Study"
     },
     {
-      "id": "availability",
-      "title": "Internship Eligibility & Availability"
+      "id": "role",
+      "title": "What role are you looking for?"
     },
     {
       "id": "authorization",
@@ -50,34 +50,55 @@
       "question": "What is your anticipated graduation date (Month & Year)?"
     },
     {
-      "id": "fullTimeAvailable",
-      "section": "availability",
-      "type": "single",
-      "question": "Are you available to work full-time (40 hours/week) during the internship term?",
+      "id": "positionTypes",
+      "section": "role",
+      "type": "multi",
+      "question": "What type of position / opportunity are you looking for?",
+      "helper": "Select all that apply.",
       "options": [
         {
-          "value": "yes",
-          "label": "Yes"
+          "value": "summer_internship",
+          "label": "Summer Internship"
         },
         {
-          "value": "no",
-          "label": "No"
+          "value": "fall_internship_coop",
+          "label": "Fall Internship / Co-op"
+        },
+        {
+          "value": "winter_spring_internship_coop",
+          "label": "Winter / Spring Internship / Co-op"
+        },
+        {
+          "value": "full_time_new_grad",
+          "label": "Full-Time / New Grad (Entry-Level)"
+        },
+        {
+          "value": "rotational_ldp",
+          "label": "Rotational Program / Leadership Development Program (LDP)"
         }
       ]
     },
     {
-      "id": "returningToSchool",
-      "section": "availability",
+      "id": "startTerm",
+      "section": "role",
       "type": "single",
-      "question": "Are you planning to return to school for at least one term following the completion of this internship?",
+      "question": "What is your target start date or availability term?",
       "options": [
         {
-          "value": "yes",
-          "label": "Yes"
+          "value": "fall_2026",
+          "label": "Fall 2026"
         },
         {
-          "value": "no",
-          "label": "No"
+          "value": "spring_2027",
+          "label": "Spring 2027"
+        },
+        {
+          "value": "summer_2027",
+          "label": "Summer 2027"
+        },
+        {
+          "value": "immediate_flexible",
+          "label": "Immediate / Flexible"
         }
       ]
     },

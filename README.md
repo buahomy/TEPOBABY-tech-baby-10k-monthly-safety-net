@@ -26,13 +26,50 @@ Tap **I'll just browse around** to use Tepobaby without signing in. You'll answe
 ### Getting to know you
 Before your home page, Tepobaby asks 4 short sections, one page each:
 1. **Year of Study**: your class standing and graduation date
-2. **Internship Eligibility & Availability**: full-time availability and returning to school
+2. **What role are you looking for?**: the types of positions you want (select all that apply) and your target start term
 3. **Work Authorization & Sponsorship**: work authorization, sponsorship needs and visa status
 4. **Demographic & Identity Information**: optional, with "Prefer not to say" on every question
 
 Your answers are used to recommend postings, resources, organizations, clubs and opportunities that fit you. You can review and change them anytime from your home page.
 
 Safety Assurance: Your answers are saved to your own account, and no other student can see them. Identity answers are optional, only used to recommend things for you, and never shared with employers. If you browse as a guest, your answers stay on your device until you sign in.
+
+
+### Your home page
+After the questions, you land on **Home**. The bar at the bottom has **Home**, **Interview**, a big **+** for uploading an image, **Connect** and **Profile**.
+
+- **Job postings** (live): switch between **Underclassmen Programs**, **Internship** and **Entry-level**, and between **Last 48–72h** and **This week**. Tepobaby opens on the level that fits your answers, and if you need visa sponsorship you can hide roles that say they don't sponsor.
+- **Company tiers**: a tier list of companies by interview difficulty, from System Design at the top down to Easy LC.
+- **Contractor & startup roles**: job boards for startup and contract work.
+- **Profile**: see all your answers, review them, or sign out.
+
+Interview, Connect and image uploads are coming soon.
+
+### Where job postings come from
+Postings update live. The server checks each source in the background, keeps only roles posted in the last 7 days, removes duplicates, and pushes new postings to the app the moment they arrive.
+
+| Source | What it adds | Checked every |
+| --- | --- | --- |
+| [SimplifyJobs Summer 2027 Internships](https://github.com/SimplifyJobs/Summer2027-Internships) + [New Grad Positions](https://github.com/SimplifyJobs/New-Grad-Positions) | Most internships and new grad roles, with exact posting times | 5 min |
+| [speedyapply 2027 SWE College Jobs](https://github.com/speedyapply/2027-SWE-College-Jobs) | More SWE internships and new grad roles (age in days only) | 5 min |
+| [Pitt CSC](https://github.com/pittcsc/Summer2027-Internships), [vanshb03](https://github.com/vanshb03/Summer2027-Internships) | Extra community-curated internships | 5 min |
+| Company job boards: [Greenhouse](https://developers.greenhouse.io/job-board.html), [Lever](https://github.com/lever/postings-api), [Ashby](https://developers.ashbyhq.com/docs/public-job-posting-api) | Early-career roles straight from about 80 companies (Stripe, Figma, OpenAI, Ramp, Palantir…). Add more in [server/jobs/companies.json](server/jobs/companies.json) | 30 min |
+| [Hacker News "Who is hiring?"](https://github.com/HackerNews/API) | Startup posts that mention internships, new grad or junior roles | 2 hours |
+| [Google Jobs via SerpApi](https://serpapi.com/google-jobs-api) (optional) | Roles indexed from LinkedIn, Indeed, Glassdoor and company sites. Needs a paid `SERPAPI_KEY` | 6 hours |
+
+The Simplify.jobs site doesn't need its own scraper, because the SimplifyJobs GitHub lists above already carry its data.
+
+LinkedIn, Indeed, Glassdoor, Wellfound, Y Combinator's Work at a Startup, RippleMatch, WayUp, Untapped and CodePath are not scraped directly, because their terms don't allow it or they need a login. Google Jobs through SerpApi covers much of LinkedIn, Indeed and Glassdoor legitimately.
+
+**On your Home page**
+- Each level tab shows how many postings it has, and **Last 48–72h** / **This week** filter by real posting times.
+- Newest first, with a **Live** badge and "Updated X min ago". New postings appear on their own, and **Show more** loads the next batch.
+- Each posting's level comes from the list it was found in and its title (like "intern" or "new grad"). Senior roles are left out.
+
+**Good to know**
+- **Visa sponsorship is often unknown.** Many sources don't say whether a role sponsors. If you need sponsorship, the toggle hides roles that say they don't, and **Sponsors visa** only shows when a source confirms it.
+- **Underclassmen Programs is often empty.** Programs for freshmen and sophomores (like Microsoft Explore) are rare and mostly open August–October. When none are new, Tepobaby suggests the Internship tab, since many internships accept every class year.
+- **Each link opens the original application** on the company's site or job board.
 
 
 ### Environment variables
@@ -43,6 +80,8 @@ Safety Assurance: Your answers are saved to your own account, and no other stude
 | `GOOGLE_CLIENT_SECRET` | Server | Your OAuth client secret. Never put this in a `VITE_` variable. |
 | `SESSION_SECRET` | Server | Random string of 32+ characters: `openssl rand -base64 48` |
 | `APP_ORIGIN` | Server | Public URL of the app, no trailing slash. `http://localhost:5173` locally. |
+| `SERPAPI_KEY` | Server | Optional. Adds Google Jobs results through SerpApi. |
+| `JOBS_FEED` | Server | Optional. Set to `off` to stop checking job sources. |
 
 `.env.local` is git-ignored. Never commit real values.
 
@@ -64,3 +103,5 @@ API routes (the Vite dev server forwards `/api` to the auth server):
 | `GET /api/auth/me` | Current user, or `401` if signed out |
 | `POST /api/auth/logout` | Sign out |
 | `GET` / `PUT /api/profile` | Read / save the signed-in student's own answers |
+| `GET /api/postings?level=&window=&visa=` | Live job postings (public). `level`: `underclassmen`, `internship` or `entry`; `window`: `fresh` (72h) or `week` |
+| `GET /api/postings/stream` | Live updates (Server-Sent Events): sends `update` whenever new postings arrive |
