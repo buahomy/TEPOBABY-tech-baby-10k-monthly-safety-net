@@ -42,6 +42,7 @@ After the questions, you land on **Home**. The bar at the bottom has **Home**, *
 - **Company tiers**: big tech and quant companies ranked by interview difficulty, as a launchpad of logos. Tap a logo to open that company's careers page (see below).
 - **Contractor & startup roles**: job boards for startup and contract work. These roles rarely show up on the big job lists, because small teams often post only on their own sites and a few niche boards, and the roles are very specific. Going straight to these sites is the best way to find them.
 - **Save jobs with ♥**: tap the heart on any job posting to save it. Saved jobs appear under **My jobs** on your Profile, with **Saved** and **Applied** tabs; tap **Mark applied** to track where you've applied. Each saved job keeps its details, so it stays there after the posting leaves the 7-day feed. When signed in, saved jobs are stored on your account; as a guest, they stay on your device and move to your account when you sign in.
+- **Track your applications**: in **My jobs → Applied**, tap a job's stage to update it: **Applied → OA → Phone → On-site → Final → Team match → Offer**, or **Ghosted** / **Not proceeding**. A pipeline summary shows how many jobs are at each stage, and each job shows when its stage last changed. Applied jobs stay until you remove them: the daily job update never touches this list, and changing a stage never reshuffles it (it's ordered by when you applied).
 - **Profile**: your saved and applied jobs, all your answers, programs and organizations picked for you, a button to review your answers, and sign out.
 - **＋ (Ginny)**: pick one saved job, then run an ATS match analysis or ask Gemini about it (see below).
 
@@ -93,8 +94,8 @@ Tap the big **＋** in the middle of the bottom bar. A sheet opens with two tabs
 
 1. **Job**: pick **one** job from your saved (♥) jobs. Ginny uses it for everything.
 2. **Ginny!**: AI tools for that job:
-   - **🎯 ATS match analysis**: scores how well your resume fits the job.
-   - **💬 Ask Gemini**: an interview FAQ chat about the job, so you can chancemaxx.
+   - **ATS match analysis** (shown with the Voyage AI logo, the embeddings that power it): scores how well your resume fits the job.
+   - **Ask Gemini** (shown with the Google Gemini logo): an interview FAQ chat about the job, so you can chancemaxx.
 
 **ATS match analysis**
 
@@ -279,6 +280,13 @@ How I built Tepobaby (with Claude Code): each decision, why I made it, and the p
   - *Why:* students shouldn't lose progress when they decide to sign in.
   - *Pain point:* guests have no account to save to.
 
+- **Hiring stages for applied jobs** (Applied, OA, Phone, On-site, Final, Team match, Offer, Ghosted, Not proceeding), set with a tap-to-open toggle.
+  - *Why:* "applied" alone doesn't tell students where they stand, and a pipeline view shows what needs follow-up.
+  - *Pain point:* students track this in spreadsheets today. The server only accepts these 9 stages, and records when the stage last changed.
+- **The Applied list never refreshes or reshuffles.**
+  - *Why:* applications take weeks, and a list that jumps around is hard to track.
+  - *Pain point:* saving used to move the job to the top, so changing a stage would have reshuffled the list. Updates now replace the job in place, and Applied is ordered by when you applied. The daily job update never touches saved or applied jobs.
+
 #### Programs & organizations
 - **Match programs inside the app, and keep "Show all programs".**
   - *Why:* nobody has to share identity data to see the full list.
@@ -331,6 +339,9 @@ How I built Tepobaby (with Claude Code): each decision, why I made it, and the p
   - *Pain point:* Eightfold's formula isn't public, so the report says it's my calibration. Test jobs scored Strong 80, Weak 22 and Weak 2.
 
 #### Ginny: Ask Gemini
+- **Show each tool with the logo of the AI behind it** (Voyage AI on ATS match analysis, Google Gemini on Ask Gemini), bundled in `public/logos/`.
+  - *Why:* students can see at a glance which AI does what.
+  - *Pain point:* Voyage's site favicon now shows MongoDB's leaf (MongoDB acquired Voyage AI), so I used Voyage's own "V" icon, and Gemini's official sparkle from Google.
 - **Gemini 3.8 Flash through the Interactions API** (`POST /v1beta/interactions`).
   - *Why:* it's the current free Flash model, and Google now serves new models through this API.
   - *Pain point:* Gemini 1.5 Flash was retired in 2025, Gemini 2.5 Flash came back "no longer available to new users", and newer models returned 404 on the old `generateContent` endpoint.

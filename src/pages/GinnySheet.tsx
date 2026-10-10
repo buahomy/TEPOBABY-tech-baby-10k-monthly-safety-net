@@ -188,7 +188,9 @@ function GinnyHome({ job, status, onTool, onChangeJob }: { job: SavedJob; status
       <p className="gs-hint">Your AI sidekick for this job:</p>
       <SelectedJob job={job} onChange={onChangeJob} />
       <button type="button" className="gs-tool" onClick={() => onTool("ats")}>
-        <span className="gs-tool-icon">🎯</span>
+        <span className="gs-tool-icon">
+          <img src="/logos/voyage.png" alt="Voyage AI" />
+        </span>
         <span className="gs-tool-copy">
           <span className="gs-tool-title">ATS match analysis</span>
           <span className="gs-tool-detail">See how your resume matches this job: Strong, Good, Average or Weak, with what's missing.</span>
@@ -196,7 +198,9 @@ function GinnyHome({ job, status, onTool, onChangeJob }: { job: SavedJob; status
         <Icon name="arrow" />
       </button>
       <button type="button" className="gs-tool" onClick={() => onTool("chat")}>
-        <span className="gs-tool-icon">💬</span>
+        <span className="gs-tool-icon">
+          <img src="/logos/gemini.png" alt="Google Gemini" />
+        </span>
         <span className="gs-tool-copy">
           <span className="gs-tool-title">Ask Gemini</span>
           <span className="gs-tool-detail">
@@ -272,7 +276,9 @@ function AtsPanel({ user, job, status }: { user: User | null; job: SavedJob; sta
 
   return (
     <>
-      <h2 className="gs-title">ATS match analysis</h2>
+      <h2 className="gs-title gs-title--brand">
+        <img src="/logos/voyage.png" alt="" /> ATS match analysis
+      </h2>
       <SelectedJob job={job} />
 
       <div className="gs-resume">
@@ -587,7 +593,9 @@ function ChatPanel({ job, profile, status }: { job: SavedJob; profile: Profile; 
 
   return (
     <div className="gs-chat">
-      <h2 className="gs-title">Ask Gemini</h2>
+      <h2 className="gs-title gs-title--brand">
+        <img src="/logos/gemini.png" alt="" /> Ask Gemini
+      </h2>
       <SelectedJob job={job} />
       {status && !status.gemini && <p className="gs-note">Ask Gemini isn't set up yet: the server needs a GEMINI_API_KEY.</p>}
 

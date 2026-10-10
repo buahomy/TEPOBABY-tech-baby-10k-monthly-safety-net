@@ -195,8 +195,27 @@
   flex: 0 0 auto;
   place-items: center;
   border-radius: 13px;
-  background: var(--indigo-soft);
-  font-size: 20px;
+  background: #fff;
+}
+
+.m01 .gs-tool-icon img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.m01 .gs-title--brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.m01 .gs-title--brand img {
+  width: 24px;
+  height: 24px;
+  padding: 2px;
+  border-radius: 7px;
+  background: #fff;
 }
 
 .m01 .gs-tool-copy {
