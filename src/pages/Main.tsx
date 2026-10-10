@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
+import { loadSelectedJobId, saveSelectedJobId } from "../utils/ginny";
 import BottomNav, { Tab } from "../components/BottomNav";
 import PhoneShell from "../components/PhoneShell";
 import { User } from "../utils/auth";
 import { Profile } from "../utils/profile";
 import { useSavedJobs } from "../utils/savedJobs";
+import GinnySheet from "./GinnySheet";
 import ComingSoonTab from "./tabs/ComingSoonTab";
 import HomeTab from "./tabs/HomeTab";
 import ProfileTab from "./tabs/ProfileTab";
@@ -22,8 +24,8 @@ type Props = {
 
 export default function Main({ user, profile, onEdit, onSignIn, onSignOut }: Props) {
   const [tab, setTab] = useState<Tab>("home");
-  const [upload, setUpload] = useState<{ url: string; name: string } | null>(null);
-  const fileInput = useRef<HTMLInputElement>(null);
+  const [ginnyOpen, setGinnyOpen] = useState(false);
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(loadSelectedJobId);
   const scroller = useRef<HTMLDivElement>(null);
   const firstName = user?.name.split(" ")[0] || "there";
   const saved = useSavedJobs(!!user);
@@ -32,11 +34,6 @@ export default function Main({ user, profile, onEdit, onSignIn, onSignOut }: Pro
   useEffect(() => {
     scroller.current?.scrollTo({ top: 0 });
   }, [tab]);
-  // Free the preview image when the sheet closes.
-  useEffect(() => {
-    if (!upload) return;
-    return () => URL.revokeObjectURL(upload.url);
-  }, [upload]);
 
   return (
     <PhoneShell label="tepobaby" className="phone-frame--flex">
@@ -76,34 +73,24 @@ export default function Main({ user, profile, onEdit, onSignIn, onSignOut }: Pro
           )}
         </div>
 
-        <BottomNav active={tab} onSelect={setTab} onUpload={() => fileInput.current?.click()} />
+        <BottomNav active={tab} onSelect={setTab} onPlus={() => setGinnyOpen(true)} />
 
-        <input
-          ref={fileInput}
-          type="file"
-          accept="image/*"
-          hidden
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            e.target.value = "";
-            if (file) setUpload({ url: URL.createObjectURL(file), name: file.name });
-          }}
-        />
-
-        {upload && (
-          <div className="sheet-backdrop" onClick={() => setUpload(null)}>
-            <div className="sheet" role="dialog" aria-label="Image preview" onClick={(e) => e.stopPropagation()}>
-              <img className="sheet-image" src={upload.url} alt={upload.name} />
-              <p className="sheet-title">Image uploads are coming soon</p>
-              <p className="sheet-text">
-                Soon you'll be able to snap a job posting or interview question and Tepobaby will read it for you. Your
-                image stays on your device for now.
-              </p>
-              <button type="button" className="primary-action tab-cta" onClick={() => setUpload(null)}>
-                <span>Done</span>
-              </button>
-            </div>
-          </div>
+        {ginnyOpen && (
+          <GinnySheet
+            user={user}
+            profile={profile}
+            saved={saved}
+            selectedId={selectedJobId}
+            onSelect={(id) => {
+              setSelectedJobId(id);
+              saveSelectedJobId(id);
+            }}
+            onBrowse={() => {
+              setGinnyOpen(false);
+              setTab("home");
+            }}
+            onClose={() => setGinnyOpen(false)}
+          />
         )}
       </div>
     </PhoneShell>

@@ -43,8 +43,9 @@ After the questions, you land on **Home**. The bar at the bottom has **Home**, *
 - **Contractor & startup roles**: job boards for startup and contract work. These roles rarely show up on the big job lists, because small teams often post only on their own sites and a few niche boards, and the roles are very specific. Going straight to these sites is the best way to find them.
 - **Save jobs with ♥**: tap the heart on any job posting to save it. Saved jobs appear under **My jobs** on your Profile, with **Saved** and **Applied** tabs; tap **Mark applied** to track where you've applied. Each saved job keeps its details, so it stays there after the posting leaves the 7-day feed. When signed in, saved jobs are stored on your account; as a guest, they stay on your device and move to your account when you sign in.
 - **Profile**: your saved and applied jobs, all your answers, programs and organizations picked for you, a button to review your answers, and sign out.
+- **＋ (Ginny)**: pick one saved job, then run an ATS match analysis or ask Gemini about it (see below).
 
-Interview, Connect and image uploads are coming soon.
+Interview and Connect are coming soon.
 
 ### Company tiers
 I rank big tech and quant companies by how hard their interviews are for **college internships and new grad roles**. There are 4 tiers, hardest at the top, based on what students report on Glassdoor, LeetCode Discuss, Reddit and other reliable sources:
@@ -85,6 +86,71 @@ On your **Profile**, inside **Demographic & Identity Information**, Tepobaby sug
 | Open to everyone | [CodePath](https://www.codepath.org/), [MLH Fellowship](https://fellowship.mlh.com/), [Tapia Conference](https://tapiaconference.cmd-it.org/), [Forage](https://www.theforage.com/), [ACM](https://www.acm.org/) |
 
 Each logo comes from the organization's own website (its app icon or site icon), with Google's favicon service as a backup, and every program in the list has a real logo. The list lives in [src/data/communities.json](src/data/communities.json), so adding a program is one entry. Your answers are only used inside the app to choose what to show; nothing extra is sent anywhere.
+
+
+### Ginny ✨ (the ＋ button)
+Tap the big **＋** in the middle of the bottom bar. A sheet opens with two tabs side by side:
+
+1. **Job**: pick **one** job from your saved (♥) jobs. Ginny uses it for everything.
+2. **Ginny!**: AI tools for that job:
+   - **🎯 ATS match analysis**: scores how well your resume fits the job.
+   - **💬 Ask Gemini**: an interview FAQ chat about the job, so you can chancemaxx.
+
+**ATS match analysis**
+
+Upload your resume PDF once. Signed-in students' resumes are stored privately on their account; guests' stay on their device. After that, Ginny goes straight to the analysis. It loads the job's full description automatically from Greenhouse, Lever, Ashby, Workday, or the posting page's job data. If it can't, it asks you to paste the description.
+
+It then runs three stages:
+
+| Stage | What it does | How |
+| --- | --- | --- |
+| 1 · Retrieval | Semantic similarity between your resume and the job | [Voyage AI](https://docs.voyageai.com/docs/embeddings) `voyage-4` embeddings: resume lines with `input_type="document"`, the job description and each requirement with `input_type="query"` |
+| 1.1 · Hard skills | Exact technical string overlap (does "Kubernetes" or "C++" actually appear?) | BM25 over your resume lines, with a tech-skills dictionary and aliases (k8s → Kubernetes). Required qualifications count double |
+| 2 · Reranking | Scores the top 10–20 retrieved resume lines against each job requirement | A local cross-encoder (ms-marco MiniLM, the model family [FlashRank](https://github.com/PrithivirajDamodaran/FlashRank) uses) on our server's CPU. No external API calls |
+
+You get one of the four match tiers that Eightfold-style candidate-matching systems label you with:
+
+| Tier | Score | Meaning |
+| --- | --- | --- |
+| 🎯 **Strong Match** | 75+ | Near-perfect alignment with the required skills, core tools and experience trajectory of the job. |
+| **Good Match** | 55–74 | A solid, competitive profile. You meet the main standards but may be missing a couple of secondary keywords or proof for some tools. |
+| **Average / Partial Match** | 30–54 | Some relevant experience, but significant gaps, like missing core languages, platforms or equivalent job titles. |
+| **Weak Match** | under 30 | Very low alignment. The system struggles to find direct evidence that your background fits the position. |
+
+The report also shows:
+- skills you have, and skills missing from your resume (required ones are flagged);
+- where your resume proves each requirement (the job line next to your bullet);
+- requirements with little evidence;
+- how the score was built.
+
+The score blends hard skills (40%), semantic fit (35%) and evidence (25%). Eightfold's own formula isn't public, so these weights and cutoffs are Tepobaby's calibration.
+
+**Your privacy (PII mitigation).** Voyage AI is a hosted API, and sending raw resumes would create GDPR/CCPA risk. So before anything leaves our server:
+1. **Direct identifiers are redacted locally:** your name (the header line), email, phone, street address, and LinkedIn, GitHub and other links.
+2. **Only the useful sections are kept:** Work Experience, Projects, Skills and Education. Summary, objective, references and other header info are dropped.
+3. **Metadata is stored separately:** the original PDF stays in private, owner-only storage on our server (`server/data/resumes`; S3 + PostgreSQL in production). Only the sanitized, sectioned text is sent to Voyage AI. BM25 and reranking run locally.
+
+**Voyage AI limits** (as published by Voyage for the free tier):
+
+| Factor | Limit | What it means for Tepobaby |
+| --- | --- | --- |
+| Free tokens | 200M | About 400,000 resume or job documents for prototyping and early users, at $0 and no credit card. |
+| Rate limits | 2,000 RPM / 8M TPM | Plenty for many students analyzing at once. |
+| Context window | 32,000 tokens per input | A resume is about 500 tokens, so nothing gets cut off. |
+| Vector size | 1,024 dimensions | High semantic resolution; supports Matryoshka (256 or 512) to save storage. |
+
+Why Voyage:
+- **Tuned for tech.** It's built for code, APIs and engineering terms, so it relates "Next.js" to "React", or "Forward Deployed Engineer" to "Solutions Architect".
+- **One shared vector space.** `voyage-4-large`, `voyage-4` and `voyage-4-lite` share it, so resumes can be indexed once and searched with the faster lite model.
+
+**Ask Gemini**
+
+A chat about your selected job, so you know what to expect. It opens with suggested questions, filled in automatically from the job and your profile, so you don't retype anything:
+- *"(role) at (company): how many interview rounds are there, and what are they?"*
+- *"According to Glassdoor interviews at (company), what questions does (company) ask for (role)? List NeetCode 150 problems to practice."*
+- *"Does (company) sponsor (your visa type) for (role)?"* U.S. citizens get a citizenship / clearance question instead.
+
+Gemini uses Google Search for company-specific facts and shows its sources. It only gets the role, company and non-identifying profile facts (class year, graduation date, visa status), never your resume, name or email.
 
 
 ### Where job postings come from
@@ -158,6 +224,24 @@ How I built the job postings feed and the rest of the app (with Claude Code), wh
 
 - **Keeping the list to real organizations.** Google Tech Exchange and Generation Google Scholarship are programs run by one company, so they only showed Google's logo, and Hispanic Scholarship Fund is mainly a scholarship rather than a community or career program. → I removed all three to keep the launchpad focused on organizations students join. Google is still in the company tiers.
 
+**Ginny (ATS analysis + Ask Gemini)**
+- **FlashRank is a Python library; Tepobaby's server is Node.** → I run the same kind of model FlashRank uses (an ms-marco MiniLM cross-encoder) in Node with ONNX Runtime, still fully local, with no external API.
+- **"Under 20 ms" depends on the CPU.** On my Intel Mac, reranking takes about 10–27 ms per resume line (for example, 120 pairs in 3.2 s). → Fast enough in practice; Apple Silicon or a server CPU is quicker. The report shows the real timing.
+- **The newest ONNX Runtime dropped Intel Macs, and a PDF library needed Node 22.** → I pinned `@huggingface/transformers` 3.8.1 (ONNX Runtime 1.21, which still ships Intel Mac builds), and added a one-line `Promise.try` polyfill so `unpdf` runs on Node 20. pdf.js runs with `isEvalSupported: false` for safety.
+- **The disk filled up mid-install**, leaving broken packages. → I cleared the npm cache and my scratch files, deleted `node_modules`, and reinstalled cleanly.
+- **Saved jobs don't include a job description.** → The server fetches it on demand from Greenhouse, Lever, Ashby and Workday APIs, or the page's schema.org JobPosting data, and caches it for a day. When none of that works, you paste it.
+- **Job descriptions are full of marketing and testimonials.** At first "Solomon Graf experience as a 2026 intern" and "Semgrep, the leader in code security…" were treated as requirements, and product language ("we support Ruby, PHP") counted as required skills. → Requirements and skills now come only from qualifications and responsibilities sections (Requirements, What you'll need, You will, Nice to have…). Benefits, about-us and testimonial links are skipped.
+- **Skill matching had false positives:** "go to", "the rest of", "node the tree", and "C" inside "Objective-C". → Short or common names only count in their usual capitalization (Go, REST, Node, C), and hyphens count as part of a word.
+- **Reranker scores needed calibration.** ms-marco scores clearly relevant lines around −4…+2 and unrelated ones around −10, so a plain 0–1 conversion called real evidence weak. → Evidence is now calibrated so −3 reads as solid and −10 as none. I checked it on good, partial and poor-fit jobs (Strong 80, Weak 22, Weak 2).
+- **Eightfold's real scoring isn't public.** → I use the same 4 tier names and meanings with my own weights and cutoffs, and say so in the report.
+- **Resumes are sensitive.** → Identifiers are redacted locally, only four sections are kept, and the PDF stays in private storage (guests: on their device). Only the sanitized text goes to Voyage.
+- **Without a Voyage key** the analysis would fail. → It still runs with BM25 + the local reranker, and the score is re-weighted. The report says semantic fit was skipped.
+- **Gemini 1.5 Flash is retired** (Google shut it down in 2025). → Ask Gemini uses Gemini 2.5 Flash on the free tier, and `GEMINI_MODEL` can change it.
+- **Gemini can't log in to Glassdoor.** → It uses Google Search grounding and shows sources, so answers about interview rounds, questions and sponsorship are based on what's public, not guesses.
+- **Typing the same details over and over is tedious.** → The suggested questions fill in the role, company and visa type from the selected job and your answers.
+- **The chat screen crashed on open.** Newer Chrome returns a Promise from `scrollIntoView()`, and a React effect returned it. → Effects never return values now.
+- **Free API quotas can be drained.** → Per-user/IP rate limits: 30 analyses and 40 questions per hour, and 20 resume uploads per hour.
+
 **Rest of the app**
 - **Google sign-in didn't come back from the popup** in some browsers (in-editor browsers, the iPhone Home Screen app). → Sign-in uses a full-page redirect.
 - **A .edu check in the browser could be bypassed.** → The server verifies Google's ID token and only accepts verified emails ending in `.edu`.
@@ -175,6 +259,10 @@ How I built the job postings feed and the rest of the app (with Claude Code), wh
 | `SERPAPI_KEY` | Server | Optional. Your SerpApi key; adds Google Jobs results (4 searches each morning, about 124 a month). |
 | `JOBS_FEED` | Server | Optional. Set to `off` to stop checking job sources. |
 | `JOBS_DAILY_TIME` | Server | Optional. Daily update time in Eastern Time, `HH:MM` (default `07:00`). |
+| `VOYAGE_API_KEY` | Server | Voyage AI key for Ginny's semantic matching (free tier). Optional: without it, ATS analysis uses BM25 + the local reranker. |
+| `VOYAGE_MODEL` | Server | Optional. Default `voyage-4`. |
+| `GEMINI_API_KEY` | Server | Gemini key for Ask Gemini (free tier). Server-only, never sent to the browser. |
+| `GEMINI_MODEL` | Server | Optional. Default `gemini-2.5-flash` (Gemini 1.5 Flash is retired). |
 
 `.env.local` is git-ignored. Never commit real values.
 
@@ -200,4 +288,8 @@ API routes (the Vite dev server forwards `/api` to the auth server):
 | `POST /api/saved/import` | Move jobs a guest saved on the device into their account after sign-in |
 | `GET /api/postings?level=&window=&visa=` | Live job postings (public). `level`: `underclassmen`, `internship` or `entry`; `window`: `fresh` (72h) or `week` |
 | `GET /api/postings/stream` | Live updates (Server-Sent Events): sends `update` when the morning update brings new postings |
+| `GET /api/ginny/status` | Which Ginny pieces are set up (Voyage, Gemini, reranker) and the tier cutoffs |
+| `GET` / `PUT` / `DELETE /api/ginny/resume` | The signed-in student's resume (PUT body = PDF bytes) |
+| `POST /api/ginny/ats` | ATS match analysis for one job (guests send their PDF with the request) |
+| `POST /api/ginny/chat` | Ask Gemini about the selected job |
 | `GET /api/logo/:domain` | A logo, cached by the server (only for companies in current postings, the tier list, or suggested programs) |

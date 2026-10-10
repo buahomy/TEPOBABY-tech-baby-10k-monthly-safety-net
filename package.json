@@ -12,10 +12,12 @@
     "start:api": "NODE_ENV=production node server/index.js"
   },
   "dependencies": {
+    "@huggingface/transformers": "3.8.1",
     "express": "^5.2.1",
     "google-auth-library": "^10.9.1",
     "react": "18.3.1",
-    "react-dom": "18.3.1"
+    "react-dom": "18.3.1",
+    "unpdf": "1.6.0"
   },
   "devDependencies": {
     "@types/react": "18.3.3",
