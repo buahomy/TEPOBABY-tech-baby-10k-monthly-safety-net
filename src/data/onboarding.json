@@ -1,0 +1,250 @@
+{
+  "sections": [
+    {
+      "id": "academics",
+      "title": "Year of Study"
+    },
+    {
+      "id": "availability",
+      "title": "Internship Eligibility & Availability"
+    },
+    {
+      "id": "authorization",
+      "title": "Work Authorization & Sponsorship"
+    },
+    {
+      "id": "identity",
+      "title": "Demographic & Identity Information",
+      "note": "Optional. Only used to recommend organizations, clubs and opportunities for you. Never shared with employers."
+    }
+  ],
+  "steps": [
+    {
+      "id": "academicLevel",
+      "section": "academics",
+      "type": "single",
+      "question": "What is your current academic level / class standing?",
+      "options": [
+        {
+          "value": "freshman",
+          "label": "Freshman"
+        },
+        {
+          "value": "sophomore",
+          "label": "Sophomore"
+        },
+        {
+          "value": "junior",
+          "label": "Junior"
+        },
+        {
+          "value": "senior",
+          "label": "Senior"
+        }
+      ]
+    },
+    {
+      "id": "graduation",
+      "section": "academics",
+      "type": "monthYear",
+      "question": "What is your anticipated graduation date (Month & Year)?"
+    },
+    {
+      "id": "fullTimeAvailable",
+      "section": "availability",
+      "type": "single",
+      "question": "Are you available to work full-time (40 hours/week) during the internship term?",
+      "options": [
+        {
+          "value": "yes",
+          "label": "Yes"
+        },
+        {
+          "value": "no",
+          "label": "No"
+        }
+      ]
+    },
+    {
+      "id": "returningToSchool",
+      "section": "availability",
+      "type": "single",
+      "question": "Are you planning to return to school for at least one term following the completion of this internship?",
+      "options": [
+        {
+          "value": "yes",
+          "label": "Yes"
+        },
+        {
+          "value": "no",
+          "label": "No"
+        }
+      ]
+    },
+    {
+      "id": "workAuthorized",
+      "section": "authorization",
+      "type": "single",
+      "question": "Are you legally authorized to work in the United States?",
+      "options": [
+        {
+          "value": "yes",
+          "label": "Yes"
+        },
+        {
+          "value": "no",
+          "label": "No"
+        }
+      ]
+    },
+    {
+      "id": "needsSponsorship",
+      "section": "authorization",
+      "type": "single",
+      "question": "Will you now or in the future require visa sponsorship to work in the United States?",
+      "options": [
+        {
+          "value": "yes",
+          "label": "Yes"
+        },
+        {
+          "value": "no",
+          "label": "No"
+        }
+      ]
+    },
+    {
+      "id": "workAuthStatus",
+      "section": "authorization",
+      "type": "single",
+      "question": "What is your current work authorization status?",
+      "options": [
+        {
+          "value": "us_citizen_pr",
+          "label": "U.S. Citizen / Permanent Resident"
+        },
+        {
+          "value": "f1_cpt",
+          "label": "F-1 Visa (CPT)"
+        },
+        {
+          "value": "f1_opt",
+          "label": "F-1 Visa (OPT / STEM OPT)"
+        },
+        {
+          "value": "h1b",
+          "label": "H-1B"
+        },
+        {
+          "value": "other_visa",
+          "label": "Other Work Visa (TN, J-1, L-2, etc.)"
+        },
+        {
+          "value": "require_sponsorship",
+          "label": "Require Sponsorship"
+        }
+      ]
+    },
+    {
+      "id": "gender",
+      "section": "identity",
+      "type": "single",
+      "question": "What is your gender identity?",
+      "options": [
+        {
+          "value": "male",
+          "label": "Male"
+        },
+        {
+          "value": "female",
+          "label": "Female"
+        },
+        {
+          "value": "non_binary",
+          "label": "Non-binary"
+        },
+        {
+          "value": "prefer_not_to_say",
+          "label": "Prefer not to say"
+        }
+      ]
+    },
+    {
+      "id": "raceEthnicity",
+      "section": "identity",
+      "type": "single",
+      "question": "What is your race / ethnicity?",
+      "options": [
+        {
+          "value": "asian",
+          "label": "Asian"
+        },
+        {
+          "value": "black",
+          "label": "Black or African American"
+        },
+        {
+          "value": "hispanic_latino",
+          "label": "Hispanic or Latino"
+        },
+        {
+          "value": "white",
+          "label": "White"
+        },
+        {
+          "value": "two_or_more",
+          "label": "Two or More Races"
+        },
+        {
+          "value": "prefer_not_to_say",
+          "label": "Prefer not to say"
+        }
+      ]
+    },
+    {
+      "id": "lgbtq",
+      "section": "identity",
+      "type": "single",
+      "question": "Do you identify as a member of the LGBTQ+ community?",
+      "options": [
+        {
+          "value": "yes",
+          "label": "Yes"
+        },
+        {
+          "value": "no",
+          "label": "No"
+        },
+        {
+          "value": "prefer_not_to_say",
+          "label": "Prefer not to say"
+        }
+      ]
+    },
+    {
+      "id": "firstGen",
+      "section": "identity",
+      "type": "single",
+      "question": "Are you a first-generation college student?",
+      "helper": "Neither parent/guardian completed a 4-year degree.",
+      "options": [
+        {
+          "value": "yes",
+          "label": "Yes"
+        },
+        {
+          "value": "no",
+          "label": "No"
+        },
+        {
+          "value": "unsure",
+          "label": "Unsure"
+        },
+        {
+          "value": "prefer_not_to_say",
+          "label": "Prefer not to say"
+        }
+      ]
+    }
+  ]
+}

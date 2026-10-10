@@ -58,22 +58,32 @@ Open http://localhost:5173. Use `localhost`, not `127.0.0.1`, because Google onl
 `.env.local` is git-ignored. Never commit real values.
 
 ### How it works
-- **Google Identity Services** (authorization code flow) opens Google's account picker and gives the browser a one-time code. A random `state` value is checked so forged sign-ins are rejected.
+- **Google Identity Services** (authorization code flow, redirect mode) sends the page to Google's account picker. Google sends the browser back to `/api/auth/google/callback` with a one-time code. A random `state` value, checked against a cookie, rejects forged sign-ins.
 - **A small Node.js/Express server** ([server/index.js](server/index.js)) exchanges the code with Google and verifies the ID token with the official `google-auth-library`. It checks the signature, that the token was issued for this app, the issuer, and the expiry.
 - The server only accepts accounts whose email is **verified and ends in `.edu`**.
 - It then sets its own **signed, httpOnly session cookie** (7 days, `SameSite=Lax`, `Secure` in production). Google tokens are discarded.
 - Requests that change data need an `X-Requested-With` header, which blocks cross-site requests (CSRF).
-- In the iPhone Home Screen app, popups don't work, so sign-in switches to a full-page redirect.
+- Sign-in uses a full-page redirect instead of a popup, so it also works in in-editor browsers, with strict popup blockers, and in the iPhone Home Screen app.
 - The service worker never caches `/api`, so sign-in status is never stale.
 
 API routes (the Vite dev server forwards `/api` to the auth server):
 
 | Route | Purpose |
 | --- | --- |
-| `POST /api/auth/google` | Popup flow: exchange the code and start a session |
-| `GET /api/auth/google/callback` | Redirect flow (Home Screen app): exchange the code and start a session |
+| `GET /api/auth/google/callback` | Google redirects here after sign-in: exchange the code and start a session |
 | `GET /api/auth/me` | Current user, or `401` if signed out |
+| `GET` / `PUT /api/profile` | Read / save the signed-in student's onboarding answers |
 | `POST /api/auth/logout` | Sign out |
+
+### Onboarding questions
+Before reaching home, students answer 4 sections, one page each: Year of Study, Internship Eligibility & Availability, Work Authorization & Sponsorship, and Demographic & Identity Information (optional).
+
+- The questions and answer options live in [src/data/onboarding.json](src/data/onboarding.json). Both the app and the server read this file, so edit questions there.
+- Signed-in students: each section is saved with `PUT /api/profile` when they tap Continue, so they can leave and continue where they stopped. `GET /api/profile` returns the signed-in student's own answers only.
+- Guests ("I'll just browse around"): answers are saved in the browser (`localStorage`, key `tepobaby.guestProfile`) on that device only. If a guest later signs in with .edu, their answers are copied into the account (answers already on the account win) and removed from the device.
+- The server rejects any answer that isn't one of the listed options.
+- Answers are saved as short codes for recommendations, e.g. `workAuthStatus: "f1_opt"`, `firstGen: "yes"`, `graduation: { month: 5, year: 2028 }`. Types are in [src/utils/profile.ts](src/utils/profile.ts).
+- For local development, profiles are stored in `server/data/profiles.json` (git-ignored, owner-only file permissions). Move this to a real database before launch. Identity answers are sensitive: never send them to employers or third parties.
 
 ### Deploying
 1. Add your real domain to both lists in Google Cloud, e.g. `https://yourdomain.com` and `https://yourdomain.com/api/auth/google/callback`.
@@ -89,4 +99,4 @@ API routes (the Vite dev server forwards `/api` to the auth server):
 | "Google sign-in isn't configured" | `VITE_GOOGLE_CLIENT_ID` is empty. Fill it in and restart `npm run dev`. |
 | Auth server exits with "Missing ..." | A server variable in `.env.local` is empty, or `SESSION_SECRET` is shorter than 32 characters. |
 | "Use your school Google account ending in .edu." | Working as intended: only verified `.edu` emails can sign in. |
-| "Allow pop-ups to sign in with Google." | Allow pop-ups for the site in your browser. |
+| Back on the welcome screen with "Sign-in expired…" | The sign-in took over 10 minutes or cookies are blocked for `localhost`. Try again. |

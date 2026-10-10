@@ -1,59 +1,10 @@
 import { useEffect, useState } from "react";
-import { AUTH_ERRORS, User, getCurrentUser, prepareGoogleSignIn, signInWithGoogle, signOut } from "../utils/auth";
-import "./mess01.css";
+import Icon from "../components/Icon";
+import PhoneShell from "../components/PhoneShell";
+import { AUTH_ERRORS, prepareGoogleSignIn, signInWithGoogle } from "../utils/auth";
 
 // Welcome screen ported from the Figma Make file "TEPOBABY" (b5IEjWIqPE1QZrVzTYJ3Eu).
-// Served at /mess-01. Styles live in mess01.css, scoped under `.m01`.
-
-type IconName = "radar" | "people" | "spark" | "arrow" | "lock";
-
-function Icon({ name }: { name: IconName }) {
-  const paths: Record<IconName, React.ReactNode> = {
-    radar: (
-      <>
-        <circle cx="12" cy="12" r="8.5" />
-        <circle cx="12" cy="12" r="4.5" />
-        <path d="M12 3.5V12l5.8-5.8" />
-        <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" />
-      </>
-    ),
-    people: (
-      <>
-        <circle cx="9" cy="8" r="3" />
-        <path d="M3.8 18.5c.4-3.2 2.1-5 5.2-5s4.8 1.8 5.2 5" />
-        <path d="M15 5.4a3 3 0 0 1 0 5.4M16 13.2c2.5.4 3.8 2.1 4.1 4.7" />
-      </>
-    ),
-    spark: (
-      <>
-        <path d="M12 2.8c.6 4.9 2.6 7.1 7.2 7.7-4.6.6-6.6 2.8-7.2 7.7-.6-4.9-2.6-7.1-7.2-7.7C9.4 9.9 11.4 7.7 12 2.8Z" />
-        <path d="M19.3 3.2c.2 1.7.9 2.4 2.5 2.6-1.6.2-2.3 1-2.5 2.7-.2-1.7-.9-2.5-2.5-2.7 1.6-.2 2.3-.9 2.5-2.6Z" />
-      </>
-    ),
-    arrow: <path d="m9 5 7 7-7 7" />,
-    lock: (
-      <>
-        <rect x="5" y="10" width="14" height="10" rx="3" />
-        <path d="M8.5 10V7.5a3.5 3.5 0 0 1 7 0V10M12 14v2" />
-      </>
-    ),
-  };
-
-  return (
-    <svg
-      aria-hidden="true"
-      className={`icon icon-${name}`}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      {paths[name]}
-    </svg>
-  );
-}
+// Shown to signed-out visitors. Styles live in mess01.css, scoped under `.m01`.
 
 const features = [
   {
@@ -76,14 +27,13 @@ const features = [
   },
 ];
 
-export default function Mess01() {
-  const [guest, setGuest] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
+type Props = { onGuest: () => void; initialError?: string };
+
+export default function Mess01({ onGuest, initialError = "" }: Props) {
   const [signingIn, setSigningIn] = useState(false);
-  const [authError, setAuthError] = useState("");
+  const [authError, setAuthError] = useState(initialError);
 
   useEffect(() => {
-    getCurrentUser().then(setUser);
     prepareGoogleSignIn().catch((e: Error) => setAuthError(e.message));
 
     // Errors from the redirect flow come back as ?auth_error=<code>.
@@ -97,17 +47,16 @@ export default function Mess01() {
     }
   }, []);
 
-  // Called straight from the click/keypress so the Google popup isn't blocked.
+  // Sends the page to Google; it comes back signed in and the app opens onboarding.
   const startEduSignIn = () => {
-    if (signingIn || user) return;
+    if (signingIn) return;
     setAuthError("");
-    setSigningIn(true);
-    signInWithGoogle()
-      .then((result) => {
-        if (result !== "redirecting") setUser(result);
-      })
-      .catch((e: Error) => setAuthError(e.message))
-      .finally(() => setSigningIn(false));
+    try {
+      signInWithGoogle();
+      setSigningIn(true);
+    } catch (e) {
+      setAuthError(e instanceof Error ? e.message : AUTH_ERRORS.failed);
+    }
   };
 
   const onActivate = (action: () => void) => (event: React.KeyboardEvent) => {
@@ -117,34 +66,10 @@ export default function Mess01() {
     }
   };
 
-  const primaryLabel = user
-    ? `Signed in as ${user.name.split(" ")[0] || user.email}`
-    : signingIn
-      ? "Connecting to Google…"
-      : "Get Started with .edu Email";
+  const primaryLabel = signingIn ? "Connecting to Google…" : "Get Started with .edu Email";
 
   return (
-    <main className="m01 app-shell">
-      <div className="ambient ambient-one" />
-      <div className="ambient ambient-two" />
-
-      <section className="phone-frame" aria-label="tepobaby welcome screen">
-        <div className="status-bar" aria-label="iOS status bar">
-          <span className="time">9:41</span>
-          <div className="status-icons" aria-hidden="true">
-            <span className="cellular">
-              <i />
-              <i />
-              <i />
-              <i />
-            </span>
-            <span className="wifi" />
-            <span className="battery">
-              <i />
-            </span>
-          </div>
-        </div>
-
+    <PhoneShell label="tepobaby welcome screen">
         <div className="screen-content">
           <header className="brand-row">
             <div className="brand-mark">
@@ -185,7 +110,7 @@ export default function Mess01() {
               role="button"
               tabIndex={0}
               aria-busy={signingIn}
-              aria-disabled={signingIn || !!user}
+              aria-disabled={signingIn}
               onClick={startEduSignIn}
               onKeyDown={onActivate(startEduSignIn)}
             >
@@ -196,18 +121,6 @@ export default function Mess01() {
             {authError ? (
               <p className="primary-helper auth-error" role="alert">
                 {authError}
-              </p>
-            ) : user ? (
-              <p className="primary-helper">
-                <Icon name="lock" />
-                {user.email} ·{" "}
-                <button
-                  type="button"
-                  className="text-link"
-                  onClick={() => signOut().then(() => setUser(null))}
-                >
-                  Sign out
-                </button>
               </p>
             ) : (
               <p className="primary-helper">
@@ -226,17 +139,14 @@ export default function Mess01() {
               className="guest-action"
               role="button"
               tabIndex={0}
-              onClick={() => setGuest(true)}
-              onKeyDown={onActivate(() => setGuest(true))}
+              onClick={onGuest}
+              onKeyDown={onActivate(onGuest)}
             >
-              {guest ? "Browsing as guest" : "I’ll just browse around"}
+              I’ll just browse around
             </div>
-            <p className="guest-helper">Explore public job links & contractor roles without progress saving.</p>
+            <p className="guest-helper">Explore public job links & contractor roles. Answers are saved on this device only.</p>
           </div>
         </div>
-
-        <div className="home-indicator" aria-hidden="true" />
-      </section>
-    </main>
+    </PhoneShell>
   );
 }

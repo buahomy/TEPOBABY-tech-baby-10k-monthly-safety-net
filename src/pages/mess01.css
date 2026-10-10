@@ -94,6 +94,7 @@ body {
   width: min(393px, 100vw);
   height: min(852px, 100vh);
   overflow: hidden;
+  padding-top: 28px;
   background:
     radial-gradient(circle at 85% 4%, rgba(99, 102, 241, 0.18), transparent 24%),
     linear-gradient(180deg, #111425 0%, #0b0d17 56%, #090b13 100%);
@@ -110,95 +111,6 @@ body {
   mask-image: linear-gradient(to bottom, black, transparent 55%);
   content: "";
   pointer-events: none;
-}
-
-/* iOS status bar */
-.m01 .status-bar {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  height: 54px;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 25px 0 29px;
-}
-
-.m01 .time {
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: -0.2px;
-}
-
-.m01 .status-icons {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  height: 14px;
-}
-
-.m01 .cellular {
-  display: flex;
-  align-items: flex-end;
-  gap: 2px;
-  height: 12px;
-}
-
-.m01 .cellular i {
-  display: block;
-  width: 3px;
-  border-radius: 2px;
-  background: var(--text);
-}
-
-.m01 .cellular i:nth-child(1) { height: 4px; }
-.m01 .cellular i:nth-child(2) { height: 6px; }
-.m01 .cellular i:nth-child(3) { height: 9px; }
-.m01 .cellular i:nth-child(4) { height: 12px; }
-
-.m01 .wifi {
-  width: 15px;
-  height: 11px;
-  border-top: 2px solid var(--text);
-  border-radius: 50%;
-  transform: translateY(2px);
-}
-
-.m01 .wifi::after {
-  display: block;
-  width: 5px;
-  height: 5px;
-  margin: 2px auto;
-  border-radius: 50%;
-  background: var(--text);
-  content: "";
-}
-
-.m01 .battery {
-  position: relative;
-  width: 22px;
-  height: 11px;
-  padding: 2px;
-  border: 1.5px solid rgba(248, 250, 252, 0.8);
-  border-radius: 3px;
-}
-
-.m01 .battery::after {
-  position: absolute;
-  top: 3px;
-  right: -3px;
-  width: 2px;
-  height: 5px;
-  border-radius: 0 2px 2px 0;
-  background: rgba(248, 250, 252, 0.65);
-  content: "";
-}
-
-.m01 .battery i {
-  display: block;
-  width: 100%;
-  height: 100%;
-  border-radius: 1px;
-  background: var(--text);
 }
 
 /* Content */
@@ -540,18 +452,17 @@ body {
   transform: translateX(-50%);
 }
 
-/* Launched from the Home Screen: iOS draws the real status bar and home indicator,
-   so drop the mock ones and fill the whole display, respecting the notch / Dynamic Island. */
+/* Launched from the Home Screen: fill the whole display, keep clear of the notch / Dynamic Island,
+   and drop the mock home indicator (iOS draws the real one). */
 @media (display-mode: standalone) {
   .m01 .phone-frame {
     width: 100vw;
     height: 100vh;
     height: 100dvh;
-    padding-top: env(safe-area-inset-top);
+    padding-top: max(env(safe-area-inset-top), 12px);
     padding-bottom: env(safe-area-inset-bottom);
   }
 
-  .m01 .status-bar,
   .m01 .home-indicator {
     display: none;
   }
@@ -570,8 +481,8 @@ body {
 }
 
 @media (max-height: 760px) {
-  .m01 .status-bar {
-    height: 44px;
+  .m01 .phone-frame {
+    padding-top: 16px;
   }
 
   .m01 .hero-copy {

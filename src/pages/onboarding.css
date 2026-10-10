@@ -1,0 +1,416 @@
+/* Onboarding + home placeholder. Built on the Figma tokens in mess01.css (scoped under .m01). */
+
+.m01 button {
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+
+.m01 button:disabled {
+  cursor: default;
+}
+
+.m01 .phone-frame--flex {
+  display: flex;
+  flex-direction: column;
+}
+
+.m01 .ob {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  padding: 6px 22px 0;
+}
+
+/* Top bar: back, progress, count */
+.m01 .ob-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 40px;
+}
+
+.m01 .ob-back {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--stroke);
+  border-radius: 11px;
+  color: var(--text-secondary);
+  background: var(--surface-raised);
+  transition: opacity 160ms ease, border-color 160ms ease;
+}
+
+.m01 .ob-back:disabled {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.m01 .ob-back .icon {
+  width: 17px;
+  height: 17px;
+}
+
+.m01 .ob-progress {
+  height: 5px;
+  flex: 1;
+  overflow: hidden;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.m01 .ob-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #818cf8, #6ee7b7);
+  transition: width 320ms ease;
+}
+
+.m01 .ob-count {
+  min-width: 30px;
+  color: var(--text-tertiary);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: right;
+}
+
+/* Question */
+.m01 .ob-step {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  margin: 0 -22px;
+  padding: 24px 22px 20px;
+  overflow-y: auto;
+  animation: ob-in 320ms ease both;
+}
+
+@keyframes ob-in {
+  from {
+    opacity: 0;
+    transform: translateX(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.m01 .ob-eyebrow {
+  color: #b8bdfb;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+}
+
+.m01 .ob-question {
+  margin-top: 10px;
+  color: var(--text);
+  font-size: 25px;
+  font-weight: 700;
+  letter-spacing: -0.8px;
+  line-height: 1.15;
+}
+
+.m01 .ob-helper {
+  margin-top: 10px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.m01 .ob-center {
+  text-align: center;
+}
+
+/* Answer options */
+.m01 .ob-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 26px;
+}
+
+.m01 .ob-option {
+  display: flex;
+  min-height: 56px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--stroke);
+  border-radius: 16px;
+  color: #edf0f7;
+  background: linear-gradient(105deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.025));
+  font-size: 15px;
+  font-weight: 600;
+  text-align: left;
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.m01 .ob-option:not(:disabled):hover {
+  border-color: var(--stroke-strong);
+  background: var(--surface-hover);
+}
+
+.m01 .ob-option:active {
+  transform: scale(0.985);
+}
+
+.m01 .ob-option.is-selected {
+  border-color: rgba(129, 140, 248, 0.7);
+  background: var(--indigo-soft);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.m01 .ob-check {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1.5px solid var(--stroke-strong);
+  border-radius: 50%;
+}
+
+.m01 .is-selected .ob-check {
+  border-color: transparent;
+  color: white;
+  background: var(--indigo);
+}
+
+.m01 .ob-check .icon {
+  width: 14px;
+  height: 14px;
+}
+
+.m01 .ob-option:focus-visible,
+.m01 .ob-chip:focus-visible,
+.m01 .ob-back:focus-visible,
+.m01 .text-link:focus-visible {
+  outline: 2px solid var(--indigo-bright);
+  outline-offset: 2px;
+}
+
+/* Section page: grouped questions */
+.m01 .ob-field {
+  margin-top: 26px;
+}
+
+.m01 .ob-field + .ob-field {
+  padding-top: 22px;
+  border-top: 1px solid var(--stroke);
+}
+
+.m01 .ob-field-q {
+  color: #edf0f7;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  line-height: 1.35;
+}
+
+.m01 .ob-field-help {
+  margin-top: 4px;
+  color: var(--text-tertiary);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.m01 .ob-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.m01 .ob-pill {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid var(--stroke);
+  border-radius: 999px;
+  color: #c7ccda;
+  background: var(--surface-raised);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: left;
+  transition: border-color 160ms ease, background 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.m01 .ob-pill:hover {
+  border-color: var(--stroke-strong);
+  color: var(--text);
+}
+
+.m01 .ob-pill:active {
+  transform: scale(0.97);
+}
+
+.m01 .ob-pill.is-selected {
+  border-color: rgba(129, 140, 248, 0.7);
+  color: white;
+  background: var(--indigo);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.m01 .ob-pill .icon {
+  width: 14px;
+  height: 14px;
+  margin-left: -3px;
+}
+
+.m01 .ob-pill:focus-visible {
+  outline: 2px solid var(--indigo-bright);
+  outline-offset: 2px;
+}
+
+/* Sticky Continue */
+.m01 .ob-footer {
+  position: relative;
+  margin: 0 -22px;
+  padding: 14px 22px 30px;
+  background: linear-gradient(180deg, rgba(9, 11, 19, 0), #090b13 30%);
+}
+
+.m01 .ob-footer .ob-continue {
+  margin-top: 0;
+}
+
+.m01 .ob-continue:disabled {
+  cursor: default;
+  opacity: 0.55;
+  box-shadow: none;
+  transform: none;
+}
+
+/* Month / year picker */
+.m01 .ob-picker {
+  display: flex;
+  flex-direction: column;
+  margin-top: 12px;
+}
+
+.m01 .ob-label {
+  margin: 0 0 8px;
+  color: var(--text-tertiary);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+}
+
+.m01 .ob-months {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.m01 .ob-years {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.m01 .ob-chip {
+  height: 38px;
+  flex: 0 0 auto;
+  padding: 0 14px;
+  border: 1px solid var(--stroke);
+  border-radius: 12px;
+  color: #c7ccda;
+  background: var(--surface-raised);
+  font-size: 13px;
+  font-weight: 600;
+  transition: border-color 160ms ease, background 160ms ease, color 160ms ease;
+}
+
+.m01 .ob-chip.is-selected {
+  border-color: rgba(129, 140, 248, 0.7);
+  color: white;
+  background: var(--indigo);
+}
+
+.m01 .ob-continue {
+  width: 100%;
+  margin-top: auto;
+}
+
+.m01 .ob-continue:disabled {
+  opacity: 0.7;
+}
+
+/* Notes, errors */
+.m01 .ob-note {
+  display: flex;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 20px;
+  color: var(--text-tertiary);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.m01 .ob-error {
+  margin-top: 14px;
+  color: #fca5a5;
+  font-size: 12px;
+}
+
+/* Home placeholder summary */
+.m01 .ob-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 24px 0;
+  overflow: hidden;
+  border: 1px solid var(--stroke);
+  border-radius: 16px;
+}
+
+.m01 .ob-summary div {
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.m01 .ob-summary dt {
+  color: var(--text-tertiary);
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.m01 .ob-summary dd {
+  margin-top: 2px;
+  color: #edf0f7;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.m01-loading {
+  min-height: 100vh;
+  background: #090b14;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .m01 .ob-step {
+    animation: none;
+  }
+
+  .m01 .ob-progress span,
+  .m01 .ob-option {
+    transition: none;
+  }
+}
