@@ -6,6 +6,20 @@ import { Posting } from "./postings";
 
 export type JobStatus = "saved" | "applied";
 
+/** Where an applied job is in the hiring process. */
+export const STAGES = [
+  { id: "applied", label: "Applied" },
+  { id: "oa", label: "OA" },
+  { id: "phone", label: "Phone" },
+  { id: "onsite", label: "On-site" },
+  { id: "final", label: "Final" },
+  { id: "team_match", label: "Team match" },
+  { id: "offer", label: "Offer" },
+  { id: "ghosted", label: "Ghosted" },
+  { id: "not_proceeding", label: "Not proceeding" },
+] as const;
+export type Stage = (typeof STAGES)[number]["id"];
+
 export type SavedJob = {
   id: string;
   company: string;
@@ -18,6 +32,8 @@ export type SavedJob = {
   status: JobStatus;
   savedAt: string;
   appliedAt: string | null;
+  stage?: Stage | null;
+  stageUpdatedAt?: string | null;
 };
 
 const GUEST_KEY = "tepobaby.savedJobs";
@@ -36,6 +52,8 @@ export function fromPosting(p: Posting): SavedJob {
     status: "saved",
     savedAt: new Date().toISOString(),
     appliedAt: null,
+    stage: null,
+    stageUpdatedAt: null,
   };
 }
 
@@ -107,7 +125,9 @@ export function useSavedJobs(signedIn: boolean) {
 
   const upsert = useCallback(
     async (job: SavedJob, current: SavedJob[]) => {
-      const optimistic = [job, ...current.filter((j) => j.id !== job.id)];
+      // Update in place (no reshuffling); only brand-new saves go on top.
+      const exists = current.some((j) => j.id === job.id);
+      const optimistic = exists ? current.map((j) => (j.id === job.id ? job : j)) : [job, ...current];
       commit(optimistic);
       if (!signedIn) return;
       try {
@@ -151,7 +171,19 @@ export function useSavedJobs(signedIn: boolean) {
     toggle: (p: Posting) => (isSaved(p.id) ? remove(p.id, jobs) : upsert(fromPosting(p), jobs)),
     setStatus: (id: string, status: JobStatus) => {
       const job = jobs.find((j) => j.id === id);
-      if (job) upsert({ ...job, status, appliedAt: status === "applied" ? new Date().toISOString() : null }, jobs);
+      if (!job) return;
+      const now = new Date().toISOString();
+      upsert(
+        status === "applied"
+          ? { ...job, status, appliedAt: job.appliedAt ?? now, stage: job.stage ?? "applied", stageUpdatedAt: job.stageUpdatedAt ?? now }
+          : { ...job, status, appliedAt: null, stage: null, stageUpdatedAt: null },
+        jobs,
+      );
+    },
+    /** Applied jobs: update the hiring stage (OA, phone, on-site, …). */
+    setStage: (id: string, stage: Stage) => {
+      const job = jobs.find((j) => j.id === id);
+      if (job && job.stage !== stage) upsert({ ...job, stage, stageUpdatedAt: new Date().toISOString() }, jobs);
     },
     remove: (id: string) => remove(id, jobs),
   };

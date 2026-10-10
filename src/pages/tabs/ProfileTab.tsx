@@ -6,7 +6,7 @@ import Icon from "../../components/Icon";
 import { User } from "../../utils/auth";
 import { timeAgo } from "../../utils/postings";
 import { Profile, SECTIONS, STEPS, labelFor } from "../../utils/profile";
-import { JobStatus, SavedJobsApi } from "../../utils/savedJobs";
+import { JobStatus, STAGES, SavedJob, SavedJobsApi, Stage } from "../../utils/savedJobs";
 
 // Profile tab: account, saved / applied jobs, every onboarding answer grouped by section,
 // and edit / sign-out actions.
@@ -27,7 +27,11 @@ function MyJobs({ saved, onBrowse, signedIn }: { saved: SavedJobsApi; onBrowse: 
     saved: saved.jobs.filter((j) => j.status === "saved").length,
     applied: saved.jobs.filter((j) => j.status === "applied").length,
   };
-  const list = saved.jobs.filter((j) => j.status === tab);
+  // Applied list: stable order by when you applied (changing a stage never reshuffles it).
+  const list = saved.jobs
+    .filter((j) => j.status === tab)
+    .sort((a, b) => (tab === "applied" ? (b.appliedAt || "").localeCompare(a.appliedAt || "") : 0));
+  const stageCounts = STAGES.map((st) => ({ ...st, n: list.filter((j) => (j.stage || "applied") === st.id).length })).filter((x) => x.n > 0);
 
   return (
     <section className="block" aria-labelledby="h-myjobs">
@@ -50,6 +54,19 @@ function MyJobs({ saved, onBrowse, signedIn }: { saved: SavedJobsApi; onBrowse: 
           </button>
         ))}
       </div>
+
+      {tab === "applied" && list.length > 0 && (
+        <>
+          <div className="pipeline" aria-label="Your pipeline">
+            {stageCounts.map((st) => (
+              <span key={st.id} className={`stage-chip stage--${st.id}`}>
+                {st.label} · {st.n}
+              </span>
+            ))}
+          </div>
+          <p className="block-foot">Applied jobs stay here until you remove them. Daily job updates never touch this list.</p>
+        </>
+      )}
 
       {list.length === 0 ? (
         <p className="empty">
@@ -80,13 +97,13 @@ function MyJobs({ saved, onBrowse, signedIn }: { saved: SavedJobsApi; onBrowse: 
                     </span>
                   </span>
                 </a>
-                <button
-                  type="button"
-                  className={`status-btn${j.status === "applied" ? " is-applied" : ""}`}
-                  onClick={() => saved.setStatus(j.id, j.status === "applied" ? "saved" : "applied")}
-                >
-                  {j.status === "applied" ? "✓ Applied" : "Mark applied"}
-                </button>
+                {j.status === "applied" ? (
+                  <StageToggle job={j} onStage={(st) => saved.setStage(j.id, st)} onUnapply={() => saved.setStatus(j.id, "saved")} />
+                ) : (
+                  <button type="button" className="status-btn" onClick={() => saved.setStatus(j.id, "applied")}>
+                    Mark applied
+                  </button>
+                )}
               </div>
               <HeartButton saved label={`${j.title} at ${j.company}`} onToggle={() => saved.remove(j.id)} />
             </li>
@@ -95,6 +112,50 @@ function MyJobs({ saved, onBrowse, signedIn }: { saved: SavedJobsApi; onBrowse: 
       )}
       {saved.error && <p className="ob-error">{saved.error}</p>}
     </section>
+  );
+}
+
+/** Hiring-stage toggle for an applied job: tap to open the stages, pick one to update. */
+function StageToggle({ job, onStage, onUnapply }: { job: SavedJob; onStage: (s: Stage) => void; onUnapply: () => void }) {
+  const [open, setOpen] = useState(false);
+  const current = STAGES.find((s) => s.id === (job.stage || "applied"))!;
+  return (
+    <div className="stage-toggle">
+      <div className="stage-row">
+        <button
+          type="button"
+          className={`stage-btn stage--${current.id}`}
+          aria-expanded={open}
+          aria-label={`Stage: ${current.label}. Change stage`}
+          onClick={() => setOpen((v) => !v)}
+        >
+          {current.label} <span aria-hidden="true">{open ? "▴" : "▾"}</span>
+        </button>
+        {job.stageUpdatedAt && <span className="stage-when">updated {timeAgo(job.stageUpdatedAt)}</span>}
+      </div>
+      {open && (
+        <div className="stage-options" role="radiogroup" aria-label="Application stage">
+          {STAGES.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              role="radio"
+              aria-checked={s.id === current.id}
+              className={`stage-chip stage--${s.id}${s.id === current.id ? " is-current" : ""}`}
+              onClick={() => {
+                onStage(s.id);
+                setOpen(false);
+              }}
+            >
+              {s.label}
+            </button>
+          ))}
+          <button type="button" className="text-link stage-undo" onClick={onUnapply}>
+            Move back to Saved
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 

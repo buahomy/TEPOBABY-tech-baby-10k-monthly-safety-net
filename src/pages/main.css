@@ -506,6 +506,67 @@
   background: var(--emerald-soft);
 }
 
+/* Applied jobs: hiring stage */
+.m01 .pipeline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.m01 .stage-toggle {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-left: 50px;
+}
+
+.m01 .stage-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.m01 .stage-when {
+  color: var(--text-tertiary);
+  font-size: 10.5px;
+}
+
+.m01 .stage-btn,
+.m01 .stage-chip {
+  padding: 4px 10px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.m01 .stage-options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.m01 .stage-chip.is-current {
+  outline: 2px solid var(--text);
+  outline-offset: 1px;
+}
+
+.m01 .stage-undo {
+  font-size: 11px;
+}
+
+/* Stage colors: in progress = indigo / violet, offer = green, closed = gray / red */
+.m01 .stage--applied { color: #c7d2fe; background: rgba(99, 102, 241, 0.18); }
+.m01 .stage--oa { color: #bae6fd; background: rgba(56, 189, 248, 0.16); }
+.m01 .stage--phone { color: #a5f3fc; background: rgba(34, 211, 238, 0.14); }
+.m01 .stage--onsite { color: #ddd6fe; background: rgba(139, 92, 246, 0.18); }
+.m01 .stage--final { color: #f5d0fe; background: rgba(217, 70, 239, 0.16); }
+.m01 .stage--team_match { color: #fde68a; background: rgba(251, 191, 36, 0.14); }
+.m01 .stage--offer { color: #052e16; background: #34d399; }
+.m01 .stage--ghosted { color: #d1d5db; background: rgba(156, 163, 175, 0.16); }
+.m01 .stage--not_proceeding { color: #fecaca; background: rgba(248, 113, 113, 0.14); }
+
 /* Tier launchpad: app-style logo shortcuts */
 .m01 .tier-apps {
   display: grid;

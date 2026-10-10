@@ -1,6 +1,8 @@
 // Saved / applied jobs per signed-in student, keyed by Google account ID (`sub`).
 // Each entry keeps a copy of the posting, so it stays in the list after the posting leaves the
-// 7-day feed. A JSON file is enough for local development; swap for a real database before launch.
+// 7-day feed. Applied jobs are never pruned or refreshed by the daily job update: they stay until
+// the student removes them, with their hiring stage (OA, phone, on-site, … offer).
+// A JSON file is enough for local development; swap for a real database before launch.
 
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -10,6 +12,8 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const FILE = process.env.SAVED_JOBS_STORE_PATH || path.join(here, "data", "saved-jobs.json");
 const MAX_JOBS = 500;
 const STATUSES = new Set(["saved", "applied"]);
+// Where an applied job is in the hiring process.
+export const STAGES = ["applied", "oa", "phone", "onsite", "final", "team_match", "offer", "ghosted", "not_proceeding"];
 
 let cache = null;
 let writes = Promise.resolve();
@@ -56,6 +60,8 @@ function clean(job) {
   const status = job.status ?? "saved";
   if (!STATUSES.has(status)) throw { status: 400, message: "Status must be saved or applied." };
   const domain = job.domain == null ? null : str(job.domain, 253);
+  const stage = status === "applied" ? (job.stage ?? "applied") : null;
+  if (stage !== null && !STAGES.includes(stage)) throw { status: 400, message: "Unknown application stage." };
   const now = new Date().toISOString();
   return {
     id,
@@ -69,6 +75,8 @@ function clean(job) {
     status,
     savedAt: str(job.savedAt, 40) ?? now,
     appliedAt: status === "applied" ? (str(job.appliedAt, 40) ?? now) : null,
+    stage,
+    stageUpdatedAt: stage ? (str(job.stageUpdatedAt, 40) ?? now) : null,
   };
 }
 
@@ -84,11 +92,12 @@ export async function upsertSaved(sub, job) {
   const next = clean(job);
   const prev = mine[next.id];
   if (!prev && Object.keys(mine).length >= MAX_JOBS) throw { status: 400, message: `You can save up to ${MAX_JOBS} jobs.` };
-  // Keep the original save time; record when it was first marked applied.
+  // Keep the original save / apply times; stamp the stage time only when the stage changes.
   mine[next.id] = {
     ...next,
     savedAt: prev?.savedAt ?? next.savedAt,
     appliedAt: next.status === "applied" ? (prev?.appliedAt ?? next.appliedAt) : null,
+    stageUpdatedAt: next.stage ? (prev?.stage === next.stage ? (prev.stageUpdatedAt ?? next.stageUpdatedAt) : new Date().toISOString()) : null,
   };
   await persist(all);
   return mine[next.id];
