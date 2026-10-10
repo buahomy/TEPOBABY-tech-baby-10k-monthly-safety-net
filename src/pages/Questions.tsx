@@ -1,10 +1,10 @@
 import { useState } from "react";
 import Icon from "../components/Icon";
 import PhoneShell from "../components/PhoneShell";
-import { AnswerId, Answers, MONTHS, MonthYear, Profile, SECTIONS, STEPS } from "../utils/profile";
+import { AnswerId, Answers, MONTHS, MonthYear, Profile, SECTIONS, STEPS, currentAnswers } from "../utils/profile";
 import "./onboarding.css";
 
-// One page per section (Year of Study → Internship Eligibility → Work Authorization → Demographics),
+// One page per section (Year of Study → Role → Work Authorization → Demographics),
 // each with all of that section's questions. Answers are saved when the student taps Continue.
 
 type Props = {
@@ -17,8 +17,10 @@ type Props = {
 
 const PAGES = SECTIONS.map((section) => ({ section, steps: STEPS.filter((s) => s.section === section.id) }));
 
+const isAnswered = (v: unknown) => v !== undefined && !(Array.isArray(v) && v.length === 0);
+
 function firstIncompletePage(answers: Partial<Answers>) {
-  const i = PAGES.findIndex((p) => p.steps.some((s) => answers[s.id] === undefined));
+  const i = PAGES.findIndex((p) => p.steps.some((s) => !isAnswered(answers[s.id])));
   return i === -1 ? 0 : i;
 }
 
@@ -31,8 +33,8 @@ function suggestedGraduation(level: Answers["academicLevel"] | undefined): Month
 }
 
 export default function Questions({ firstName, initial, startAt, save, onDone }: Props) {
-  const [answers, setAnswers] = useState<Partial<Answers>>(initial?.answers ?? {});
-  const [page, setPage] = useState(() => startAt ?? firstIncompletePage(initial?.answers ?? {}));
+  const [answers, setAnswers] = useState<Partial<Answers>>(() => currentAnswers(initial?.answers ?? {}));
+  const [page, setPage] = useState(() => startAt ?? firstIncompletePage(currentAnswers(initial?.answers ?? {})));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -44,7 +46,7 @@ export default function Questions({ firstName, initial, startAt, save, onDone }:
     const out: Partial<Answers> = {};
     for (const s of steps) {
       const v = s.id === "graduation" ? (answers.graduation ?? suggestedGraduation(answers.academicLevel)) : answers[s.id];
-      if (v !== undefined) (out as Record<string, unknown>)[s.id] = v;
+      if (isAnswered(v)) (out as Record<string, unknown>)[s.id] = v;
     }
     return out;
   };
@@ -52,6 +54,16 @@ export default function Questions({ firstName, initial, startAt, save, onDone }:
 
   const set = <K extends AnswerId>(id: K, value: Answers[K]) => {
     setAnswers((prev) => ({ ...prev, [id]: value }));
+    setError("");
+  };
+
+  // Select-all-that-apply: tap to add or remove an option.
+  const toggle = (id: AnswerId, value: string) => {
+    setAnswers((prev) => {
+      const current = (prev[id] as string[] | undefined) ?? [];
+      const next = current.includes(value) ? current.filter((v) => v !== value) : [...current, value];
+      return { ...prev, [id]: next };
+    });
     setError("");
   };
 
@@ -122,18 +134,27 @@ export default function Questions({ firstName, initial, startAt, save, onDone }:
               </p>
               {step.helper && <p className="ob-field-help">{step.helper}</p>}
 
-              {step.type === "single" ? (
-                <div className="ob-pills" role="radiogroup" aria-labelledby={`q-${step.id}`}>
+              {step.type === "single" || step.type === "multi" ? (
+                <div
+                  className="ob-pills"
+                  role={step.type === "multi" ? "group" : "radiogroup"}
+                  aria-labelledby={`q-${step.id}`}
+                >
                   {step.options!.map((o) => {
-                    const selected = answers[step.id] === o.value;
+                    const value = answers[step.id];
+                    const selected = Array.isArray(value) ? (value as string[]).includes(o.value) : value === o.value;
                     return (
                       <button
                         key={o.value}
                         type="button"
-                        role="radio"
+                        role={step.type === "multi" ? "checkbox" : "radio"}
                         aria-checked={selected}
                         className={`ob-pill${selected ? " is-selected" : ""}`}
-                        onClick={() => set(step.id, o.value as Answers[typeof step.id])}
+                        onClick={() =>
+                          step.type === "multi"
+                            ? toggle(step.id, o.value)
+                            : set(step.id, o.value as Answers[typeof step.id])
+                        }
                       >
                         {selected && <Icon name="check" />}
                         {o.label}

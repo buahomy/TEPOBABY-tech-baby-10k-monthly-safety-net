@@ -49,6 +49,15 @@ function validateAnswer(id, value) {
   if (step.type === "single") {
     return step.options.some((o) => o.value === value) ? null : `Invalid answer for "${id}".`;
   }
+  if (step.type === "multi") {
+    const allowed = new Set(step.options.map((o) => o.value));
+    const ok =
+      Array.isArray(value) &&
+      value.length > 0 &&
+      new Set(value).size === value.length &&
+      value.every((v) => allowed.has(v));
+    return ok ? null : `Pick at least one valid option for "${id}".`;
+  }
   if (step.type === "monthYear") {
     const now = new Date().getFullYear();
     const ok =
@@ -68,7 +77,9 @@ function validateAnswer(id, value) {
 
 export async function getProfile(sub) {
   const all = await load();
-  return all[sub] ?? null;
+  const p = all[sub];
+  if (!p) return null;
+  return { ...p, answers: Object.fromEntries(Object.entries(p.answers).filter(([id]) => STEP_BY_ID.has(id))) };
 }
 
 /**
@@ -88,7 +99,9 @@ export async function saveAnswers(sub, email, answers, complete) {
   const all = await load();
   const now = new Date().toISOString();
   const prev = all[sub] ?? { answers: {}, completedAt: null, createdAt: now };
-  const next = { ...prev, email, answers: { ...prev.answers, ...answers }, updatedAt: now };
+  // Drop answers to questions that were removed from onboarding.json.
+  const kept = Object.fromEntries(Object.entries(prev.answers).filter(([id]) => STEP_BY_ID.has(id)));
+  const next = { ...prev, email, answers: { ...kept, ...answers }, updatedAt: now };
 
   if (complete) {
     const missing = STEPS.filter((s) => next.answers[s.id] === undefined).map((s) => s.id);

@@ -8,7 +8,7 @@ export type Option = { value: string; label: string };
 export type Step = {
   id: AnswerId;
   section: string;
-  type: "single" | "monthYear";
+  type: "single" | "multi" | "monthYear";
   question: string;
   helper?: string;
   options?: Option[];
@@ -20,8 +20,14 @@ export type MonthYear = { month: number; year: number };
 export type Answers = {
   academicLevel: "freshman" | "sophomore" | "junior" | "senior";
   graduation: MonthYear;
-  fullTimeAvailable: "yes" | "no";
-  returningToSchool: "yes" | "no";
+  positionTypes: (
+    | "summer_internship"
+    | "fall_internship_coop"
+    | "winter_spring_internship_coop"
+    | "full_time_new_grad"
+    | "rotational_ldp"
+  )[];
+  startTerm: "fall_2026" | "spring_2027" | "summer_2027" | "immediate_flexible";
   workAuthorized: "yes" | "no";
   needsSponsorship: "yes" | "no";
   workAuthStatus: "us_citizen_pr" | "f1_cpt" | "f1_opt" | "h1b" | "other_visa" | "require_sponsorship";
@@ -36,6 +42,17 @@ export type Profile = { answers: Partial<Answers>; completedAt: string | null };
 
 export const STEPS = questions.steps as Step[];
 export const SECTIONS = questions.sections as Section[];
+const STEP_IDS = new Set<string>(STEPS.map((s) => s.id));
+
+/** Keeps only answers to questions that still exist (questions can change between versions). */
+export function currentAnswers(answers: Partial<Answers>): Partial<Answers> {
+  return Object.fromEntries(Object.entries(answers).filter(([id]) => STEP_IDS.has(id))) as Partial<Answers>;
+}
+
+/** Finished onboarding and has answered every current question. */
+export function isComplete(profile: Profile | null): boolean {
+  return !!profile?.completedAt && STEPS.every((s) => profile.answers[s.id] !== undefined);
+}
 
 export async function getProfile(): Promise<Profile | null> {
   const res = await fetch("/api/profile", { credentials: "same-origin" });
@@ -66,7 +83,7 @@ export function loadGuestProfile(): Profile | null {
     const raw = localStorage.getItem(GUEST_KEY);
     if (!raw) return null;
     const p = JSON.parse(raw);
-    return { answers: p.answers ?? {}, completedAt: p.completedAt ?? null };
+    return { answers: currentAnswers(p.answers ?? {}), completedAt: p.completedAt ?? null };
   } catch {
     return null;
   }
@@ -98,7 +115,7 @@ function writeGuest(p: Profile) {
 
 export async function saveAnswersAsGuest(answers: Partial<Answers>, complete = false): Promise<Profile> {
   const prev = loadGuestProfile() ?? { answers: {}, completedAt: null };
-  const next: Profile = { answers: { ...prev.answers, ...answers }, completedAt: prev.completedAt };
+  const next: Profile = { answers: { ...currentAnswers(prev.answers), ...answers }, completedAt: prev.completedAt };
   if (complete) {
     const missing = STEPS.filter((s) => next.answers[s.id] === undefined);
     if (missing.length) throw new Error("Please answer every question first.");
@@ -138,6 +155,9 @@ export async function moveGuestAnswersToAccount(): Promise<Profile | null> {
 
 export function labelFor(id: AnswerId, value: unknown): string {
   const step = STEPS.find((s) => s.id === id);
+  if (Array.isArray(value)) {
+    return value.map((v) => step?.options?.find((o) => o.value === v)?.label ?? "").filter(Boolean).join(", ");
+  }
   if (step?.type === "monthYear" && value && typeof value === "object") {
     const { month, year } = value as MonthYear;
     return `${MONTHS[month - 1]} ${year}`;
