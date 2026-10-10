@@ -547,7 +547,9 @@ function AtsReport({
           <li>Stage 1 · Retrieval: {r.pipeline.retrieval ?? r.pipeline.retrievalNote}</li>
           <li>Stage 1.1 · Hard skills: {r.pipeline.hardSkills}</li>
           <li>
-            Stage 2 · Reranking: {r.pipeline.reranker}, {r.pipeline.rerankPairs} pairs in {r.pipeline.rerankMs} ms
+            {r.pipeline.reranker
+              ? `Stage 2 · Reranking: ${r.pipeline.reranker}, ${r.pipeline.rerankPairs} pairs in ${r.pipeline.rerankMs} ms`
+              : "Stage 2 · Evidence: closest resume line per requirement (Voyage embeddings)"}
           </li>
           <li>Tiers: {status?.tiers.map((t) => `${t.label} ${t.min}+`).join(" · ")}</li>
         </ul>

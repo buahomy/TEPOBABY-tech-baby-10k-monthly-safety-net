@@ -2,45 +2,17 @@
 // Each entry keeps a copy of the posting, so it stays in the list after the posting leaves the
 // 7-day feed. Applied jobs are never pruned or refreshed by the daily job update: they stay until
 // the student removes them, with their hiring stage (OA, phone, on-site, … offer).
-// A JSON file is enough for local development; swap for a real database before launch.
+// Stored with server/store.js (Upstash Redis on Vercel, a JSON file locally), one entry per student.
 
-import fs from "node:fs/promises";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import * as store from "./store.js";
 
-const here = path.dirname(fileURLToPath(import.meta.url));
-const FILE = process.env.SAVED_JOBS_STORE_PATH || path.join(here, "data", "saved-jobs.json");
 const MAX_JOBS = 500;
 const STATUSES = new Set(["saved", "applied"]);
 // Where an applied job is in the hiring process.
 export const STAGES = ["applied", "oa", "phone", "onsite", "final", "team_match", "offer", "ghosted", "not_proceeding"];
 
-let cache = null;
-let writes = Promise.resolve();
-
-async function load() {
-  if (cache) return cache;
-  try {
-    cache = JSON.parse(await fs.readFile(FILE, "utf8"));
-  } catch (err) {
-    if (err.code !== "ENOENT") throw err;
-    cache = {};
-  }
-  return cache;
-}
-
-function persist(all) {
-  // Write-then-rename so a crash never leaves a half-written file; owner-only permissions.
-  writes = writes
-    .catch(() => {})
-    .then(async () => {
-      await fs.mkdir(path.dirname(FILE), { recursive: true, mode: 0o700 });
-      const tmp = `${FILE}.${process.pid}.tmp`;
-      await fs.writeFile(tmp, JSON.stringify(all), { mode: 0o600 });
-      await fs.rename(tmp, FILE);
-    });
-  return writes;
-}
+const mineOf = async (sub) => (await store.get("saved-jobs", sub)) || {};
+const saveMine = (sub, mine) => store.set("saved-jobs", sub, mine);
 
 const str = (v, max) => (typeof v === "string" && v.length <= max ? v : null);
 
@@ -81,14 +53,12 @@ function clean(job) {
 }
 
 export async function listSaved(sub) {
-  const all = await load();
-  return Object.values(all[sub] || {}).sort((a, b) => b.savedAt.localeCompare(a.savedAt));
+  return Object.values(await mineOf(sub)).sort((a, b) => b.savedAt.localeCompare(a.savedAt));
 }
 
 /** Saves a job or updates its status. */
 export async function upsertSaved(sub, job) {
-  const all = await load();
-  const mine = (all[sub] ||= {});
+  const mine = await mineOf(sub);
   const next = clean(job);
   const prev = mine[next.id];
   if (!prev && Object.keys(mine).length >= MAX_JOBS) throw { status: 400, message: `You can save up to ${MAX_JOBS} jobs.` };
@@ -99,27 +69,26 @@ export async function upsertSaved(sub, job) {
     appliedAt: next.status === "applied" ? (prev?.appliedAt ?? next.appliedAt) : null,
     stageUpdatedAt: next.stage ? (prev?.stage === next.stage ? (prev.stageUpdatedAt ?? next.stageUpdatedAt) : new Date().toISOString()) : null,
   };
-  await persist(all);
+  await saveMine(sub, mine);
   return mine[next.id];
 }
 
 export async function removeSaved(sub, id) {
-  const all = await load();
-  if (all[sub]?.[id]) {
-    delete all[sub][id];
-    await persist(all);
+  const mine = await mineOf(sub);
+  if (mine[id]) {
+    delete mine[id];
+    await saveMine(sub, mine);
   }
 }
 
 /** Adds jobs saved as a guest; jobs already on the account win. */
 export async function importSaved(sub, jobs) {
   if (!Array.isArray(jobs)) throw { status: 400, message: "Expected a list of jobs." };
-  const all = await load();
-  const mine = (all[sub] ||= {});
+  const mine = await mineOf(sub);
   for (const raw of jobs.slice(0, MAX_JOBS)) {
     const job = clean(raw);
     if (!mine[job.id] && Object.keys(mine).length < MAX_JOBS) mine[job.id] = job;
   }
-  await persist(all);
+  await saveMine(sub, mine);
   return listSaved(sub);
 }

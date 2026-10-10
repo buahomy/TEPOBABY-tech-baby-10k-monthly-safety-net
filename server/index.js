@@ -11,7 +11,8 @@
 import crypto from "node:crypto";
 import express from "express";
 import { OAuth2Client } from "google-auth-library";
-import { feedEvents, knownDomain, queryPostings, startJobFeed } from "./jobs/index.js";
+import { feedEvents, knownDomain, queryPostings, runDailyUpdate, startJobFeed, syncFromStore } from "./jobs/index.js";
+import { onVercel } from "./store.js";
 import { getLogo } from "./jobs/logos.js";
 import fs from "node:fs";
 import { getProfile, saveAnswers } from "./profileStore.js";
@@ -35,10 +36,12 @@ const missing = Object.entries({ GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, SESSION
   .map(([k]) => k);
 if (missing.length) {
   console.error(`[auth] Missing ${missing.join(", ")}. Copy .env.example to .env.local and fill it in.`);
+  if (process.env.VERCEL) throw new Error(`Missing environment variables: ${missing.join(", ")}`);
   process.exit(1);
 }
 if (SESSION_SECRET.length < 32) {
   console.error("[auth] SESSION_SECRET must be at least 32 characters (try: openssl rand -base64 48).");
+  if (process.env.VERCEL) throw new Error("SESSION_SECRET is too short");
   process.exit(1);
 }
 
@@ -139,7 +142,8 @@ if (isProd) app.set("trust proxy", 1);
 app.use("/api/saved/import", express.json({ limit: "512kb" })); // up to 500 saved jobs
 const globalJson = express.json({ limit: "8kb" });
 app.use("/api/neetcode/expected", express.json({ limit: "64kb" })); // custom test inputs
-app.use((req, res, next) => (req.path.startsWith("/api/ginny/") || req.body !== undefined ? next() : globalJson(req, res, next)));
+// Skip the global parser for Ginny (raw PDF uploads) and for bodies a route-specific parser already read.
+app.use((req, res, next) => (req.path.startsWith("/api/ginny/") || req._body ? next() : globalJson(req, res, next)));
 app.use("/api", (_req, res, next) => {
   res.set("Cache-Control", "no-store");
   next();
@@ -337,7 +341,8 @@ app.post("/api/neetcode/expected", requireXhr, async (req, res) => {
 
 const LEVELS = new Set(["underclassmen", "internship", "entry"]);
 
-app.get("/api/postings", (req, res) => {
+app.get("/api/postings", async (req, res) => {
+  await syncFromStore();
   const level = String(req.query.level || "internship");
   if (!LEVELS.has(level)) return res.status(400).json({ error: "Unknown level." });
   const maxHours = req.query.window === "week" ? 168 : 72;
@@ -360,16 +365,18 @@ const LAUNCHPAD = new Map([
 // current postings or a launchpad are served, so this can't be used as an open proxy.
 app.get("/api/logo/:domain", async (req, res) => {
   const domain = String(req.params.domain).toLowerCase();
+  await syncFromStore();
   if (!knownDomain(domain) && !LAUNCHPAD.has(domain)) return res.status(404).end();
   try {
     const logo = await getLogo(domain, LAUNCHPAD.get(domain));
     if (!logo) {
-      res.set("Cache-Control", "public, max-age=86400");
+      res.set("Cache-Control", "public, max-age=86400, s-maxage=86400");
       return res.status(404).end();
     }
     res.set({
       "Content-Type": logo.type,
-      "Cache-Control": "public, max-age=604800, immutable",
+      // s-maxage lets Vercel's CDN serve repeat requests without running the function.
+      "Cache-Control": "public, max-age=604800, s-maxage=2592000, immutable",
       "X-Content-Type-Options": "nosniff",
       "Content-Security-Policy": "default-src 'none'",
     });
@@ -381,6 +388,9 @@ app.get("/api/logo/:domain", async (req, res) => {
 
 // Server-Sent Events: pushes a message to open apps whenever the postings change.
 app.get("/api/postings/stream", (_req, res) => {
+  // Serverless functions can't hold connections open for hours. 204 tells EventSource to stop
+  // reconnecting; the app re-checks postings when the student comes back to it instead.
+  if (onVercel) return res.status(204).end();
   res.set({
     "Content-Type": "text/event-stream",
     "Cache-Control": "no-store",
@@ -400,12 +410,30 @@ app.get("/api/postings/stream", (_req, res) => {
   });
 });
 
-startJobFeed();
-// Fetch any NeetCode problems not cached yet (one request at a time).
-warmCache().catch((err) => console.warn("[neetcode] warm-up failed:", err.message));
-// Warm the logo cache so launchpads load instantly.
-Promise.allSettled([...LAUNCHPAD].map(([d, opts]) => getLogo(d, opts)));
+// ---- Vercel Cron: the daily 7 AM job update (see vercel.json) ----
+// Vercel calls this with "Authorization: Bearer $CRON_SECRET".
 
-app.listen(Number(PORT), "127.0.0.1", () => {
-  console.log(`[auth] listening on http://127.0.0.1:${PORT} (redirect URI ${REDIRECT_URI})`);
+app.get("/api/cron/jobs", async (req, res) => {
+  const secret = process.env.CRON_SECRET;
+  if (!secret || req.get("Authorization") !== `Bearer ${secret}`) return res.status(401).json({ error: "Unauthorized" });
+  const started = Date.now();
+  await runDailyUpdate();
+  // Re-fetch launchpad logos that have expired (each is cached for a month).
+  await Promise.allSettled([...LAUNCHPAD].map(([d, opts]) => getLogo(d, opts)));
+  res.json({ ok: true, seconds: Math.round((Date.now() - started) / 1000) });
 });
+
+export default app;
+
+// Running as a normal server (local development, or any host with a lasting process).
+if (!onVercel) {
+  startJobFeed();
+  // Fetch any NeetCode problems not cached yet (one request at a time).
+  warmCache().catch((err) => console.warn("[neetcode] warm-up failed:", err.message));
+  // Warm the logo cache so launchpads load instantly.
+  Promise.allSettled([...LAUNCHPAD].map(([d, opts]) => getLogo(d, opts)));
+
+  app.listen(Number(PORT), "127.0.0.1", () => {
+    console.log(`[auth] listening on http://127.0.0.1:${PORT} (redirect URI ${REDIRECT_URI})`);
+  });
+}

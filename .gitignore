@@ -229,3 +229,5 @@ node_modules/
 
 # Local onboarding profile store (contains personal data)
 server/data/
+.vercel
+.env*

@@ -8,7 +8,7 @@ const XHR = { "X-Requested-With": "XmlHttpRequest" };
 export type GinnyStatus = {
   voyage: string | null;
   gemini: string | null;
-  reranker: string;
+  reranker: string | null;
   tiers: { id: string; label: string; about: string; min: number }[];
 };
 
@@ -29,7 +29,7 @@ export type AtsResult = {
     retrieval: string | null;
     retrievalNote: string | null;
     hardSkills: string;
-    reranker: string;
+    reranker: string | null;
     rerankMs: number;
     rerankPairs: number;
     totalMs: number;

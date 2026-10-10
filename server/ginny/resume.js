@@ -5,12 +5,14 @@
 //      LinkedIn / GitHub / personal URLs.
 //   2. Keep only Work Experience, Projects, Skills and Education. Summary, objective, references
 //      and other header info are dropped.
-//   3. The original PDF stays in private storage on our server (server/data/resumes, owner-only);
-//      only the sanitized, sectioned text is ever sent for embedding.
+//   3. Only the sanitized, sectioned text is stored (Upstash Redis on Vercel, server/data/resumes
+//      locally) and sent for embedding. The original PDF is kept only in local development
+//      (owner-only files); the deployed app never stores it.
 
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import * as store from "../store.js";
 
 // pdf.js (inside unpdf) uses Promise.try, which arrived in Node 22.
 if (!Promise.try) Promise.try = (fn, ...args) => new Promise((resolve) => resolve(fn(...args)));
@@ -163,12 +165,17 @@ export async function saveResume(sub, buffer, fileName) {
     bytes: buffer.length,
     sanitized,
   };
-  await writePrivate(fileFor(sub, "pdf"), buffer);
-  await writePrivate(fileFor(sub, "json"), JSON.stringify(meta));
+  if (store.usingRedis) {
+    await store.set("resumes", sub, meta);
+  } else {
+    await writePrivate(fileFor(sub, "pdf"), buffer);
+    await writePrivate(fileFor(sub, "json"), JSON.stringify(meta));
+  }
   return meta;
 }
 
 export async function loadResume(sub) {
+  if (store.usingRedis) return store.get("resumes", sub);
   try {
     return JSON.parse(await fs.readFile(fileFor(sub, "json"), "utf8"));
   } catch {
@@ -177,6 +184,7 @@ export async function loadResume(sub) {
 }
 
 export async function deleteResume(sub) {
+  if (store.usingRedis) return store.del("resumes", sub);
   await Promise.allSettled([fs.unlink(fileFor(sub, "pdf")), fs.unlink(fileFor(sub, "json"))]);
 }
 

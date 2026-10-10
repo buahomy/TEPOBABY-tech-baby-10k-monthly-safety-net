@@ -4,6 +4,8 @@ If you're not a nepo baby or your dad does not have hundreds of connections in l
 This is only for U.S. college students who need to lock in and get the job prospect off their chest in this insane market. It is not guaranteed that you would secure an offer with the use of this app, but you can interviewmaxx in every process required to get yourself where you want to be with TEPOBABY.
 
 
+**Try it:** [tepobaby.vercel.app](https://tepobaby.vercel.app) works on any phone or computer. On iPhone, tap Share → **Add to Home Screen** to install it like an app.
+
 ### Gemini Usage
 Ginny's Gemini features (Ask Gemini and tailored rewrites) currently run on the author's personal free API key. To unlock them in your own copy, grab your own API key from [Google AI Studio](https://aistudio.google.com/app/apikey), which is free. Then add it to `.env.local` as `GEMINI_API_KEY=...` and restart the server.
 
@@ -142,7 +144,7 @@ It never invents experience: unknown numbers become placeholders like [X%]. Beca
 **Your privacy (PII mitigation).** Voyage AI is a hosted API, and sending raw resumes would create GDPR/CCPA risk. So before anything leaves our server:
 1. **Direct identifiers are redacted locally:** your name (the header line), email, phone, street address, and LinkedIn, GitHub and other links.
 2. **Only the useful sections are kept:** Work Experience, Projects, Skills and Education. Summary, objective, references and other header info are dropped.
-3. **Metadata is stored separately:** the original PDF stays in private, owner-only storage on our server (`server/data/resumes`; S3 + PostgreSQL in production). Only the sanitized, sectioned text is sent to Voyage AI. BM25 and reranking run locally.
+3. **Metadata is stored separately:** the deployed app stores only the redacted summary (in Upstash Redis) and never keeps the original PDF; in local development the PDF stays in owner-only files (`server/data/resumes`). Only the sanitized, sectioned text is sent to Voyage AI. BM25 and reranking run locally.
 
 **Voyage AI limits** (as published by Voyage for the free tier):
 
@@ -532,6 +534,25 @@ How I built Tepobaby (with Claude Code): each decision, why I made it, and the p
 - **End with the referral question, styled as a quote.**
   - *Why:* asking a stranger for a referral up front rarely works. Asking to reach out again about roles that fit is a softer way to set up a referral later, and the quote styling makes it stand out as the one line to remember.
 
+#### Deploying to Vercel
+- **Keep Express, and run it as one Vercel Function.**
+  - *Why:* one codebase for local and production. `server/index.js` exports the app, and [api/index.js](api/index.js) hands it to Vercel.
+  - *Pain point:* the server was built as a long-running process. It saved data to files, ran a 7 AM timer, held live connections open, and warmed caches at startup. Vercel functions have none of that: no lasting disk, no background timers, and a time limit per request.
+- **Move every saved file to Upstash Redis behind one small storage module** (`server/store.js`).
+  - *Why:* Upstash is free on the Vercel Marketplace and works over plain HTTPS, so no new package was needed. Locally the same calls still read and write `server/data/*.json`, so development didn't change.
+  - *Pain point:* on Vercel, files written during one request are gone by the next, so profiles and saved jobs would have vanished. Data is now one Redis key per student (for profiles, saved jobs and résumé summaries) instead of one big shared file, so two requests can't overwrite each other's changes.
+- **Run the 7 AM update from Vercel Cron.**
+  - *Why:* nothing stays running on Vercel to fire a timer. The cron calls `/api/cron/jobs` with a secret; the full update took about 20 seconds on Vercel.
+  - *Pain point:* Vercel Cron runs on UTC, so 11:00 UTC is 7:00 AM Eastern only during daylight time (6:00 AM in winter). The free plan allows one run a day.
+- **Turn off live push on Vercel.**
+  - *Why:* a serverless function can't hold a connection open for hours. The stream returns `204`, which tells the browser to stop reconnecting, and the app re-checks postings when you come back to it.
+- **Drop the local reranker on Vercel.**
+  - *Pain point:* ONNX Runtime alone is about 200 MB, near Vercel's 250 MB function limit. It's excluded from the deploy and loaded only when available, and ATS scores evidence from the Voyage embeddings instead.
+- **Never upload secrets or student data.**
+  - *Why:* `.vercelignore` excludes `.env*` and `server/data/`, the production keys live in Vercel's encrypted environment variables, and production got its own `SESSION_SECRET`.
+- **Google sign-in needs the new address.**
+  - *Pain point:* Google only sends students back to addresses listed in the OAuth client, so `https://tepobaby.vercel.app/api/auth/google/callback` has to be added in Google Cloud Console. That step can't be automated.
+
 #### Platform & tooling
 - **Pin `@huggingface/transformers` 3.8.1** (ONNX Runtime 1.21), and add a `Promise.try` polyfill for `unpdf`.
   - *Why:* my Intel Mac runs Node 20.
@@ -558,6 +579,28 @@ How I built Tepobaby (with Claude Code): each decision, why I made it, and the p
   - *Pain point:* questions changed after students had already answered, so now they only answer the new section.
 
 
+### Deployment (Vercel)
+The app is live at **https://tepobaby.vercel.app**, deployed on Vercel's free Hobby plan.
+
+- **Frontend:** the Vite build (`dist/`) is served from Vercel's CDN. Every non-API path falls back to `index.html`.
+- **API:** the same Express app that runs locally, as one Vercel Function. [api/index.js](api/index.js) imports [server/index.js](server/index.js), which exports the app and only calls `listen()` when it's not on Vercel. [vercel.json](vercel.json) routes `/api/*` to it.
+- **Data:** stored in **Upstash Redis** (Vercel Marketplace, free plan), through [server/store.js](server/store.js). That covers profiles, saved jobs, résumé summaries, postings, logos, and the school and LeetCode caches. Locally the same code uses the JSON files in `server/data/`.
+- **Daily job update:** a **Vercel Cron** calls `GET /api/cron/jobs` at 11:00 UTC, protected by `CRON_SECRET`. That's 7:00 AM Eastern in daylight time and 6:00 AM in winter. Each function instance re-reads the postings snapshot from Redis at most every 5 minutes.
+- **What's different from local:**
+  - **Live updates:** the postings stream returns `204` on Vercel; the app re-checks postings when you come back to it instead.
+  - **Local reranker:** off on Vercel. ATS scores evidence from the Voyage embeddings instead.
+  - **Original PDF:** the deployed app never stores your résumé file, only its redacted summary.
+- **Never uploaded:** [.vercelignore](.vercelignore) keeps `.env*` and `server/data/` (students' data) out of every upload.
+
+To deploy your own copy:
+1. Run `npx vercel login`, then `npx vercel link`.
+2. Add the environment variables below with `npx vercel env add NAME production`.
+3. Add Upstash Redis: `npx vercel integration add upstash/upstash-kv` (this sets `KV_REST_API_URL` and `KV_REST_API_TOKEN`).
+4. Run `npx vercel deploy --prod`.
+5. In Google Cloud Console → Credentials → your OAuth client, add:
+   - your site under **Authorized JavaScript origins**;
+   - `https://<your-site>/api/auth/google/callback` under **Authorized redirect URIs**.
+
 ### Environment variables
 | Variable | Used by | Value |
 | --- | --- | --- |
@@ -577,6 +620,9 @@ How I built Tepobaby (with Claude Code): each decision, why I made it, and the p
 | `OPENAI_REALTIME_MODEL` | Server | Optional. Default `gpt-realtime-2.1`. |
 | `OPENAI_REALTIME_VOICE` | Server | Optional. Default `marin`. |
 | `OPENAI_TRANSCRIBE_MODEL` | Server | Optional. Transcribes what you say. Default `gpt-4o-mini-transcribe`. |
+| `CRON_SECRET` | Server (Vercel) | Random string; Vercel Cron sends it to `/api/cron/jobs`, and nobody else can trigger the update. |
+| `KV_REST_API_URL`, `KV_REST_API_TOKEN` | Server (Vercel) | Set automatically by the Upstash Redis integration (or use `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`). Without them, data is saved to `server/data/`. |
+| `RERANK` | Server | Optional. `off` turns off the local reranker (it's always off on Vercel). |
 | `GEMINI_FALLBACK_MODELS` | Server | Optional. Comma-separated models to try when the main one is overloaded. Default `gemini-3.7-flash,gemini-3.5-flash`. |
 
 `.env.local` is git-ignored. Never commit real values.
@@ -608,6 +654,7 @@ API routes (the Vite dev server forwards `/api` to the auth server):
 | `POST /api/ginny/ats` | ATS match analysis for one job (guests send their PDF with the request) |
 | `GET /api/interview/status` | Whether voice practice is set up, and the interviewer options |
 | `POST /api/interview/session` | Short-lived OpenAI Realtime client secret for one behavioral interview (company persona + STAR tools baked in) |
+| `GET /api/cron/jobs` | The daily job update, called by Vercel Cron (needs `Authorization: Bearer $CRON_SECRET`) |
 | `GET /api/connect/school` | The signed-in student's school name, from their `.edu` email domain |
 | `GET /api/neetcode` | The NeetCode 150 list (number, title, difficulty, category) and the 18 concepts |
 | `GET /api/neetcode/problem/:slug` | One problem: statement (from LeetCode, cached), signature, starter code, accepted concepts, example tests and hidden tests with expected answers |
