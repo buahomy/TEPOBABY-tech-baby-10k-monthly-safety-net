@@ -11,7 +11,8 @@
 import crypto from "node:crypto";
 import express from "express";
 import { OAuth2Client } from "google-auth-library";
-import { feedEvents, queryPostings, startJobFeed } from "./jobs/index.js";
+import { feedEvents, knownDomain, queryPostings, startJobFeed } from "./jobs/index.js";
+import { getLogo } from "./jobs/logos.js";
 import { getProfile, saveAnswers } from "./profileStore.js";
 
 const {
@@ -223,6 +224,29 @@ app.get("/api/postings", (req, res) => {
   const offset = Math.max(Number.parseInt(req.query.offset, 10) || 0, 0);
   res.set("Cache-Control", "public, max-age=60");
   res.json(queryPostings({ level, maxHours, visaFriendly: req.query.visa === "1", limit, offset }));
+});
+
+// Company logo for a posting, fetched once and cached (see server/jobs/logos.js). Only domains that
+// appear in current postings are served, so this can't be used as an open proxy.
+app.get("/api/logo/:domain", async (req, res) => {
+  const domain = String(req.params.domain).toLowerCase();
+  if (!knownDomain(domain)) return res.status(404).end();
+  try {
+    const logo = await getLogo(domain);
+    if (!logo) {
+      res.set("Cache-Control", "public, max-age=86400");
+      return res.status(404).end();
+    }
+    res.set({
+      "Content-Type": logo.type,
+      "Cache-Control": "public, max-age=604800, immutable",
+      "X-Content-Type-Options": "nosniff",
+      "Content-Security-Policy": "default-src 'none'",
+    });
+    res.send(logo.body);
+  } catch {
+    res.status(502).end();
+  }
 });
 
 // Server-Sent Events: pushes a message to open apps whenever the postings change.

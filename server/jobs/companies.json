@@ -2,327 +2,407 @@
   "greenhouse": [
     {
       "slug": "affirm",
-      "name": "Affirm"
+      "name": "Affirm",
+      "domain": "affirm.com"
     },
     {
       "slug": "airbnb",
-      "name": "Airbnb"
+      "name": "Airbnb",
+      "domain": "airbnb.com"
     },
     {
       "slug": "airtable",
-      "name": "Airtable"
+      "name": "Airtable",
+      "domain": "airtable.com"
     },
     {
       "slug": "andurilindustries",
-      "name": "Anduril"
+      "name": "Anduril",
+      "domain": "anduril.com"
     },
     {
       "slug": "anthropic",
-      "name": "Anthropic"
+      "name": "Anthropic",
+      "domain": "anthropic.com"
     },
     {
       "slug": "asana",
-      "name": "Asana"
+      "name": "Asana",
+      "domain": "asana.com"
     },
     {
       "slug": "block",
-      "name": "Block"
+      "name": "Block",
+      "domain": "block.xyz"
     },
     {
       "slug": "brex",
-      "name": "Brex"
+      "name": "Brex",
+      "domain": "brex.com"
     },
     {
       "slug": "chime",
-      "name": "Chime"
+      "name": "Chime",
+      "domain": "chime.com"
     },
     {
       "slug": "cloudflare",
-      "name": "Cloudflare"
+      "name": "Cloudflare",
+      "domain": "cloudflare.com"
     },
     {
       "slug": "coinbase",
-      "name": "Coinbase"
+      "name": "Coinbase",
+      "domain": "coinbase.com"
     },
     {
       "slug": "databricks",
-      "name": "Databricks"
+      "name": "Databricks",
+      "domain": "databricks.com"
     },
     {
       "slug": "datadog",
-      "name": "Datadog"
+      "name": "Datadog",
+      "domain": "datadoghq.com"
     },
     {
       "slug": "discord",
-      "name": "Discord"
+      "name": "Discord",
+      "domain": "discord.com"
     },
     {
       "slug": "doordashusa",
-      "name": "DoorDash"
+      "name": "DoorDash",
+      "domain": "doordash.com"
     },
     {
       "slug": "dropbox",
-      "name": "Dropbox"
+      "name": "Dropbox",
+      "domain": "dropbox.com"
     },
     {
       "slug": "duolingo",
-      "name": "Duolingo"
+      "name": "Duolingo",
+      "domain": "duolingo.com"
     },
     {
       "slug": "elastic",
-      "name": "Elastic"
+      "name": "Elastic",
+      "domain": "elastic.co"
     },
     {
       "slug": "epicgames",
-      "name": "Epic Games"
+      "name": "Epic Games",
+      "domain": "epicgames.com"
     },
     {
       "slug": "faire",
-      "name": "Faire"
+      "name": "Faire",
+      "domain": "faire.com"
     },
     {
       "slug": "figma",
-      "name": "Figma"
+      "name": "Figma",
+      "domain": "figma.com"
     },
     {
       "slug": "flexport",
-      "name": "Flexport"
+      "name": "Flexport",
+      "domain": "flexport.com"
     },
     {
       "slug": "gitlab",
-      "name": "GitLab"
+      "name": "GitLab",
+      "domain": "gitlab.com"
     },
     {
       "slug": "gusto",
-      "name": "Gusto"
+      "name": "Gusto",
+      "domain": "gusto.com"
     },
     {
       "slug": "imc",
-      "name": "IMC"
+      "name": "IMC",
+      "domain": "imc.com"
     },
     {
       "slug": "instacart",
-      "name": "Instacart"
+      "name": "Instacart",
+      "domain": "instacart.com"
     },
     {
       "slug": "intercom",
-      "name": "Intercom"
+      "name": "Intercom",
+      "domain": "intercom.com"
     },
     {
       "slug": "janestreet",
-      "name": "Jane Street"
+      "name": "Jane Street",
+      "domain": "janestreet.com"
     },
     {
       "slug": "jumptrading",
-      "name": "Jump Trading"
+      "name": "Jump Trading",
+      "domain": "jumptrading.com"
     },
     {
       "slug": "lyft",
-      "name": "Lyft"
+      "name": "Lyft",
+      "domain": "lyft.com"
     },
     {
       "slug": "mercury",
-      "name": "Mercury"
+      "name": "Mercury",
+      "domain": "mercury.com"
     },
     {
       "slug": "mongodb",
-      "name": "MongoDB"
+      "name": "MongoDB",
+      "domain": "mongodb.com"
     },
     {
       "slug": "nextdoor",
-      "name": "Nextdoor"
+      "name": "Nextdoor",
+      "domain": "nextdoor.com"
     },
     {
       "slug": "nuro",
-      "name": "Nuro"
+      "name": "Nuro",
+      "domain": "nuro.ai"
     },
     {
       "slug": "okta",
-      "name": "Okta"
+      "name": "Okta",
+      "domain": "okta.com"
     },
     {
       "slug": "peloton",
-      "name": "Peloton"
+      "name": "Peloton",
+      "domain": "onepeloton.com"
     },
     {
       "slug": "pinterest",
-      "name": "Pinterest"
+      "name": "Pinterest",
+      "domain": "pinterest.com"
     },
     {
       "slug": "point72",
-      "name": "Point72"
+      "name": "Point72",
+      "domain": "point72.com"
     },
     {
       "slug": "reddit",
-      "name": "Reddit"
+      "name": "Reddit",
+      "domain": "reddit.com"
     },
     {
       "slug": "riotgames",
-      "name": "Riot Games"
+      "name": "Riot Games",
+      "domain": "riotgames.com"
     },
     {
       "slug": "robinhood",
-      "name": "Robinhood"
+      "name": "Robinhood",
+      "domain": "robinhood.com"
     },
     {
       "slug": "roblox",
-      "name": "Roblox"
+      "name": "Roblox",
+      "domain": "roblox.com"
     },
     {
       "slug": "rubrik",
-      "name": "Rubrik"
+      "name": "Rubrik",
+      "domain": "rubrik.com"
     },
     {
       "slug": "samsara",
-      "name": "Samsara"
+      "name": "Samsara",
+      "domain": "samsara.com"
     },
     {
       "slug": "scaleai",
-      "name": "Scale AI"
+      "name": "Scale AI",
+      "domain": "scale.com"
     },
     {
       "slug": "sofi",
-      "name": "SoFi"
+      "name": "SoFi",
+      "domain": "sofi.com"
     },
     {
       "slug": "spacex",
-      "name": "SpaceX"
+      "name": "SpaceX",
+      "domain": "spacex.com"
     },
     {
       "slug": "squarespace",
-      "name": "Squarespace"
+      "name": "Squarespace",
+      "domain": "squarespace.com"
     },
     {
       "slug": "stripe",
-      "name": "Stripe"
+      "name": "Stripe",
+      "domain": "stripe.com"
     },
     {
       "slug": "toast",
-      "name": "Toast"
+      "name": "Toast",
+      "domain": "toasttab.com"
     },
     {
       "slug": "twilio",
-      "name": "Twilio"
+      "name": "Twilio",
+      "domain": "twilio.com"
     },
     {
       "slug": "twitch",
-      "name": "Twitch"
+      "name": "Twitch",
+      "domain": "twitch.tv"
     },
     {
       "slug": "vercel",
-      "name": "Vercel"
+      "name": "Vercel",
+      "domain": "vercel.com"
     },
     {
       "slug": "verkada",
-      "name": "Verkada"
+      "name": "Verkada",
+      "domain": "verkada.com"
     },
     {
       "slug": "waymo",
-      "name": "Waymo"
+      "name": "Waymo",
+      "domain": "waymo.com"
     },
     {
       "slug": "ziprecruiter",
-      "name": "ZipRecruiter"
+      "name": "ZipRecruiter",
+      "domain": "ziprecruiter.com"
     },
     {
       "slug": "zscaler",
-      "name": "Zscaler"
+      "name": "Zscaler",
+      "domain": "zscaler.com"
     }
   ],
   "lever": [
     {
       "slug": "matchgroup",
-      "name": "Match Group"
+      "name": "Match Group",
+      "domain": "mtch.com"
     },
     {
       "slug": "palantir",
-      "name": "Palantir"
+      "name": "Palantir",
+      "domain": "palantir.com"
     },
     {
       "slug": "shieldai",
-      "name": "Shield AI"
+      "name": "Shield AI",
+      "domain": "shield.ai"
     },
     {
       "slug": "spotify",
-      "name": "Spotify"
+      "name": "Spotify",
+      "domain": "spotify.com"
     },
     {
       "slug": "wealthfront",
-      "name": "Wealthfront"
+      "name": "Wealthfront",
+      "domain": "wealthfront.com"
     },
     {
       "slug": "zoox",
-      "name": "Zoox"
+      "name": "Zoox",
+      "domain": "zoox.com"
     }
   ],
   "ashby": [
     {
       "slug": "cohere",
-      "name": "Cohere"
+      "name": "Cohere",
+      "domain": "cohere.com"
     },
     {
       "slug": "elevenlabs",
-      "name": "ElevenLabs"
+      "name": "ElevenLabs",
+      "domain": "elevenlabs.io"
     },
     {
       "slug": "harvey",
-      "name": "Harvey"
+      "name": "Harvey",
+      "domain": "harvey.ai"
     },
     {
       "slug": "hex",
-      "name": "Hex"
+      "name": "Hex",
+      "domain": "hex.tech"
     },
     {
       "slug": "linear",
-      "name": "Linear"
+      "name": "Linear",
+      "domain": "linear.app"
     },
     {
       "slug": "modal",
-      "name": "Modal"
+      "name": "Modal",
+      "domain": "modal.com"
     },
     {
       "slug": "notion",
-      "name": "Notion"
+      "name": "Notion",
+      "domain": "notion.so"
     },
     {
       "slug": "openai",
-      "name": "OpenAI"
+      "name": "OpenAI",
+      "domain": "openai.com"
     },
     {
       "slug": "perplexity",
-      "name": "Perplexity"
+      "name": "Perplexity",
+      "domain": "perplexity.ai"
     },
     {
       "slug": "posthog",
-      "name": "PostHog"
+      "name": "PostHog",
+      "domain": "posthog.com"
     },
     {
       "slug": "ramp",
-      "name": "Ramp"
+      "name": "Ramp",
+      "domain": "ramp.com"
     },
     {
       "slug": "replit",
-      "name": "Replit"
+      "name": "Replit",
+      "domain": "replit.com"
     },
     {
       "slug": "runway",
-      "name": "Runway"
+      "name": "Runway",
+      "domain": "runwayml.com"
     },
     {
       "slug": "sierra",
-      "name": "Sierra"
+      "name": "Sierra",
+      "domain": "sierra.ai"
     },
     {
       "slug": "supabase",
-      "name": "Supabase"
+      "name": "Supabase",
+      "domain": "supabase.com"
     },
     {
       "slug": "vanta",
-      "name": "Vanta"
+      "name": "Vanta",
+      "domain": "vanta.com"
     },
     {
       "slug": "watershed",
-      "name": "Watershed"
+      "name": "Watershed",
+      "domain": "watershed.com"
     }
   ]
 }

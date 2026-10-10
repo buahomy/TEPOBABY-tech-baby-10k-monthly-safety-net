@@ -102,6 +102,12 @@
   text-transform: uppercase;
 }
 
+.m01 .block-note {
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .m01 .block-foot {
   color: var(--text-tertiary);
   font-size: 10px;
@@ -274,6 +280,18 @@
   background: var(--indigo-soft);
   font-size: 15px;
   font-weight: 700;
+}
+
+.m01 .logo-tile--image {
+  overflow: hidden;
+  background: #fff;
+}
+
+.m01 .logo-tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 5px;
 }
 
 .m01 .posting-copy,

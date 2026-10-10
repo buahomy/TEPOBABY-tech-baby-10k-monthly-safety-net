@@ -49,7 +49,7 @@ export async function loadCompanies() {
   return JSON.parse(await fs.readFile(path.join(here, "..", "companies.json"), "utf8"));
 }
 
-async function fromBoard(provider, slug, company, now) {
+async function fromBoard(provider, slug, company, domain, now) {
   const p = PROVIDERS[provider];
   const data = await fetchJson(p.url(slug), { timeoutMs: 30000 });
   const out = [];
@@ -72,6 +72,7 @@ async function fromBoard(provider, slug, company, now) {
       postedApprox: false,
       level,
       sponsorship: null,
+      domain: domain || null,
     });
   }
   return out;
@@ -86,7 +87,7 @@ export async function fetchCompanyBoards() {
 
   const results = await mapLimit(boards, 6, async (b) => {
     try {
-      return { ok: true, postings: await fromBoard(b.provider, b.slug, b.name, now) };
+      return { ok: true, postings: await fromBoard(b.provider, b.slug, b.name, b.domain, now) };
     } catch (err) {
       return { ok: false, board: `${b.provider}/${b.slug}`, error: err.message, postings: [] };
     }
