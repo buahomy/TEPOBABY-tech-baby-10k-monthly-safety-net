@@ -2,9 +2,9 @@ import { useState } from "react";
 
 // Launchpad shortcut: an app-style logo tile that opens a site in a new tab.
 
-type Props = { name: string; domain: string; href: string; title?: string; tile?: string };
+type Props = { name: string; domain: string; href: string; title?: string; tile?: string; logo?: string };
 
-export default function AppIcon({ name, domain, href, title, tile }: Props) {
+export default function AppIcon({ name, domain, href, title, tile, logo }: Props) {
   const [failed, setFailed] = useState(false);
   return (
     <a
@@ -19,7 +19,7 @@ export default function AppIcon({ name, domain, href, title, tile }: Props) {
         {failed ? (
           <span className="app-icon-letter">{name.replace(/^\W+/, "")[0]}</span>
         ) : (
-          <img src={`/api/logo/${domain}`} alt="" loading="lazy" decoding="async" onError={() => setFailed(true)} />
+          <img src={logo || `/api/logo/${domain}`} alt="" loading="lazy" decoding="async" onError={() => setFailed(true)} />
         )}
       </span>
       <span className="app-icon-name">{name}</span>

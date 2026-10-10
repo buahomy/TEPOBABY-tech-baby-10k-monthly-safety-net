@@ -1,5 +1,5 @@
 {
-  "_note": "Organizations, clubs, non-profits and programs suggested on Profile under Demographic & Identity Information. `for` tags: everyone, first_gen, black, hispanic_latino, asian, two_or_more, women_nonbinary, lgbtq. Edit freely. Optional `tile`: background color for logos that are white.",
+  "_note": "Programs for U.S. college students, suggested on Profile under Demographic & Identity Information. No high school or admissions programs; professional networks students can join early are included; every entry must have a real logo. `for` tags: everyone, first_gen, black, hispanic_latino, asian, two_or_more, women_nonbinary, lgbtq. Optional `also`: every one of these must fit the student too; ignored by Show all. Optional `logo`: image URL from the organization's own site when its site icon isn't usable. Optional `tile`: dark background for white logos. Optional `localLogo`: a logo image bundled with the app (public/logos) when the site's icon is too small.",
   "groups": [
     {
       "id": "first_gen",
@@ -66,16 +66,6 @@
       ]
     },
     {
-      "name": "/dev/color",
-      "domain": "devcolor.org",
-      "url": "https://devcolor.org/",
-      "who": "Community of Black software engineers",
-      "for": [
-        "black"
-      ],
-      "tile": "#111827"
-    },
-    {
       "name": "MLT",
       "domain": "mlt.org",
       "url": "https://mlt.org/",
@@ -123,7 +113,8 @@
       "who": "Scholarships plus career services and company partners",
       "for": [
         "hispanic_latino"
-      ]
+      ],
+      "logo": "https://prod-hsf4-cms.s3-us-west-1.amazonaws.com/public/directus/hsf/originals/80cac959-d0af-4312-bfb9-bd082677ea76.png"
     },
     {
       "name": "SACNAS",
@@ -181,15 +172,6 @@
       ]
     },
     {
-      "name": "QuestBridge",
-      "domain": "questbridge.org",
-      "url": "https://www.questbridge.org/",
-      "who": "Scholars network with career partners for high-achieving, low-income students",
-      "for": [
-        "first_gen"
-      ]
-    },
-    {
       "name": "Break Through Tech",
       "domain": "breakthroughtech.org",
       "url": "https://www.breakthroughtech.org/",
@@ -238,34 +220,17 @@
       "name": "Girls Who Code",
       "domain": "girlswhocode.com",
       "url": "https://girlswhocode.com/",
-      "who": "College Loops and career programs for women & non-binary students",
+      "who": "College Loops: community and career programs for college women & non-binary students in CS",
       "for": [
         "women_nonbinary"
-      ]
+      ],
+      "logo": "https://www.google.com/s2/favicons?domain=girlswhocode.com&sz=128"
     },
     {
       "name": "oSTEM",
       "domain": "ostem.org",
       "url": "https://ostem.org/",
       "who": "LGBTQ+ people in STEM: chapters and annual conference with recruiters",
-      "for": [
-        "lgbtq"
-      ]
-    },
-    {
-      "name": "Out in Tech",
-      "domain": "outintech.com",
-      "url": "https://outintech.com/",
-      "who": "LGBTQ+ tech community with mentorship programs",
-      "for": [
-        "lgbtq"
-      ]
-    },
-    {
-      "name": "Lesbians Who Tech",
-      "domain": "lesbianswhotech.org",
-      "url": "https://lesbianswhotech.org/",
-      "who": "LGBTQ+ women, non-binary and trans people in tech: summit and job board",
       "for": [
         "lgbtq"
       ]
@@ -287,7 +252,8 @@
       "who": "Remote, paid open-source fellowship for students",
       "for": [
         "everyone"
-      ]
+      ],
+      "logo": "https://www.google.com/s2/favicons?domain=mlh.io&sz=128"
     },
     {
       "name": "Tapia Conference",
@@ -296,6 +262,211 @@
       "who": "Celebration of diversity in computing, with a career fair",
       "for": [
         "everyone"
+      ],
+      "localLogo": "/logos/tapia.png"
+    },
+    {
+      "name": "Career Pathways Initiative",
+      "domain": "careerpathwaysinitiative.com",
+      "url": "https://www.careerpathwaysinitiative.com/",
+      "who": "Founded by Ken Lang: CPI Fellowship and a 4-week Career Prep Series for first-gen, low-income students, with employer connections for internships",
+      "for": [
+        "first_gen"
+      ]
+    },
+    {
+      "name": "Google Tech Exchange",
+      "domain": "google.com",
+      "url": "https://buildyourfuture.withgoogle.com/programs/tech-exchange",
+      "who": "Google CS courses for students at HBCUs and Hispanic-Serving Institutions",
+      "for": [
+        "black",
+        "hispanic_latino"
+      ]
+    },
+    {
+      "name": "Generation Google Scholarship",
+      "domain": "google.com",
+      "url": "https://buildyourfuture.withgoogle.com/scholarships/generation-google-scholarship",
+      "who": "Google scholarship for CS students from groups underrepresented in tech",
+      "for": [
+        "black",
+        "hispanic_latino",
+        "two_or_more",
+        "women_nonbinary"
+      ]
+    },
+    {
+      "name": "UNCF",
+      "domain": "uncf.org",
+      "url": "https://uncf.org/",
+      "who": "Scholarships and career programs for Black students",
+      "for": [
+        "black"
+      ]
+    },
+    {
+      "name": "Thurgood Marshall College Fund",
+      "domain": "tmcf.org",
+      "url": "https://tmcf.org/",
+      "who": "HBCU scholarships, leadership institute and recruiting with company partners",
+      "for": [
+        "black"
+      ]
+    },
+    {
+      "name": "Black in AI",
+      "domain": "blackinai.org",
+      "url": "https://www.blackinai.org/",
+      "who": "Community and mentoring for Black researchers and students in AI",
+      "for": [
+        "black"
+      ]
+    },
+    {
+      "name": "Hispanic Heritage Foundation",
+      "domain": "hispanicheritage.org",
+      "url": "https://hispanicheritage.org/",
+      "who": "LOFT network and Code as a Second Language for Latino students",
+      "for": [
+        "hispanic_latino"
+      ]
+    },
+    {
+      "name": "LatinX in AI",
+      "domain": "latinxinai.org",
+      "url": "https://www.latinxinai.org/",
+      "who": "Community and mentoring for Latinx students and researchers in AI",
+      "for": [
+        "hispanic_latino"
+      ]
+    },
+    {
+      "name": "APIA Scholars",
+      "domain": "apiascholars.org",
+      "url": "https://apiascholars.org/",
+      "who": "Scholarships and leadership programs for Asian American & Pacific Islander students",
+      "for": [
+        "asian"
+      ]
+    },
+    {
+      "name": "American Indian College Fund",
+      "domain": "collegefund.org",
+      "url": "https://collegefund.org/",
+      "who": "Scholarships and career support for Native American students",
+      "for": [
+        "two_or_more"
+      ]
+    },
+    {
+      "name": "Point Foundation",
+      "domain": "pointfoundation.org",
+      "url": "https://pointfoundation.org/",
+      "who": "Scholarships and mentorship for LGBTQ+ students",
+      "for": [
+        "lgbtq"
+      ]
+    },
+    {
+      "name": "Out for Undergrad",
+      "domain": "outforundergrad.org",
+      "url": "https://www.outforundergrad.org/",
+      "who": "Conferences connecting LGBTQ+ undergrads with top tech and finance employers",
+      "for": [
+        "lgbtq"
+      ]
+    },
+    {
+      "name": "Queer in AI",
+      "domain": "queerinai.com",
+      "url": "https://www.queerinai.com/",
+      "who": "Community and mentoring for queer students and researchers in AI",
+      "for": [
+        "lgbtq"
+      ]
+    },
+    {
+      "name": "Forage",
+      "domain": "theforage.com",
+      "url": "https://www.theforage.com/",
+      "who": "Free virtual job simulations built by real companies, a common path to interviews",
+      "for": [
+        "everyone"
+      ]
+    },
+    {
+      "name": "ACM",
+      "domain": "acm.org",
+      "url": "https://www.acm.org/",
+      "who": "Association for Computing Machinery: student chapters, conferences and competitions",
+      "for": [
+        "everyone"
+      ],
+      "logo": "https://tapiaconference.cmd-it.org/wp-content/uploads/2022/12/ACMLogo-60x60-1.png"
+    },
+    {
+      "name": "/dev/color",
+      "domain": "devcolor.org",
+      "url": "https://devcolor.org/",
+      "who": "Community of Black software engineers; join early to build your network",
+      "for": [
+        "black"
+      ],
+      "tile": "#111827"
+    },
+    {
+      "name": "Blacks In Technology",
+      "domain": "blacksintechnology.org",
+      "url": "https://blacksintechnology.org/",
+      "who": "Community, mentoring and conferences for Black people in tech",
+      "for": [
+        "black"
+      ]
+    },
+    {
+      "name": "Latinas in Tech",
+      "domain": "latinasintech.org",
+      "url": "https://latinasintech.org/",
+      "who": "Community, mentoring and job board for Latina women in tech",
+      "for": [
+        "hispanic_latino",
+        "women_nonbinary"
+      ],
+      "also": [
+        "hispanic_latino",
+        "women_nonbinary"
+      ]
+    },
+    {
+      "name": "NAAAP",
+      "domain": "naaap.org",
+      "url": "https://www.naaap.org/",
+      "who": "National Association of Asian American Professionals: leadership and career events",
+      "for": [
+        "asian"
+      ]
+    },
+    {
+      "name": "Out in Tech",
+      "domain": "outintech.com",
+      "url": "https://outintech.com/",
+      "who": "LGBTQ+ tech community with mentorship programs",
+      "for": [
+        "lgbtq"
+      ]
+    },
+    {
+      "name": "Lesbians Who Tech",
+      "domain": "lesbianswhotech.org",
+      "url": "https://lesbianswhotech.org/",
+      "who": "LGBTQ+ women, non-binary and trans people in tech: summit and job board",
+      "for": [
+        "lgbtq"
+      ],
+      "also": [
+        "lgbtq",
+        "women_nonbinary"
       ]
     }
   ]

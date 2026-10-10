@@ -5,8 +5,9 @@
 //    platform) → companies.json → a name lookup (Clearbit company autocomplete), accepted only when
 //    the name matches exactly and the website looks like the company's own.
 //    Lookups are cached in server/data/domains.json so each company is looked up once.
-// 2. Serve the logo through our own server (/api/logo/:domain): the site's icon at 128px via
-//    Google's favicon service, with DuckDuckGo's as a fallback. Images are cached on disk, so
+// 2. Serve the logo through our own server (/api/logo/:domain). Launchpad organizations use their
+//    own website's icon (apple-touch-icon or largest site icon, or an explicit `logo`); everything
+//    falls back to Google's favicon service at 128px, then DuckDuckGo's. Images are cached on disk, so
 //    students' browsers never contact third parties and each logo is fetched once a month at most.
 
 import fs from "node:fs/promises";
@@ -139,27 +140,73 @@ export async function addDomains(postings, { maxLookups = 1000 } = {}) {
 
 const inflight = new Map();
 
-async function fetchIcon(domain) {
+const BROWSER_UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0 Safari/537.36";
+
+/**
+ * Reads a site's homepage and returns its own icon URLs, best first: apple-touch-icon, then the
+ * largest declared icon. Only used for launchpad entries (our own curated list of websites).
+ */
+async function siteIconUrls(siteUrl) {
+  try {
+    const res = await fetch(siteUrl, {
+      headers: { "User-Agent": BROWSER_UA, Accept: "text/html" },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!res.ok || !(res.headers.get("content-type") || "").includes("html")) return [];
+    const html = (await res.text()).slice(0, 1_000_000);
+    const found = [];
+    for (const tag of html.match(/<link\b[^>]*>/gi) || []) {
+      const rel = tag.match(/rel=["']([^"']+)/i)?.[1]?.toLowerCase() || "";
+      const href = tag.match(/href=["']([^"']+)/i)?.[1];
+      if (!href || !/icon/.test(rel)) continue;
+      const size = Number(tag.match(/sizes=["'](\d+)/i)?.[1] || 0);
+      const rank = (rel.includes("apple-touch-icon") ? 1000 : 0) + size;
+      try {
+        const url = new URL(href.replace(/&amp;/g, "&"), res.url);
+        if (/^https?:$/.test(url.protocol) && !/\.svg(\?|$)/i.test(url.pathname)) found.push({ url: url.toString(), rank });
+      } catch {
+        // bad href
+      }
+    }
+    return found.sort((a, b) => b.rank - a.rank).map((f) => f.url);
+  } catch {
+    return [];
+  }
+}
+
+async function fetchImage(src) {
+  try {
+    const res = await fetch(src, { headers: { "User-Agent": BROWSER_UA }, signal: AbortSignal.timeout(10000) });
+    const type = (res.headers.get("content-type") || "").split(";")[0].trim();
+    // Raster images only: SVG can carry scripts.
+    if (!res.ok || !/^image\/(png|jpeg|webp|gif|x-icon|vnd\.microsoft\.icon)$/.test(type)) return null;
+    const body = Buffer.from(await res.arrayBuffer());
+    return body.length > 64 && body.length < 1024 * 1024 ? { body, type } : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Logo for a domain. `opts.logo` is an explicit image URL from our data; `opts.site` is the
+ * organization's homepage, whose own icons are tried next. Then the favicon services.
+ */
+async function fetchIcon(domain, opts = {}) {
   const sources = [
+    ...(opts.logo ? [opts.logo] : []),
+    ...(opts.site ? await siteIconUrls(opts.site) : []),
     `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
     `https://icons.duckduckgo.com/ip3/${domain}.ico`,
   ];
   for (const src of sources) {
-    try {
-      const res = await fetch(src, { headers: { "User-Agent": USER_AGENT }, signal: AbortSignal.timeout(10000) });
-      const type = res.headers.get("content-type") || "";
-      if (!res.ok || !type.startsWith("image/")) continue;
-      const body = Buffer.from(await res.arrayBuffer());
-      if (body.length > 64 && body.length < 512 * 1024) return { body, type };
-    } catch {
-      // try the next source
-    }
+    const icon = await fetchImage(src);
+    if (icon) return icon;
   }
   return null;
 }
 
 /** Returns { body, type } for a domain's logo, or null if none was found. Cached on disk. */
-export async function getLogo(domain) {
+export async function getLogo(domain, opts = {}) {
   if (!DOMAIN_RE.test(domain)) return null;
   const file = path.join(LOGO_DIR, domain);
   try {
@@ -174,7 +221,7 @@ export async function getLogo(domain) {
   if (!inflight.has(domain)) {
     inflight.set(
       domain,
-      fetchIcon(domain)
+      fetchIcon(domain, opts)
         .then(async (icon) => {
           await fs.mkdir(LOGO_DIR, { recursive: true, mode: 0o700 });
           if (icon) await fs.writeFile(`${file}.img`, icon.body);
