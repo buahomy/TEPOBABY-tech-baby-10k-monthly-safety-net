@@ -1,10 +1,11 @@
 // School name from a student's .edu email domain (whitman.edu → "Whitman College"), using the
-// open Hipo university-domains list. Only U.S. schools are kept, cached in server/data/schools.json
-// and refreshed monthly.
+// open Hipo university-domains list. Only U.S. schools are kept, cached (server/data/schools.json
+// locally, Upstash Redis on Vercel) and refreshed monthly.
 
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import * as store from "../store.js";
 
 const FILE = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "data", "schools.json");
 const SOURCE = "https://raw.githubusercontent.com/Hipo/university-domains-list/master/world_universities_and_domains.json";
@@ -25,8 +26,12 @@ async function refresh() {
       if (!out[key]) out[key] = u.name;
     }
   }
-  await fs.mkdir(path.dirname(FILE), { recursive: true });
-  await fs.writeFile(FILE, JSON.stringify({ fetchedAt: Date.now(), schools: out }));
+  const doc = { fetchedAt: Date.now(), schools: out };
+  if (store.usingRedis) await store.set("meta", "schools", doc);
+  else {
+    await fs.mkdir(path.dirname(FILE), { recursive: true });
+    await fs.writeFile(FILE, JSON.stringify(doc));
+  }
   return out;
 }
 
@@ -34,7 +39,8 @@ async function load() {
   if (map) return map;
   loading ??= (async () => {
     try {
-      const cached = JSON.parse(await fs.readFile(FILE, "utf8"));
+      const cached = store.usingRedis ? await store.get("meta", "schools") : JSON.parse(await fs.readFile(FILE, "utf8"));
+      if (!cached) throw new Error("not cached");
       map = cached.schools;
       if (Date.now() - cached.fetchedAt > MAX_AGE) refresh().then((m) => (map = m)).catch(() => {});
     } catch {

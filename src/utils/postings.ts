@@ -50,10 +50,18 @@ export async function fetchPostings(opts: {
  * EventSource reconnects on its own if the connection drops.
  */
 export function subscribeToPostings(onUpdate: () => void): () => void {
-  if (typeof EventSource === "undefined") return () => {};
-  const source = new EventSource("/api/postings/stream");
-  source.addEventListener("update", onUpdate);
-  return () => source.close();
+  // Where live updates aren't available (the deployed app on Vercel answers 204 and the stream
+  // closes), check again whenever the student comes back to the app.
+  const onVisible = () => {
+    if (document.visibilityState === "visible" && (!source || source.readyState === EventSource.CLOSED)) onUpdate();
+  };
+  document.addEventListener("visibilitychange", onVisible);
+  const source = typeof EventSource === "undefined" ? null : new EventSource("/api/postings/stream");
+  source?.addEventListener("update", onUpdate);
+  return () => {
+    source?.close();
+    document.removeEventListener("visibilitychange", onVisible);
+  };
 }
 
 export function timeAgo(iso: string, approx = false): string {

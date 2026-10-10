@@ -1,13 +1,14 @@
-// Fetches NeetCode 150 problem statements from LeetCode's public GraphQL endpoint and caches them in
-// server/data/neetcode.json (re-fetched weekly). Subscriber-only problems come back without a
-// statement, so those use our own write-ups in premium.js; their test inputs and signatures still
-// come from LeetCode.
+// Fetches NeetCode 150 problem statements from LeetCode's public GraphQL endpoint and caches them
+// (server/data/neetcode.json locally, one Upstash Redis key per problem on Vercel; re-fetched
+// weekly). Subscriber-only problems come back without a statement, so those use our own write-ups
+// in premium.js; their test inputs and signatures still come from LeetCode.
 
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { PROBLEMS } from "./problems.js";
 import { PREMIUM } from "./premium.js";
+import * as store from "../store.js";
 
 const FILE = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "data", "neetcode.json");
 const MAX_AGE = 7 * 24 * 3600e3;
@@ -65,6 +66,18 @@ async function fetchOne(slug) {
 
 /** Raw LeetCode data for one problem: from the cache, or fetched now. */
 export async function getRaw(slug, { refresh = false } = {}) {
+  if (store.usingRedis) {
+    const hit = await store.get("neetcode", slug);
+    if (hit && !refresh && Date.now() - hit.fetchedAt < MAX_AGE) return hit;
+    try {
+      const fresh = await fetchOne(slug);
+      await store.set("neetcode", slug, fresh);
+      return fresh;
+    } catch (err) {
+      if (hit) return hit;
+      throw err;
+    }
+  }
   const c = await load();
   const hit = c[slug];
   if (hit && !refresh && Date.now() - hit.fetchedAt < MAX_AGE) return hit;

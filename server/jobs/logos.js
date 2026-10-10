@@ -4,16 +4,19 @@
 //    the list's own company link → the apply link (when it's on the company's own site, not a hiring
 //    platform) → companies.json → a name lookup (Clearbit company autocomplete), accepted only when
 //    the name matches exactly and the website looks like the company's own.
-//    Lookups are cached in server/data/domains.json so each company is looked up once.
+//    Lookups are cached (server/data/domains.json locally, Upstash Redis on Vercel) so each company
+//    is looked up once.
 // 2. Serve the logo through our own server (/api/logo/:domain). Launchpad organizations use their
 //    own website's icon (apple-touch-icon or largest site icon, or an explicit `logo`); everything
-//    falls back to Google's favicon service at 128px, then DuckDuckGo's. Images are cached on disk, so
-//    students' browsers never contact third parties and each logo is fetched once a month at most.
+//    falls back to Google's favicon service at 128px, then DuckDuckGo's. Images are cached (on disk
+//    locally, in Upstash Redis on Vercel), so students' browsers never contact third parties and each
+//    logo is fetched once a month at most.
 
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { USER_AGENT, mapLimit } from "./classify.js";
+import * as store from "../store.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const DATA = path.join(here, "..", "data");
@@ -49,7 +52,7 @@ let domainCache = null; // normalized name → { domain: string|null, at: ms }
 async function loadDomainCache() {
   if (domainCache) return domainCache;
   try {
-    domainCache = JSON.parse(await fs.readFile(DOMAINS_FILE, "utf8"));
+    domainCache = store.usingRedis ? (await store.get("meta", "domains")) || {} : JSON.parse(await fs.readFile(DOMAINS_FILE, "utf8"));
   } catch {
     domainCache = {};
   }
@@ -129,8 +132,11 @@ export async function addDomains(postings, { maxLookups = 1000 } = {}) {
         // leave uncached; try again next run
       }
     });
-    await fs.mkdir(DATA, { recursive: true, mode: 0o700 });
-    await fs.writeFile(DOMAINS_FILE, JSON.stringify(cache));
+    if (store.usingRedis) await store.set("meta", "domains", cache);
+    else {
+      await fs.mkdir(DATA, { recursive: true, mode: 0o700 });
+      await fs.writeFile(DOMAINS_FILE, JSON.stringify(cache));
+    }
     for (const p of postings) p.domain ||= cache[normName(p.company)]?.domain || null;
   }
   return postings;
@@ -205,14 +211,19 @@ async function fetchIcon(domain, opts = {}) {
   return null;
 }
 
-/** Returns { body, type } for a domain's logo, or null if none was found. Cached on disk. */
+/** Returns { body, type } for a domain's logo, or null if none was found. Cached for a month. */
 export async function getLogo(domain, opts = {}) {
   if (!DOMAIN_RE.test(domain)) return null;
   const file = path.join(LOGO_DIR, domain);
   try {
-    const meta = JSON.parse(await fs.readFile(`${file}.json`, "utf8"));
-    if (Date.now() - meta.at < MONTH) {
-      return meta.type ? { body: await fs.readFile(`${file}.img`), type: meta.type } : null;
+    if (store.usingRedis) {
+      const hit = await store.get("logos", domain);
+      if (hit && Date.now() - hit.at < MONTH) return hit.type ? { body: Buffer.from(hit.b64, "base64"), type: hit.type } : null;
+    } else {
+      const meta = JSON.parse(await fs.readFile(`${file}.json`, "utf8"));
+      if (Date.now() - meta.at < MONTH) {
+        return meta.type ? { body: await fs.readFile(`${file}.img`), type: meta.type } : null;
+      }
     }
   } catch {
     // not cached yet
@@ -223,9 +234,13 @@ export async function getLogo(domain, opts = {}) {
       domain,
       fetchIcon(domain, opts)
         .then(async (icon) => {
-          await fs.mkdir(LOGO_DIR, { recursive: true, mode: 0o700 });
-          if (icon) await fs.writeFile(`${file}.img`, icon.body);
-          await fs.writeFile(`${file}.json`, JSON.stringify({ at: Date.now(), type: icon?.type ?? null }));
+          if (store.usingRedis) {
+            await store.set("logos", domain, { at: Date.now(), type: icon?.type ?? null, b64: icon ? icon.body.toString("base64") : null }, 31 * 24 * 3600);
+          } else {
+            await fs.mkdir(LOGO_DIR, { recursive: true, mode: 0o700 });
+            if (icon) await fs.writeFile(`${file}.img`, icon.body);
+            await fs.writeFile(`${file}.json`, JSON.stringify({ at: Date.now(), type: icon?.type ?? null }));
+          }
           return icon;
         })
         .finally(() => inflight.delete(domain)),

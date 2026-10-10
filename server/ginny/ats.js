@@ -11,7 +11,7 @@
 
 import { bm25Skills } from "./bm25.js";
 import { improvements } from "./improve.js";
-import { RERANK_MODEL, rerank, sigmoid } from "./rerank.js";
+import { RERANK_MODEL, rerank, rerankEnabled, sigmoid } from "./rerank.js";
 
 // ms-marco cross-encoder logits: clearly relevant lines score about −4…+2, unrelated ones about
 // −10. Shift/scale so −3 reads as solid evidence (~0.9) and −10 as none (~0.05).
@@ -159,10 +159,17 @@ export async function analyze({ sections, jobTitle, company, description }) {
     } else {
       pool = pool.slice(0, 20);
     }
-    const { scores, ms } = await rerank(reqs[r], pool.map((i) => texts[i]));
-    rerankMs += ms;
-    const best = scores.reduce((b, s, k) => (s > b.s ? { s, k } : b), { s: -Infinity, k: -1 });
-    evidence.push({ requirement: reqs[r], bullet: best.k >= 0 ? texts[pool[best.k]] : null, score: evidenceFromLogit(best.s) });
+    if (rerankEnabled) {
+      const { scores, ms } = await rerank(reqs[r], pool.map((i) => texts[i]));
+      rerankMs += ms;
+      const best = scores.reduce((b, s, k) => (s > b.s ? { s, k } : b), { s: -Infinity, k: -1 });
+      evidence.push({ requirement: reqs[r], bullet: best.k >= 0 ? texts[pool[best.k]] : null, score: evidenceFromLogit(best.s) });
+    } else if (reqEmbeds && chunkEmbeds) {
+      // No local reranker (e.g. on Vercel): the closest resume line by embedding similarity.
+      const i = pool[0];
+      const sim = cosine(chunkEmbeds[i + 1], reqEmbeds[r + 1]);
+      evidence.push({ requirement: reqs[r], bullet: texts[i], score: clamp01((sim - 0.3) / 0.4) });
+    }
   }
   const evidenceScore = evidence.length ? evidence.reduce((a, e) => a + e.score, 0) / evidence.length : null;
 
@@ -208,9 +215,9 @@ export async function analyze({ sections, jobTitle, company, description }) {
       retrieval: usedVoyage && !voyageError ? `Voyage AI (${VOYAGE_MODEL})` : null,
       retrievalNote: voyageError ? "Voyage AI was unavailable, so semantic similarity was skipped." : usedVoyage ? null : "Add VOYAGE_API_KEY to turn on semantic similarity.",
       hardSkills: `BM25 over ${texts.length} resume lines`,
-      reranker: `${RERANK_MODEL} (local)`,
+      reranker: RERANK_MODEL ? `${RERANK_MODEL} (local)` : null,
       rerankMs: Math.round(rerankMs),
-      rerankPairs: evidence.length * Math.min(15, candidates.length || texts.length),
+      rerankPairs: RERANK_MODEL ? evidence.length * Math.min(15, candidates.length || texts.length) : 0,
       totalMs: Date.now() - started,
     },
   };

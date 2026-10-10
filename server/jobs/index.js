@@ -8,6 +8,10 @@
 // never overlaps a previous update). As each source finishes, results are merged and deduped and
 // connected apps are notified right away (see /api/postings/stream). The last snapshot is kept on
 // disk so a restart serves postings immediately.
+//
+// On Vercel there's no long-running process: a daily Vercel Cron calls /api/cron/jobs (see
+// vercel.json), which runs runDailyUpdate(), and the snapshot lives in Upstash Redis. Each function
+// instance loads it on demand and re-checks it every few minutes (syncFromStore).
 
 import crypto from "node:crypto";
 import { EventEmitter } from "node:events";
@@ -16,6 +20,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { MAX_AGE_MS } from "./classify.js";
 import { addDomains } from "./logos.js";
+import * as store from "../store.js";
 import { fetchCompanyBoards } from "./sources/ats.js";
 import { fetchGithubLists } from "./sources/github.js";
 import { fetchGoogleJobs } from "./sources/googleJobs.js";
@@ -164,6 +169,10 @@ function scheduleNext() {
 
 async function save() {
   try {
+    if (store.usingRedis) {
+      await store.set("meta", "postings", state);
+      return;
+    }
     await fs.mkdir(path.dirname(SNAPSHOT), { recursive: true, mode: 0o700 });
     const tmp = `${SNAPSHOT}.${process.pid}.tmp`;
     await fs.writeFile(tmp, JSON.stringify(state));
@@ -175,7 +184,7 @@ async function save() {
 
 async function restore() {
   try {
-    const saved = JSON.parse(await fs.readFile(SNAPSHOT, "utf8"));
+    const saved = store.usingRedis ? await store.get("meta", "postings") : JSON.parse(await fs.readFile(SNAPSHOT, "utf8"));
     if (saved && saved.sources) {
       state = saved;
       rebuild();
@@ -186,8 +195,21 @@ async function restore() {
   }
 }
 
+let syncedAt = 0;
+let syncing = null;
+
+/** Serverless: (re)loads the latest snapshot from storage, at most every 5 minutes per instance. */
+export function syncFromStore() {
+  if (!store.onVercel || updating) return Promise.resolve();
+  if (Date.now() - syncedAt < 5 * 60e3) return syncing || Promise.resolve();
+  syncedAt = Date.now();
+  syncing = restore().finally(() => (syncing = null));
+  return syncing;
+}
+
 export async function startJobFeed() {
   if (process.env.JOBS_FEED === "off") return;
+  if (store.onVercel) return syncFromStore(); // the daily update runs from Vercel Cron instead
   await restore();
   const missed = !state.lastRunAt || new Date(state.lastRunAt) < previousRunAt();
   if (missed) runDailyUpdate(); // catch up without delaying startup

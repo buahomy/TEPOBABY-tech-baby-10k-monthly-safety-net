@@ -1,45 +1,18 @@
-// Onboarding profiles, keyed by Google account ID (`sub`).
-// A JSON file is enough for local development; swap for a real database before launch.
+// Onboarding profiles, keyed by Google account ID (`sub`). Stored with server/store.js
+// (Upstash Redis on Vercel, a JSON file locally).
 
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import * as store from "./store.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const FILE = process.env.PROFILE_STORE_PATH || path.join(here, "data", "profiles.json");
 
 const questions = JSON.parse(
   await fs.readFile(path.join(here, "..", "src", "data", "onboarding.json"), "utf8"),
 );
 export const STEPS = questions.steps;
 const STEP_BY_ID = new Map(STEPS.map((s) => [s.id, s]));
-
-let cache = null;
-let writes = Promise.resolve();
-
-async function load() {
-  if (cache) return cache;
-  try {
-    cache = JSON.parse(await fs.readFile(FILE, "utf8"));
-  } catch (err) {
-    if (err.code !== "ENOENT") throw err;
-    cache = {};
-  }
-  return cache;
-}
-
-async function persist(all) {
-  // Write-then-rename so a crash never leaves a half-written file; owner-only permissions.
-  writes = writes
-    .catch(() => {})
-    .then(async () => {
-      await fs.mkdir(path.dirname(FILE), { recursive: true, mode: 0o700 });
-      const tmp = `${FILE}.${process.pid}.tmp`;
-      await fs.writeFile(tmp, JSON.stringify(all, null, 2), { mode: 0o600 });
-      await fs.rename(tmp, FILE);
-    });
-  return writes;
-}
 
 /** Returns an error message, or null if `value` is a valid answer for step `id`. */
 function validateAnswer(id, value) {
@@ -76,8 +49,7 @@ function validateAnswer(id, value) {
 }
 
 export async function getProfile(sub) {
-  const all = await load();
-  const p = all[sub];
+  const p = await store.get("profiles", sub);
   if (!p) return null;
   return { ...p, answers: Object.fromEntries(Object.entries(p.answers).filter(([id]) => STEP_BY_ID.has(id))) };
 }
@@ -96,9 +68,8 @@ export async function saveAnswers(sub, email, answers, complete) {
     if (problem) throw { status: 400, message: problem };
   }
 
-  const all = await load();
   const now = new Date().toISOString();
-  const prev = all[sub] ?? { answers: {}, completedAt: null, createdAt: now };
+  const prev = (await store.get("profiles", sub)) ?? { answers: {}, completedAt: null, createdAt: now };
   // Drop answers to questions that were removed from onboarding.json.
   const kept = Object.fromEntries(Object.entries(prev.answers).filter(([id]) => STEP_BY_ID.has(id)));
   const next = { ...prev, email, answers: { ...kept, ...answers }, updatedAt: now };
@@ -109,7 +80,6 @@ export async function saveAnswers(sub, email, answers, complete) {
     next.completedAt ??= now;
   }
 
-  all[sub] = next;
-  await persist(all);
+  await store.set("profiles", sub, next);
   return next;
 }
