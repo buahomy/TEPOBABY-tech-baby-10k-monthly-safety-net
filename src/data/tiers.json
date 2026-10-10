@@ -1,0 +1,327 @@
+{
+  "_note": "Tech company tiers by interview difficulty for internships and new grad roles, hardest at the top. Based on widely reported intern/new-grad interview experiences (Glassdoor, LeetCode Discuss, Reddit); edit freely. Each logo opens the company's careers page.",
+  "tiers": [
+    {
+      "id": "sd",
+      "label": "System Design",
+      "detail": "Design or practical engineering rounds even for interns and new grads, on top of hard coding",
+      "color": "#ff7f7f",
+      "companies": [
+        {
+          "name": "Stripe",
+          "domain": "stripe.com",
+          "careers": "https://stripe.com/jobs/university"
+        },
+        {
+          "name": "Databricks",
+          "domain": "databricks.com",
+          "careers": "https://www.databricks.com/company/careers/university-recruiting"
+        },
+        {
+          "name": "OpenAI",
+          "domain": "openai.com",
+          "careers": "https://openai.com/careers/search/"
+        },
+        {
+          "name": "Anthropic",
+          "domain": "anthropic.com",
+          "careers": "https://www.anthropic.com/careers"
+        },
+        {
+          "name": "Palantir",
+          "domain": "palantir.com",
+          "careers": "https://www.palantir.com/careers/students/"
+        },
+        {
+          "name": "Netflix",
+          "domain": "netflix.com",
+          "careers": "https://explore.jobs.netflix.net/careers"
+        },
+        {
+          "name": "Snowflake",
+          "domain": "snowflake.com",
+          "careers": "https://careers.snowflake.com/us/en/university"
+        },
+        {
+          "name": "Uber",
+          "domain": "uber.com",
+          "careers": "https://www.uber.com/us/en/careers/teams/university/"
+        },
+        {
+          "name": "Citadel",
+          "domain": "citadel.com",
+          "careers": "https://www.citadel.com/careers/students/"
+        },
+        {
+          "name": "Citadel Securities",
+          "domain": "citadelsecurities.com",
+          "careers": "https://www.citadelsecurities.com/careers/students/"
+        }
+      ]
+    },
+    {
+      "id": "hard",
+      "label": "Hard LC + DP & Advanced Graphs",
+      "detail": "Hard LeetCode, dynamic programming, advanced graphs; quant firms add math and probability",
+      "color": "#ffbf7f",
+      "companies": [
+        {
+          "name": "Google",
+          "domain": "google.com",
+          "careers": "https://www.google.com/about/careers/applications/jobs/results"
+        },
+        {
+          "name": "Meta",
+          "domain": "meta.com",
+          "careers": "https://www.metacareers.com/careerprograms/students"
+        },
+        {
+          "name": "Airbnb",
+          "domain": "airbnb.com",
+          "careers": "https://careers.airbnb.com/"
+        },
+        {
+          "name": "TikTok",
+          "domain": "tiktok.com",
+          "careers": "https://lifeattiktok.com/"
+        },
+        {
+          "name": "Tesla",
+          "domain": "tesla.com",
+          "careers": "https://www.tesla.com/careers/students"
+        },
+        {
+          "name": "Bloomberg",
+          "domain": "bloomberg.com",
+          "careers": "https://www.bloomberg.com/company/early-careers/"
+        },
+        {
+          "name": "Jane Street",
+          "domain": "janestreet.com",
+          "careers": "https://www.janestreet.com/join-jane-street/open-roles/?type=students-and-new-grads"
+        },
+        {
+          "name": "Hudson River Trading",
+          "domain": "hudsonrivertrading.com",
+          "careers": "https://www.hudsonrivertrading.com/campus-recruiting/"
+        },
+        {
+          "name": "Jump Trading",
+          "domain": "jumptrading.com",
+          "careers": "https://www.jumptrading.com/careers/"
+        },
+        {
+          "name": "Two Sigma",
+          "domain": "twosigma.com",
+          "careers": "https://www.twosigma.com/careers/students/"
+        },
+        {
+          "name": "D. E. Shaw",
+          "domain": "deshaw.com",
+          "careers": "https://www.deshaw.com/careers/students"
+        },
+        {
+          "name": "Optiver",
+          "domain": "optiver.com",
+          "careers": "https://optiver.com/working-at-optiver/career-opportunities/"
+        },
+        {
+          "name": "IMC",
+          "domain": "imc.com",
+          "careers": "https://www.imc.com/us/careers/students-graduates"
+        },
+        {
+          "name": "Five Rings",
+          "domain": "fiverings.com",
+          "careers": "https://fiverings.com/careers/"
+        },
+        {
+          "name": "Tower Research",
+          "domain": "tower-research.com",
+          "careers": "https://www.tower-research.com/open-positions"
+        },
+        {
+          "name": "SIG",
+          "domain": "sig.com",
+          "careers": "https://careers.sig.com/campus-programs"
+        },
+        {
+          "name": "XTX Markets",
+          "domain": "xtxmarkets.com",
+          "careers": "https://www.xtxmarkets.com/careers/"
+        },
+        {
+          "name": "Akuna Capital",
+          "domain": "akunacapital.com",
+          "careers": "https://akunacapital.com/careers"
+        }
+      ]
+    },
+    {
+      "id": "medium",
+      "label": "Medium LC",
+      "detail": "Arrays, strings, trees, BFS/DFS, hashing, heaps",
+      "color": "#ffdf7f",
+      "companies": [
+        {
+          "name": "Amazon",
+          "domain": "amazon.com",
+          "careers": "https://www.amazon.jobs/content/en/teams/amazon-web-services/early-career"
+        },
+        {
+          "name": "Microsoft",
+          "domain": "microsoft.com",
+          "careers": "https://apply.careers.microsoft.com/careers?start=0&pid=1970393557007337&sort_by=timestamp"
+        },
+        {
+          "name": "Apple",
+          "domain": "apple.com",
+          "careers": "https://www.apple.com/careers/us/students.html"
+        },
+        {
+          "name": "NVIDIA",
+          "domain": "nvidia.com",
+          "careers": "https://www.nvidia.com/en-us/about-nvidia/careers/university-recruiting/"
+        },
+        {
+          "name": "LinkedIn",
+          "domain": "linkedin.com",
+          "careers": "https://careers.linkedin.com/students"
+        },
+        {
+          "name": "Salesforce",
+          "domain": "salesforce.com",
+          "careers": "https://www.salesforce.com/company/careers/university/"
+        },
+        {
+          "name": "Adobe",
+          "domain": "adobe.com",
+          "careers": "https://careers.adobe.com/us/en/university"
+        },
+        {
+          "name": "Oracle",
+          "domain": "oracle.com",
+          "careers": "https://www.oracle.com/careers/students-grads/"
+        },
+        {
+          "name": "Coinbase",
+          "domain": "coinbase.com",
+          "careers": "https://www.coinbase.com/careers"
+        },
+        {
+          "name": "Robinhood",
+          "domain": "robinhood.com",
+          "careers": "https://careers.robinhood.com/"
+        },
+        {
+          "name": "DoorDash",
+          "domain": "doordash.com",
+          "careers": "https://careersatdoordash.com/"
+        },
+        {
+          "name": "Pinterest",
+          "domain": "pinterest.com",
+          "careers": "https://www.pinterestcareers.com/"
+        },
+        {
+          "name": "Snap",
+          "domain": "snap.com",
+          "careers": "https://careers.snap.com/"
+        },
+        {
+          "name": "Spotify",
+          "domain": "spotify.com",
+          "careers": "https://www.lifeatspotify.com/students"
+        },
+        {
+          "name": "Lyft",
+          "domain": "lyft.com",
+          "careers": "https://www.lyft.com/careers/university"
+        },
+        {
+          "name": "DRW",
+          "domain": "drw.com",
+          "careers": "https://drw.com/work-at-drw/category/campus"
+        },
+        {
+          "name": "Millennium",
+          "domain": "mlp.com",
+          "careers": "https://www.mlp.com/careers/"
+        },
+        {
+          "name": "Point72",
+          "domain": "point72.com",
+          "careers": "https://careers.point72.com/"
+        },
+        {
+          "name": "Old Mission",
+          "domain": "oldmissioncapital.com",
+          "careers": "https://www.oldmissioncapital.com/careers/"
+        },
+        {
+          "name": "Virtu",
+          "domain": "virtu.com",
+          "careers": "https://www.virtu.com/careers/"
+        }
+      ]
+    },
+    {
+      "id": "easy",
+      "label": "Easy LC",
+      "detail": "Fundamentals, OA-style problems, SQL, behavioral-heavy",
+      "color": "#bfff7f",
+      "companies": [
+        {
+          "name": "Capital One",
+          "domain": "capitalone.com",
+          "careers": "https://www.capitalonecareers.com/students"
+        },
+        {
+          "name": "IBM",
+          "domain": "ibm.com",
+          "careers": "https://www.ibm.com/careers/early-professional"
+        },
+        {
+          "name": "Intel",
+          "domain": "intel.com",
+          "careers": "https://intel.wd1.myworkdayjobs.com/External"
+        },
+        {
+          "name": "AMD",
+          "domain": "amd.com",
+          "careers": "https://careers.amd.com/careers-home/"
+        },
+        {
+          "name": "Cisco",
+          "domain": "cisco.com",
+          "careers": "https://careers.cisco.com/global/en"
+        },
+        {
+          "name": "Qualcomm",
+          "domain": "qualcomm.com",
+          "careers": "https://careers.qualcomm.com/careers"
+        },
+        {
+          "name": "JPMorgan Chase",
+          "domain": "jpmorganchase.com",
+          "careers": "https://careers.jpmorgan.com/us/en/students/programs"
+        },
+        {
+          "name": "Goldman Sachs",
+          "domain": "goldmansachs.com",
+          "careers": "https://www.goldmansachs.com/careers/students/"
+        },
+        {
+          "name": "Morgan Stanley",
+          "domain": "morganstanley.com",
+          "careers": "https://www.morganstanley.com/people-opportunities/students-graduates"
+        },
+        {
+          "name": "Visa",
+          "domain": "visa.com",
+          "careers": "https://visa.wd5.myworkdayjobs.com/Visa"
+        }
+      ]
+    }
+  ]
+}

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import CompanyLogo from "../../components/CompanyLogo";
 import Icon from "../../components/Icon";
-import { LEVELS, Level, RESOURCES, TIERS, WINDOWS, WindowId } from "../../data/homeFeed";
+import TierLaunchpad from "../../components/TierLaunchpad";
+import { LEVELS, Level, RESOURCES, WINDOWS, WindowId } from "../../data/homeFeed";
 import { Posting, PostingsResponse, fetchPostings, subscribeToPostings, timeAgo } from "../../utils/postings";
 import { Profile } from "../../utils/profile";
 
@@ -191,26 +192,16 @@ export default function HomeTab({ firstName, profile }: Props) {
           <span className="block-sub">by interview difficulty</span>
         </div>
 
-        <div className="tier-list">
-          {TIERS.map((t) => (
-            <div className="tier-row" key={t.id}>
-              <div className="tier-label" style={{ background: t.color }} title={t.detail}>
-                {t.label}
-              </div>
-              <div className="tier-items">
-                {t.companies.map((c) => (
-                  <span className="tier-chip" key={c}>
-                    <span className="tier-initial" aria-hidden="true">
-                      {c[0]}
-                    </span>
-                    {c}
-                  </span>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-        <p className="block-foot">Based on what students report from recent interviews. Hardest at the top.</p>
+        <p className="block-note">
+          Tap a logo to jump straight to that company's careers page. New roles often go live on a company's own site
+          before any job list picks them up, and some never reach the lists at all, so checking the companies you care
+          about every day gets you in early. Think of these as shortcuts.
+        </p>
+        <TierLaunchpad />
+        <p className="block-foot">
+          Hardest at the top, for internship and new grad interviews. Based on what students report on Glassdoor,
+          LeetCode Discuss and Reddit.
+        </p>
       </section>
 
       {/* 3) Contractor & startup roles */}
