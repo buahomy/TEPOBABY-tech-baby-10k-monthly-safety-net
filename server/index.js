@@ -17,6 +17,7 @@ import fs from "node:fs";
 import { getProfile, saveAnswers } from "./profileStore.js";
 import { importSaved, listSaved, removeSaved, upsertSaved } from "./savedJobsStore.js";
 import { ginnyRoutes } from "./ginny/routes.js";
+import { companyOptions, createSession, realtimeEnabled } from "./interview/realtime.js";
 
 const {
   GOOGLE_CLIENT_ID,
@@ -260,6 +261,34 @@ ginnyRoutes(app, {
   readSession: (req) => readSession(parseCookies(req.headers.cookie)[SESSION_COOKIE]),
   requireXhr,
   requireUser,
+});
+
+// ---- Interview: behavioral voice practice (OpenAI Realtime API) ----
+// The browser gets a short-lived client secret; our OPENAI_API_KEY never leaves the server.
+
+const interviewHits = new Map();
+app.get("/api/interview/status", (_req, res) => {
+  res.json({ enabled: realtimeEnabled(), companies: companyOptions() });
+});
+
+app.post("/api/interview/session", requireXhr, express.json({ limit: "4kb" }), async (req, res) => {
+  if (!realtimeEnabled()) return res.status(503).json({ error: "Voice practice isn't set up yet (missing OPENAI_API_KEY)." });
+  const session = readSession(parseCookies(req.headers.cookie)[SESSION_COOKIE]);
+  const key = session?.sub || `ip:${req.ip}`;
+  const now = Date.now();
+  const recent = (interviewHits.get(key) || []).filter((t) => now - t < 3600e3);
+  if (recent.length >= 10) return res.status(429).json({ error: "You've started a lot of practice sessions. Try again in a bit." });
+  interviewHits.set(key, [...recent, now]);
+
+  const company = ["generic", "google", "amazon", "meta"].includes(req.body?.company) ? req.body.company : "generic";
+  const level = typeof req.body?.level === "string" ? req.body.level.slice(0, 30) : "";
+  const target = typeof req.body?.target === "string" ? req.body.target.slice(0, 120) : "";
+  try {
+    res.json(await createSession({ company, level, target }));
+  } catch (err) {
+    console.error("[interview] session failed:", err.message);
+    res.status(err.status === 401 ? 503 : 502).json({ error: "Couldn't start a voice session. Please try again." });
+  }
 });
 
 // ---- Job postings (public: guests see them too) ----

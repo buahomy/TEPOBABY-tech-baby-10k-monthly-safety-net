@@ -40,8 +40,9 @@ After the questions, you land on **Home**. The bar at the bottom has **Home**, *
 - **Track your applications**: in **My jobs → Applied**, tap a job's stage to update it: **Applied → OA → Phone → On-site → Final → Team match → Offer**, or **Ghosted** / **Not proceeding**. A pipeline summary shows how many jobs are at each stage, and each job shows when its stage last changed. Applied jobs stay until you remove them: the daily job update never touches this list, and changing a stage never reshuffles it (it's ordered by when you applied).
 - **Profile**: your saved and applied jobs, all your answers, programs and organizations picked for you, a button to review your answers, and sign out.
 - **＋ (Ginny)**: pick one saved job, then run an ATS match analysis or ask Gemini about it (see below).
+- **Interview**: two tabs side by side, **Behavioral** (a live AI voice interviewer, see below) and **Technical** (coming soon).
 
-Interview and Connect are coming soon.
+Connect is coming soon.
 
 ### Company tiers
 I rank big tech and quant companies by how hard their interviews are for **college internships and new grad roles**. There are 4 tiers, hardest at the top, based on what students report on Glassdoor, LeetCode Discuss, Reddit and other reliable sources:
@@ -165,6 +166,32 @@ A chat about your selected job, so you know what to expect. It opens with sugges
 - *"Does (company) sponsor (your visa type) for (role)?"* U.S. citizens get a citizenship / clearance question instead.
 
 Ask Gemini uses **Gemini 3.8 Flash** through Google's Interactions API. It tries Google Search first so company-specific answers come with sources. On the free tier, search can be over quota; then Gemini answers from what candidates have publicly reported and the answer says it has no live sources. If Gemini is overloaded, Tepobaby retries and falls back to Gemini 3.7 / 3.5 Flash. Chat only gets the role, company and non-identifying profile facts (class year, graduation date, visa status), never your resume, name or email.
+
+
+### Interview: behavioral voice practice
+In **Interview → Behavioral**, pick who interviews you: **Generic**, **Google**, **Amazon** or **Meta**. Then tap the big round button and answer out loud. **Alex, a Senior Software Engineer** at that company, interviews you in real time, powered by the OpenAI Realtime API over WebRTC.
+
+| Interviewer | Focus |
+| --- | --- |
+| Generic | Classic behavioral questions: teamwork, conflict, failure, ambiguity, ownership |
+| Google | Scale & complexity: billions of requests, system trade-offs, edge cases, and "Googleyness" (collaboration, handling ambiguity). Listens for "I" vs. "we" |
+| Amazon | Leadership Principles, evaluated like a Principal Engineer: Customer Obsession, Ownership, Bias for Action, Dive Deep, Deliver Results. Follows up when you don't show bias for action or quantifiable business metrics |
+| Meta | Move fast & impact: rapid execution, personal engineering ownership, pragmatism over over-engineering |
+
+The persona, company context, interview rigor and evaluation criteria are set with system instructions in the Realtime session. Alex keeps turns to 1–3 sentences so you do most of the talking, asks one question at a time, and follows up naturally when a STAR part is missing. For example: *"Thanks for detailing those steps! Before we move on, what was the actual impact after you shipped that?"*
+
+**Live STAR feedback.** Four boxes, **S · T · A · R**, update as you talk:
+- 🟩 **green**: that part passed;
+- 🟨 **yellow**: needs clarification (Alex follows up);
+- 🟥 **red**: needs revision, so redo that part.
+
+Alex grades each part by calling the `update_star_progress` tool (phase, status and a short note like "No quantifiable metric provided"). The note shows under the boxes. A second tool, `start_new_question`, resets the boxes and shows each new question on screen.
+
+**Privacy & cost.**
+- **Audio:** your voice goes straight from your browser to OpenAI; Tepobaby doesn't record or store it.
+- **Key safety:** the server mints a short-lived client secret for each session, so the OpenAI key never reaches the browser.
+- **Limits:** sessions end automatically after 15 minutes, and each user can start up to 10 sessions an hour.
+- **Credits:** the Realtime API has no free tier, so the OpenAI account needs credits; if it runs out, the app says so instead of failing silently.
 
 
 ### Where job postings come from
@@ -356,6 +383,26 @@ How I built Tepobaby (with Claude Code): each decision, why I made it, and the p
   - *Why:* it doesn't need the resume, name or email to answer.
   - *Pain point:* privacy.
 
+#### Interview: behavioral voice practice
+- **OpenAI Realtime API over WebRTC, with a short-lived client secret from the server.**
+  - *Why:* WebRTC gives low-latency, two-way voice straight from the browser, with echo cancellation. The server keeps `OPENAI_API_KEY` and only hands out a per-session secret, with the instructions, voice, turn detection and tools baked in.
+  - *Pain point:* a voice agent needs real-time audio, but the API key must never reach the browser. The GA Realtime API also changed from beta (`/v1/realtime/client_secrets` and `/v1/realtime/calls`, model `gpt-realtime-2.1`).
+- **Company personas as system instructions** (Generic, Google, Amazon, Meta), with "Alex, Senior Software Engineer at (company)".
+  - *Why:* each company grades behavioral answers differently: Google on scale and "I" vs. "we", Amazon on Leadership Principles and metrics, Meta on speed and ownership.
+  - *Pain point:* generic mock interviews don't prepare students for company-specific bars.
+- **STAR feedback through function calling** (`update_star_progress`), shown as four S / T / A / R boxes.
+  - *Why:* the model judges each STAR part as you speak, and the app turns that into instant green / yellow / red feedback without waiting for the end.
+  - *Pain point:* students often skip the Result or give no numbers, and only find out after the interview.
+- **An extra `start_new_question` tool.**
+  - *Why:* the boxes need to reset for each question, and showing the question helps students stay on track.
+  - *Pain point:* without it, the boxes from the last answer would bleed into the next one.
+- **Explain OpenAI credit problems in plain words.**
+  - *Why:* "connection failed" doesn't tell anyone what to fix.
+  - *Pain point:* the Realtime API has no free tier. In testing, creating the session worked (that step is free), but the WebRTC connection returned 429 `insufficient_quota` because the account had no credits. A full live conversation still needs to be verified once credits are added.
+- **Short turns, semantic turn detection, and a 15-minute cap.**
+  - *Why:* students should do most of the talking, Alex shouldn't cut them off mid-thought, and voice sessions cost money.
+  - *Pain point:* voice agents tend to ramble and interrupt, and an open session can run up API usage.
+
 #### Platform & tooling
 - **Pin `@huggingface/transformers` 3.8.1** (ONNX Runtime 1.21), and add a `Promise.try` polyfill for `unpdf`.
   - *Why:* my Intel Mac runs Node 20.
@@ -397,6 +444,10 @@ How I built Tepobaby (with Claude Code): each decision, why I made it, and the p
 | `VOYAGE_MODEL` | Server | Optional. Default `voyage-4`. |
 | `GEMINI_API_KEY` | Server | Gemini key for Ask Gemini and tailored rewrites (free tier). Server-only, never sent to the browser. |
 | `GEMINI_MODEL` | Server | Optional. Default `gemini-3.8-flash` (Interactions API). |
+| `OPENAI_API_KEY` | Server | OpenAI key for Interview → Behavioral voice practice (Realtime API, paid: the account needs credits). Server-only; the browser gets short-lived session secrets. |
+| `OPENAI_REALTIME_MODEL` | Server | Optional. Default `gpt-realtime-2.1`. |
+| `OPENAI_REALTIME_VOICE` | Server | Optional. Default `marin`. |
+| `OPENAI_TRANSCRIBE_MODEL` | Server | Optional. Transcribes what you say. Default `gpt-4o-mini-transcribe`. |
 | `GEMINI_FALLBACK_MODELS` | Server | Optional. Comma-separated models to try when the main one is overloaded. Default `gemini-3.7-flash,gemini-3.5-flash`. |
 
 `.env.local` is git-ignored. Never commit real values.
@@ -426,6 +477,8 @@ API routes (the Vite dev server forwards `/api` to the auth server):
 | `GET /api/ginny/status` | Which Ginny pieces are set up (Voyage, Gemini, reranker) and the tier cutoffs |
 | `GET` / `PUT` / `DELETE /api/ginny/resume` | The signed-in student's resume (PUT body = PDF bytes) |
 | `POST /api/ginny/ats` | ATS match analysis for one job (guests send their PDF with the request) |
+| `GET /api/interview/status` | Whether voice practice is set up, and the interviewer options |
+| `POST /api/interview/session` | Short-lived OpenAI Realtime client secret for one behavioral interview (company persona + STAR tools baked in) |
 | `POST /api/ginny/tailor` | Opt-in Gemini rewrites of the resume for the selected job (sends the redacted resume sections) |
 | `POST /api/ginny/chat` | Ask Gemini about the selected job |
 | `GET /api/logo/:domain` | A logo, cached by the server (only for companies in current postings, the tier list, or suggested programs) |
