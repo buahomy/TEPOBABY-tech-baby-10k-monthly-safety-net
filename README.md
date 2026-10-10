@@ -5,12 +5,7 @@ This is only for U.S. college students who need to lock in and get the job prosp
 
 
 ### Gemini Usage
-By default, any responses you ask are tied to the central-usage Gemini API key that is on free tier of mine. If you run out of quota to use Gemini Chatbox for your personalized job searches. Please follow these instructions to use Gemini on your own account:
-1. Go to
-2. Copy API key
-3. Paste it onto
-
-Safety Assurance: Your API key is stored locally in your browser and is only sent directly to Google. I have no access to it. 
+Ginny's Gemini features (Ask Gemini and tailored rewrites) currently run on the author's personal free API key. To unlock them in your own copy, grab your own API key from [Google AI Studio](https://aistudio.google.com/app/apikey), which is free. Then add it to `.env.local` as `GEMINI_API_KEY=...` and restart the server.
 
 
 ### Sign in with your .edu Google account
