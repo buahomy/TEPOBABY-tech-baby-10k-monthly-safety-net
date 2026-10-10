@@ -13,6 +13,7 @@ import express from "express";
 import { OAuth2Client } from "google-auth-library";
 import { feedEvents, knownDomain, queryPostings, startJobFeed } from "./jobs/index.js";
 import { getLogo } from "./jobs/logos.js";
+import fs from "node:fs";
 import { getProfile, saveAnswers } from "./profileStore.js";
 
 const {
@@ -226,11 +227,18 @@ app.get("/api/postings", (req, res) => {
   res.json(queryPostings({ level, maxHours, visaFriendly: req.query.visa === "1", limit, offset }));
 });
 
-// Company logo for a posting, fetched once and cached (see server/jobs/logos.js). Only domains that
-// appear in current postings are served, so this can't be used as an open proxy.
+// Companies in the Home "Company tiers" launchpad (src/data/tiers.json) also get logos.
+const TIER_DOMAINS = new Set(
+  JSON.parse(fs.readFileSync(new URL("../src/data/tiers.json", import.meta.url), "utf8")).tiers.flatMap((t) =>
+    t.companies.map((c) => c.domain),
+  ),
+);
+
+// Company logo, fetched once and cached (see server/jobs/logos.js). Only domains that appear in
+// current postings or the tier list are served, so this can't be used as an open proxy.
 app.get("/api/logo/:domain", async (req, res) => {
   const domain = String(req.params.domain).toLowerCase();
-  if (!knownDomain(domain)) return res.status(404).end();
+  if (!knownDomain(domain) && !TIER_DOMAINS.has(domain)) return res.status(404).end();
   try {
     const logo = await getLogo(domain);
     if (!logo) {
@@ -271,6 +279,8 @@ app.get("/api/postings/stream", (_req, res) => {
 });
 
 startJobFeed();
+// Warm the logo cache for the tier list so the launchpad loads instantly.
+Promise.allSettled([...TIER_DOMAINS].map((d) => getLogo(d)));
 
 app.listen(Number(PORT), "127.0.0.1", () => {
   console.log(`[auth] listening on http://127.0.0.1:${PORT} (redirect URI ${REDIRECT_URI})`);

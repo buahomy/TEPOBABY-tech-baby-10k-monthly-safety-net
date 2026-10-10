@@ -39,11 +39,33 @@ Safety Assurance: Your answers are saved to your own account, and no other stude
 After the questions, you land on **Home**. The bar at the bottom has **Home**, **Interview**, a big **+** for uploading an image, **Connect** and **Profile**.
 
 - **Job postings** (live): switch between **Underclassmen Programs**, **Internship** and **Entry-level**, and between **Last 48–72h** and **This week**. Tepobaby opens on the level that fits your answers, and if you need visa sponsorship you can hide roles that say they don't sponsor.
-- **Company tiers**: a tier list of companies by interview difficulty, from System Design at the top down to Easy LC.
+- **Company tiers**: big tech and quant companies ranked by interview difficulty, as a launchpad of logos. Tap a logo to open that company's careers page (see below).
 - **Contractor & startup roles**: job boards for startup and contract work. These roles rarely show up on the big job lists, because small teams often post only on their own sites and a few niche boards, and the roles are very specific. Going straight to these sites is the best way to find them.
 - **Profile**: see all your answers, review them, or sign out.
 
 Interview, Connect and image uploads are coming soon.
+
+### Company tiers
+I rank big tech and quant companies by how hard their interviews are for **college internships and new grad roles**. There are 4 tiers, hardest at the top, based on what students report on Glassdoor, LeetCode Discuss, Reddit and other reliable sources:
+
+| Tier | What to expect | Companies |
+| --- | --- | --- |
+| **System Design** | Design or practical engineering rounds even for interns and new grads, on top of hard coding | Stripe, Databricks, OpenAI, Anthropic, Palantir, Netflix, Snowflake, Uber, Citadel, Citadel Securities |
+| **Hard LC + DP & Advanced Graphs** | Hard LeetCode, dynamic programming, advanced graphs; quant firms add math and probability | Google, Meta, Airbnb, TikTok, Tesla, Bloomberg, Jane Street, Hudson River Trading, Jump Trading, Two Sigma, D. E. Shaw, Optiver, IMC, Five Rings, Tower Research, SIG, XTX Markets, Akuna Capital |
+| **Medium LC** | Arrays, strings, trees, BFS/DFS, hashing, heaps | Amazon, Microsoft, Apple, NVIDIA, LinkedIn, Salesforce, Adobe, Oracle, Coinbase, Robinhood, DoorDash, Pinterest, Snap, Spotify, Lyft, DRW, Millennium, Point72, Old Mission, Virtu |
+| **Easy LC** | Fundamentals, OA-style problems, SQL, behavioral-heavy | Capital One, IBM, Intel, AMD, Cisco, Qualcomm, JPMorgan Chase, Goldman Sachs, Morgan Stanley, Visa |
+
+**It works like a launchpad.** Like a Chrome launchpad extension, every company shows as its logo, and tapping it opens that company's careers page in a new tab. For example:
+- Microsoft → [apply.careers.microsoft.com](https://apply.careers.microsoft.com/careers?start=0&pid=1970393557007337&sort_by=timestamp)
+- Google → [google.com/about/careers](https://www.google.com/about/careers/applications/jobs/results)
+- Amazon → [AWS early career](https://www.amazon.jobs/content/en/teams/amazon-web-services/early-career)
+
+Wherever a company has one, the link goes to its student or early-career page. Logos are fetched and cached by the server.
+
+**Why check careers sites yourself.** The job feed updates once a morning, and the community lists only add a role after someone finds it. New roles often go live on a company's own site first, and some never reach the lists at all. Checking the companies you care about every day, straight from these shortcuts, gets your application in early, while fewer people have applied.
+
+The tiers, careers links and logo websites all live in [src/data/tiers.json](src/data/tiers.json), so they're easy to update.
+
 
 ### Where job postings come from
 Postings update **once a day, every morning at 7:00 AM Eastern Time (ET)**, so 30–31 times a month. The time follows daylight saving, and if the server was off at 7:00 AM it catches up as soon as it starts. Each morning the server checks every source in parallel in the background, keeps only roles posted in the last 7 days, removes duplicates, and pushes the new postings to the app as soon as each source finishes.
@@ -101,6 +123,9 @@ How I built the job postings feed and the rest of the app (with Claude Code), wh
 - **Underclassmen programs are rare.** → The tab says so and points to Internship, instead of showing made-up programs.
 - **Startup and contract roles rarely appear on job lists.** → A separate section links straight to the boards where they're posted.
 
+- **Ranking interview difficulty is subjective.** → I base tiers on what students report (Glassdoor, LeetCode Discuss, Reddit) and fact-check borderline companies. That moved Tesla, Bloomberg and Akuna Capital up to Hard LC, because reports describe medium-hard to hard problems. NVIDIA, Point72 and DRW stayed in Medium LC, because reports describe mostly medium problems plus systems or data questions. Everything is in `src/data/tiers.json`, so it's easy to adjust.
+- **Job lists lag behind company sites.** → The tier list doubles as a launchpad of careers-page shortcuts, so checking target companies daily is one tap each.
+
 **Rest of the app**
 - **Google sign-in didn't come back from the popup** in some browsers (in-editor browsers, the iPhone Home Screen app). → Sign-in uses a full-page redirect.
 - **A .edu check in the browser could be bypassed.** → The server verifies Google's ID token and only accepts verified emails ending in `.edu`.
@@ -141,4 +166,4 @@ API routes (the Vite dev server forwards `/api` to the auth server):
 | `GET` / `PUT /api/profile` | Read / save the signed-in student's own answers |
 | `GET /api/postings?level=&window=&visa=` | Live job postings (public). `level`: `underclassmen`, `internship` or `entry`; `window`: `fresh` (72h) or `week` |
 | `GET /api/postings/stream` | Live updates (Server-Sent Events): sends `update` when the morning update brings new postings |
-| `GET /api/logo/:domain` | A company's logo, cached by the server (only for companies in current postings) |
+| `GET /api/logo/:domain` | A company's logo, cached by the server (only for companies in current postings or the tier list) |

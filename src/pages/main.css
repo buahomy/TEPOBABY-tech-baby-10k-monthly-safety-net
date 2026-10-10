@@ -403,7 +403,7 @@
 
 .m01 .tier-label {
   display: flex;
-  width: 84px;
+  width: 74px;
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
@@ -415,38 +415,80 @@
   text-align: center;
 }
 
-.m01 .tier-items {
-  display: flex;
+/* Tier launchpad: app-style logo shortcuts */
+.m01 .tier-apps {
+  display: grid;
   flex: 1;
-  flex-wrap: wrap;
+  grid-template-columns: repeat(auto-fill, minmax(54px, 1fr));
+  gap: 10px 4px;
   align-content: center;
-  gap: 6px;
-  padding: 8px;
+  padding: 10px 6px;
   background: #22232a;
 }
 
-.m01 .tier-chip {
-  display: inline-flex;
+.m01 .app-icon {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
   align-items: center;
-  gap: 5px;
-  padding: 4px 8px 4px 4px;
-  border-radius: 8px;
-  color: #e5e7eb;
-  background: #2f3039;
-  font-size: 11px;
-  font-weight: 600;
+  gap: 4px;
+  color: inherit;
+  text-decoration: none;
 }
 
-.m01 .tier-initial {
+.m01 .app-icon-tile {
   display: grid;
-  width: 18px;
-  height: 18px;
+  width: 42px;
+  height: 42px;
   place-items: center;
-  border-radius: 5px;
+  overflow: hidden;
+  border-radius: 11px;
+  background: #fff;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.m01 .app-icon-tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 6px;
+}
+
+.m01 .app-icon-letter {
   color: #0b0d17;
-  background: #e5e7eb;
-  font-size: 10px;
+  font-size: 17px;
   font-weight: 800;
+}
+
+.m01 .app-icon:hover .app-icon-tile {
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+}
+
+.m01 .app-icon:active .app-icon-tile {
+  transform: scale(0.94);
+}
+
+.m01 .app-icon:focus-visible {
+  outline: none;
+}
+
+.m01 .app-icon:focus-visible .app-icon-tile {
+  outline: 2px solid var(--indigo-bright);
+  outline-offset: 2px;
+}
+
+.m01 .app-icon-name {
+  overflow: hidden;
+  max-width: 100%;
+  color: #d1d5db;
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Resources */
