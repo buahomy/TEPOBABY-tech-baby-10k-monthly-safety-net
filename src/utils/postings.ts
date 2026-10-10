@@ -13,10 +13,13 @@ export type Posting = {
   postedApprox: boolean;
   level: Level;
   sponsorship: "yes" | "no" | "citizens" | null;
+  domain: string | null; // company website, used for its logo
 };
 
 export type PostingsResponse = {
   updatedAt: string | null;
+  nextUpdateAt: string;
+  schedule: string;
   total: number;
   counts: Record<Level, { fresh: number; week: number }>;
   postings: Posting[];

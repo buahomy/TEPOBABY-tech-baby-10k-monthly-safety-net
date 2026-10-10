@@ -4,6 +4,7 @@
 // fall back to parsing the README's Markdown table.
 
 import { DAY, MAX_AGE_MS, classify, cleanText, fetchJson, fetchText, normalizeUrl, sponsorship } from "../classify.js";
+import { domainFromUrl } from "../logos.js";
 
 const RAW = "https://raw.githubusercontent.com";
 
@@ -48,6 +49,7 @@ async function fromMarkdownList({ repo, branch, hint }, now) {
   const md = await fetchText(`${RAW}/${repo}/${branch}/README.md`, { timeoutMs: 45000, cache: true });
   const out = [];
   let lastCompany = "";
+  let lastDomain = null;
   for (const line of md.split("\n")) {
     if (!line.startsWith("|") || /^\|\s*-/.test(line) || /\|\s*Company\s*\|/i.test(line)) continue;
     const cells = line.split("|").slice(1, -1).map((c) => c.trim());
@@ -57,8 +59,12 @@ async function fromMarkdownList({ repo, branch, hint }, now) {
     if (!href || age === undefined) continue;
 
     const companyCell = cleanText(cells[0]);
-    const company = companyCell === "↳" ? lastCompany : companyCell;
+    const isContinuation = companyCell === "↳";
+    const company = isContinuation ? lastCompany : companyCell;
+    // The company cell links to the company's own website, which gives us its logo.
+    const domain = isContinuation ? lastDomain : domainFromUrl(cells[0].match(/href="([^"]+)"/)?.[1] || "");
     lastCompany = company;
+    lastDomain = domain;
     const rawTitle = cells[1];
     const title = cleanText(rawTitle);
     const level = classify(title, hint);
@@ -76,6 +82,7 @@ async function fromMarkdownList({ repo, branch, hint }, now) {
       postedAt: new Date(posted).toISOString(),
       postedApprox: true, // the list only gives whole days
       level,
+      domain,
       sponsorship: sponsorship("", rawTitle),
     });
   }

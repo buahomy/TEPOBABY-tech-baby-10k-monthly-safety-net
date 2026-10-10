@@ -40,22 +40,22 @@ After the questions, you land on **Home**. The bar at the bottom has **Home**, *
 
 - **Job postings** (live): switch between **Underclassmen Programs**, **Internship** and **Entry-level**, and between **Last 48–72h** and **This week**. Tepobaby opens on the level that fits your answers, and if you need visa sponsorship you can hide roles that say they don't sponsor.
 - **Company tiers**: a tier list of companies by interview difficulty, from System Design at the top down to Easy LC.
-- **Contractor & startup roles**: job boards for startup and contract work.
+- **Contractor & startup roles**: job boards for startup and contract work. These roles rarely show up on the big job lists, because small teams often post only on their own sites and a few niche boards, and the roles are very specific. Going straight to these sites is the best way to find them.
 - **Profile**: see all your answers, review them, or sign out.
 
 Interview, Connect and image uploads are coming soon.
 
 ### Where job postings come from
-Postings update live. The server checks each source in the background, keeps only roles posted in the last 7 days, removes duplicates, and pushes new postings to the app the moment they arrive.
+Postings update **once a day, every morning at 7:00 AM Eastern Time (ET)**, so 30–31 times a month. The time follows daylight saving, and if the server was off at 7:00 AM it catches up as soon as it starts. Each morning the server checks every source in parallel in the background, keeps only roles posted in the last 7 days, removes duplicates, and pushes the new postings to the app as soon as each source finishes.
 
-| Source | What it adds | Checked every |
-| --- | --- | --- |
-| [SimplifyJobs Summer 2027 Internships](https://github.com/SimplifyJobs/Summer2027-Internships) + [New Grad Positions](https://github.com/SimplifyJobs/New-Grad-Positions) | Most internships and new grad roles, with exact posting times | 5 min |
-| [speedyapply 2027 SWE College Jobs](https://github.com/speedyapply/2027-SWE-College-Jobs) | More SWE internships and new grad roles (age in days only) | 5 min |
-| [Pitt CSC](https://github.com/pittcsc/Summer2027-Internships), [vanshb03](https://github.com/vanshb03/Summer2027-Internships) | Extra community-curated internships | 5 min |
-| Company job boards: [Greenhouse](https://developers.greenhouse.io/job-board.html), [Lever](https://github.com/lever/postings-api), [Ashby](https://developers.ashbyhq.com/docs/public-job-posting-api) | Early-career roles straight from about 80 companies (Stripe, Figma, OpenAI, Ramp, Palantir…). Add more in [server/jobs/companies.json](server/jobs/companies.json) | 30 min |
-| [Hacker News "Who is hiring?"](https://github.com/HackerNews/API) | Startup posts that mention internships, new grad or junior roles | 2 hours |
-| [Google Jobs via SerpApi](https://serpapi.com/google-jobs-api) (optional) | Roles indexed from LinkedIn, Indeed, Glassdoor and company sites. Needs a paid `SERPAPI_KEY` | 6 hours |
+| Source | What it adds |
+| --- | --- |
+| [SimplifyJobs Summer 2027 Internships](https://github.com/SimplifyJobs/Summer2027-Internships) + [New Grad Positions](https://github.com/SimplifyJobs/New-Grad-Positions) | Most internships and new grad roles, with exact posting times |
+| [speedyapply 2027 SWE College Jobs](https://github.com/speedyapply/2027-SWE-College-Jobs) | More SWE internships and new grad roles (age in days only) |
+| [Pitt CSC](https://github.com/pittcsc/Summer2027-Internships), [vanshb03](https://github.com/vanshb03/Summer2027-Internships) | Extra community-curated internships |
+| Company job boards: [Greenhouse](https://developers.greenhouse.io/job-board.html), [Lever](https://github.com/lever/postings-api), [Ashby](https://developers.ashbyhq.com/docs/public-job-posting-api) | Early-career roles straight from about 80 companies (Stripe, Figma, OpenAI, Ramp, Palantir…). Add more in [server/jobs/companies.json](server/jobs/companies.json) |
+| [Hacker News "Who is hiring?"](https://github.com/HackerNews/API) | Startup posts that mention internships, new grad or junior roles |
+| [Google Jobs via SerpApi](https://serpapi.com/google-jobs-api) (optional) | Roles indexed from LinkedIn, Indeed, Glassdoor and company sites. Needs a paid `SERPAPI_KEY` |
 
 The Simplify.jobs site doesn't need its own scraper, because the SimplifyJobs GitHub lists above already carry its data.
 
@@ -63,7 +63,8 @@ LinkedIn, Indeed, Glassdoor, Wellfound, Y Combinator's Work at a Startup, Ripple
 
 **On your Home page**
 - Each level tab shows how many postings it has, and **Last 48–72h** / **This week** filter by real posting times.
-- Newest first, with a **Live** badge and "Updated X min ago". New postings appear on their own, and **Show more** loads the next batch.
+- Newest first, with a **Live** badge and when the last morning update ran. New postings appear on their own, and **Show more** loads the next batch.
+- Each posting shows the company's logo: the site's icon via [Google's favicon service](https://www.google.com/s2/favicons) (with [DuckDuckGo's](https://icons.duckduckgo.com) as a backup), fetched and cached by our server, so your browser never contacts them. The company's website comes from the job list, the apply link, or a name lookup that has to match the company exactly. If there's no confident match, you see the company's first letter instead of a wrong logo.
 - Each posting's level comes from the list it was found in and its title (like "intern" or "new grad"). Senior roles are left out.
 
 **Good to know**
@@ -82,6 +83,7 @@ LinkedIn, Indeed, Glassdoor, Wellfound, Y Combinator's Work at a Startup, Ripple
 | `APP_ORIGIN` | Server | Public URL of the app, no trailing slash. `http://localhost:5173` locally. |
 | `SERPAPI_KEY` | Server | Optional. Adds Google Jobs results through SerpApi. |
 | `JOBS_FEED` | Server | Optional. Set to `off` to stop checking job sources. |
+| `JOBS_DAILY_TIME` | Server | Optional. Daily update time in Eastern Time, `HH:MM` (default `07:00`). |
 
 `.env.local` is git-ignored. Never commit real values.
 
@@ -104,4 +106,5 @@ API routes (the Vite dev server forwards `/api` to the auth server):
 | `POST /api/auth/logout` | Sign out |
 | `GET` / `PUT /api/profile` | Read / save the signed-in student's own answers |
 | `GET /api/postings?level=&window=&visa=` | Live job postings (public). `level`: `underclassmen`, `internship` or `entry`; `window`: `fresh` (72h) or `week` |
-| `GET /api/postings/stream` | Live updates (Server-Sent Events): sends `update` whenever new postings arrive |
+| `GET /api/postings/stream` | Live updates (Server-Sent Events): sends `update` when the morning update brings new postings |
+| `GET /api/logo/:domain` | A company's logo, cached by the server (only for companies in current postings) |

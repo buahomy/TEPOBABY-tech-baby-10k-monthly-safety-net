@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import CompanyLogo from "../../components/CompanyLogo";
 import Icon from "../../components/Icon";
 import { LEVELS, Level, RESOURCES, TIERS, WINDOWS, WindowId } from "../../data/homeFeed";
 import { Posting, PostingsResponse, fetchPostings, subscribeToPostings, timeAgo } from "../../utils/postings";
@@ -33,9 +34,9 @@ export default function HomeTab({ firstName, profile }: Props) {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState("");
 
-  // Load the first page whenever a filter changes. After that, the server pushes a message the
-  // moment new postings arrive (Server-Sent Events) and the list reloads quietly; a slow timer
-  // is only a fallback if the live connection drops.
+  // Load the first page whenever a filter changes. Postings update once every morning (7:00 AM ET);
+  // when that update lands the server pushes a message (Server-Sent Events) and the list reloads
+  // quietly. A slow timer is only a fallback if the live connection drops.
   useEffect(() => {
     const ctrl = new AbortController();
     const load = (quiet: boolean) => {
@@ -153,9 +154,7 @@ export default function HomeTab({ firstName, profile }: Props) {
             {postings.map((p) => (
               <li key={p.id}>
                 <a className="posting" href={p.url} target="_blank" rel="noreferrer">
-                  <span className="logo-tile" aria-hidden="true">
-                    {p.company[0]}
-                  </span>
+                  <CompanyLogo company={p.company} domain={p.domain} />
                   <span className="posting-copy">
                     <span className="posting-company">{p.company}</span>
                     <span className="posting-title">{p.title}</span>
@@ -179,8 +178,9 @@ export default function HomeTab({ firstName, profile }: Props) {
           </button>
         )}
         <p className="block-foot">
-          {feed?.updatedAt ? `Updated ${timeAgo(feed.updatedAt)}. ` : ""}From SimplifyJobs, speedyapply, company job boards
-          (Greenhouse, Lever, Ashby) and Hacker News. Links open the original application.
+          Updated every morning at 7:00 AM ET{feed?.updatedAt ? ` · last update ${timeAgo(feed.updatedAt)}` : ""}. From
+          SimplifyJobs, speedyapply, company job boards (Greenhouse, Lever, Ashby) and Hacker News. Links open the
+          original application.
         </p>
       </section>
 
@@ -218,6 +218,11 @@ export default function HomeTab({ firstName, profile }: Props) {
         <div className="block-head">
           <h2 id="h-resources">Contractor & startup roles</h2>
         </div>
+        <p className="block-note">
+          Startup and contract roles rarely make it onto the big job lists above. Small teams often post only on their
+          own sites and a few niche boards, and the roles are very specific. Going straight to these sites is the best
+          way to find them.
+        </p>
         <ul className="resource-list">
           {RESOURCES.map((r) => (
             <li key={r.name}>
