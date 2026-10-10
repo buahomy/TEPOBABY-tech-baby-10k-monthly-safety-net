@@ -79,7 +79,7 @@ export async function startVoiceInterview(opts: InterviewOptions, h: InterviewHa
 
     dc.onopen = () => {
       h.onState("live");
-      send({ type: "response.create" }); // Alex greets and asks the first question
+      send({ type: "response.create" }); // North West greets and asks the first question
     };
     dc.onmessage = (e) => {
       let ev: any;
@@ -111,7 +111,7 @@ export async function startVoiceInterview(opts: InterviewOptions, h: InterviewHa
           if (ev.transcript) h.onCaption(ev.transcript);
           break;
         case "response.done": {
-          // Tool calls arrive as function_call output items; answer each, then let Alex continue.
+          // Tool calls arrive as function_call output items; answer each, then let North West continue.
           const calls = (ev.response?.output || []).filter((o: any) => o.type === "function_call");
           for (const call of calls) {
             let args: any = {};

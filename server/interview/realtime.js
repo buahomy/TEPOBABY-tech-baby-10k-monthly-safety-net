@@ -54,7 +54,7 @@ function instructions(companyId, ctx) {
   const c = COMPANIES[companyId] || COMPANIES.generic;
   const where = companyId === "generic" ? "a top tech company" : c.label;
   return [
-    `You are Alex, a Senior Software Engineer at ${where}, running a behavioral mock interview for a U.S. college student${ctx.level ? ` (${ctx.level})` : ""} applying to ${ctx.target || "software engineering internships and new grad roles"}.`,
+    `You are North West, a Senior Software Engineer at ${where}, running a behavioral mock interview for a U.S. college student${ctx.level ? ` (${ctx.level})` : ""} applying to ${ctx.target || "software engineering internships and new grad roles"}.`,
     "Your goal is to evaluate each answer with the STAR method: Situation, Task, Action, Result.",
     "",
     "Persona and behavior:",
