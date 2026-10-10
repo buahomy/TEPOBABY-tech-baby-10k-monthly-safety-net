@@ -8,6 +8,7 @@ import { useSavedJobs } from "../utils/savedJobs";
 import GinnySheet from "./GinnySheet";
 import ComingSoonTab from "./tabs/ComingSoonTab";
 import HomeTab from "./tabs/HomeTab";
+import InterviewTab from "./tabs/InterviewTab";
 import ProfileTab from "./tabs/ProfileTab";
 import "./main.css";
 import "./onboarding.css";
@@ -40,16 +41,7 @@ export default function Main({ user, profile, onEdit, onSignIn, onSignOut }: Pro
       <div className="main">
         <div className="main-scroll" ref={scroller}>
           {tab === "home" && <HomeTab firstName={firstName} profile={profile} saved={saved} />}
-          {tab === "interview" && (
-            <ComingSoonTab
-              title="Interview"
-              points={[
-                "STAR answer practice with AI feedback",
-                "Fresh interview questions by company and role",
-                "Elevator pitch builder for “Tell me about yourself”",
-              ]}
-            />
-          )}
+          {tab === "interview" && <InterviewTab profile={profile} />}
           {tab === "connect" && (
             <ComingSoonTab
               title="Connect"
