@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { AUTH_ERRORS, User, getCurrentUser, prepareGoogleSignIn, signInWithGoogle, signOut } from "../utils/auth";
 import "./mess01.css";
 
 // Welcome screen ported from the Figma Make file "TEPOBABY" (b5IEjWIqPE1QZrVzTYJ3Eu).
@@ -76,20 +77,51 @@ const features = [
 ];
 
 export default function Mess01() {
-  const [selection, setSelection] = useState<"student" | "guest" | null>(null);
+  const [guest, setGuest] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [signingIn, setSigningIn] = useState(false);
+  const [authError, setAuthError] = useState("");
 
-  // The rest of the app uses a light page background; match the design's canvas here.
   useEffect(() => {
-    const prev = document.body.style.background;
-    document.body.style.background = "#090b14";
-    return () => {
-      document.body.style.background = prev;
-    };
+    getCurrentUser().then(setUser);
+    prepareGoogleSignIn().catch((e: Error) => setAuthError(e.message));
+
+    // Errors from the redirect flow come back as ?auth_error=<code>.
+    const params = new URLSearchParams(location.search);
+    const code = params.get("auth_error");
+    if (code) {
+      setAuthError(AUTH_ERRORS[code] ?? AUTH_ERRORS.failed);
+      params.delete("auth_error");
+      const rest = params.toString();
+      history.replaceState(null, "", location.pathname + (rest ? `?${rest}` : ""));
+    }
   }, []);
 
-  const onKey = (choice: "student" | "guest") => (event: React.KeyboardEvent) => {
-    if (event.key === "Enter" || event.key === " ") setSelection(choice);
+  // Called straight from the click/keypress so the Google popup isn't blocked.
+  const startEduSignIn = () => {
+    if (signingIn || user) return;
+    setAuthError("");
+    setSigningIn(true);
+    signInWithGoogle()
+      .then((result) => {
+        if (result !== "redirecting") setUser(result);
+      })
+      .catch((e: Error) => setAuthError(e.message))
+      .finally(() => setSigningIn(false));
   };
+
+  const onActivate = (action: () => void) => (event: React.KeyboardEvent) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      action();
+    }
+  };
+
+  const primaryLabel = user
+    ? `Signed in as ${user.name.split(" ")[0] || user.email}`
+    : signingIn
+      ? "Connecting to Google…"
+      : "Get Started with .edu Email";
 
   return (
     <main className="m01 app-shell">
@@ -152,17 +184,37 @@ export default function Mess01() {
               className="primary-action"
               role="button"
               tabIndex={0}
-              onClick={() => setSelection("student")}
-              onKeyDown={onKey("student")}
+              aria-busy={signingIn}
+              aria-disabled={signingIn || !!user}
+              onClick={startEduSignIn}
+              onKeyDown={onActivate(startEduSignIn)}
             >
               <span className="edu-chip">.edu</span>
-              <span>{selection === "student" ? "Student access selected" : "Get Started with .edu Email"}</span>
+              <span>{primaryLabel}</span>
               <Icon name="arrow" />
             </div>
-            <p className="primary-helper">
-              <Icon name="lock" />
-              Verified email unlocks alumni matching, clubs & peer mocks
-            </p>
+            {authError ? (
+              <p className="primary-helper auth-error" role="alert">
+                {authError}
+              </p>
+            ) : user ? (
+              <p className="primary-helper">
+                <Icon name="lock" />
+                {user.email} ·{" "}
+                <button
+                  type="button"
+                  className="text-link"
+                  onClick={() => signOut().then(() => setUser(null))}
+                >
+                  Sign out
+                </button>
+              </p>
+            ) : (
+              <p className="primary-helper">
+                <Icon name="lock" />
+                Verified email unlocks alumni matching, clubs & peer mocks
+              </p>
+            )}
 
             <div className="divider">
               <span />
@@ -174,10 +226,10 @@ export default function Mess01() {
               className="guest-action"
               role="button"
               tabIndex={0}
-              onClick={() => setSelection("guest")}
-              onKeyDown={onKey("guest")}
+              onClick={() => setGuest(true)}
+              onKeyDown={onActivate(() => setGuest(true))}
             >
-              {selection === "guest" ? "Browsing as guest" : "I’ll just browse around"}
+              {guest ? "Browsing as guest" : "I’ll just browse around"}
             </div>
             <p className="guest-helper">Explore public job links & contractor roles without progress saving.</p>
           </div>
