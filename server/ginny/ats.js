@@ -10,6 +10,7 @@
 // tier cutoffs are our own calibration, not Eightfold's (which isn't public).
 
 import { bm25Skills } from "./bm25.js";
+import { improvements } from "./improve.js";
 import { RERANK_MODEL, rerank, sigmoid } from "./rerank.js";
 
 // ms-marco cross-encoder logits: clearly relevant lines score about −4…+2, unrelated ones about
@@ -174,6 +175,19 @@ export async function analyze({ sections, jobTitle, company, description }) {
   const wSum = parts.reduce((a, p) => a + p.w, 0) || 1;
   const score = Math.round((100 * parts.reduce((a, p) => a + p.value * p.w, 0)) / wSum);
   const tier = tierFor(score);
+  const gaps = evidence.filter((e) => e.score < 0.3).sort((a, b) => a.score - b.score).slice(0, 4).map((e) => e.requirement);
+
+  const improve = improvements({
+    sections,
+    jobTitle,
+    description,
+    matchedSkills,
+    missingSkills,
+    gaps,
+    score,
+    skillWeights: { total: totalW, per: weight },
+    weights: { skills: skillsScore === null ? 0 : 0.4, sum: wSum },
+  });
 
   return {
     tier: { id: tier.id, label: tier.label, about: tier.about },
@@ -186,7 +200,10 @@ export async function analyze({ sections, jobTitle, company, description }) {
     matchedSkills,
     missingSkills,
     strengths: evidence.filter((e) => e.score >= 0.7).sort((a, b) => b.score - a.score).slice(0, 4),
-    gaps: evidence.filter((e) => e.score < 0.3).sort((a, b) => a.score - b.score).slice(0, 4).map((e) => e.requirement),
+    gaps,
+    improvements: improve.items,
+    projectedScore: improve.projected,
+    requirements: reqs,
     pipeline: {
       retrieval: usedVoyage && !voyageError ? `Voyage AI (${VOYAGE_MODEL})` : null,
       retrievalNote: voyageError ? "Voyage AI was unavailable, so semantic similarity was skipped." : usedVoyage ? null : "Add VOYAGE_API_KEY to turn on semantic similarity.",

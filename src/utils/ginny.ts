@@ -22,6 +22,9 @@ export type AtsResult = {
   missingSkills: { skill: string; required: boolean }[];
   strengths: { requirement: string; bullet: string | null; score: number }[];
   gaps: string[];
+  improvements: Improvement[];
+  projectedScore: number | null;
+  requirements: string[];
   pipeline: {
     retrieval: string | null;
     retrievalNote: string | null;
@@ -33,7 +36,23 @@ export type AtsResult = {
   };
 };
 
-export type ChatMessage = { role: "user" | "model"; text: string; sources?: { title: string; url: string }[] };
+export type Improvement = {
+  priority: "high" | "medium" | "low";
+  category: string;
+  title: string;
+  detail: string;
+  examples?: string[];
+  impact?: number;
+};
+
+export type TailorTips = {
+  summary: string;
+  rewrites: { original: string; improved: string; requirement: string; why: string }[];
+  addKeywords: { keyword: string; where: string }[];
+  projectIdea: { title: string; description: string; skills: string[] } | null;
+};
+
+export type ChatMessage = { role: "user" | "model"; text: string; sources?: { title: string; url: string }[]; grounded?: boolean };
 
 async function json<T>(res: Response): Promise<T> {
   const data = await res.json().catch(() => ({}));
@@ -140,6 +159,26 @@ export async function runAts(signedIn: boolean, job: SavedJob, description?: str
   return (await json<{ result: AtsResult }>(res)).result;
 }
 
+/** Opt-in: Gemini rewrites of the student's own bullets for this job (sends the redacted resume sections). */
+export async function getTailorTips(signedIn: boolean, job: SavedJob, result: AtsResult): Promise<TailorTips> {
+  const body: Record<string, unknown> = {
+    job: { title: job.title, company: job.company },
+    requirements: result.requirements,
+    missingSkills: result.missingSkills.map((m) => m.skill),
+    gaps: result.gaps,
+  };
+  if (!signedIn) {
+    const r = guestResumeInMemory || readGuestResume();
+    if (r) body.resumePdf = r.base64;
+  }
+  const res = await fetch("/api/ginny/tailor", {
+    method: "POST",
+    headers: { ...XHR, "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  return (await json<{ tips: TailorTips }>(res)).tips;
+}
+
 // ---- Ask Gemini ----
 
 const VISA: Record<string, string> = {
@@ -189,6 +228,6 @@ export async function askGemini(messages: ChatMessage[], job: SavedJob, profile:
       context: chatContext(job, profile),
     }),
   });
-  return json<{ text: string; sources: { title: string; url: string }[] }>(res);
+  return json<{ text: string; sources: { title: string; url: string }[]; grounded: boolean }>(res);
 }
 

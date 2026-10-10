@@ -5,6 +5,7 @@
 //   PUT    /api/ginny/resume        upload / replace the resume PDF (signed in; body = PDF bytes)
 //   DELETE /api/ginny/resume        delete it
 //   POST   /api/ginny/ats           ATS match analysis for one job
+//   POST   /api/ginny/tailor        opt-in Gemini rewrites of the resume for the selected job
 //   POST   /api/ginny/chat          Ask Gemini about the selected job
 //
 // Guests can use both tools too: their resume stays on their device and is sent with each
@@ -12,7 +13,7 @@
 
 import express from "express";
 import { analyze, TIERS } from "./ats.js";
-import { askGemini, GEMINI_MODEL, geminiEnabled } from "./gemini.js";
+import { askGemini, GEMINI_MODEL, geminiEnabled, tailorResume } from "./gemini.js";
 import { fetchJobDescription } from "./jobDescription.js";
 import { RERANK_MODEL, warmReranker } from "./rerank.js";
 import { MAX_PDF_BYTES, deleteResume, loadResume, pdfToLines, publicMeta, sanitize, saveResume } from "./resume.js";
@@ -112,6 +113,45 @@ export function ginnyRoutes(app, { readSession, requireXhr, requireUser }) {
     }
   });
 
+  // ---- Tailored rewrites (opt-in: sends the sanitized resume sections to Gemini) ----
+  app.post("/api/ginny/tailor", requireXhr, express.json({ limit: "8mb" }), async (req, res) => {
+    if (!geminiEnabled()) return res.status(503).json({ error: "Tailored suggestions need GEMINI_API_KEY on the server." });
+    if (!limit(`tailor:${who(req)}`, 15, HOUR)) return res.status(429).json({ error: "You've asked for a lot of rewrites. Try again in a bit." });
+    const job = req.body?.job || {};
+    const list = (v, n, m) => (Array.isArray(v) ? v : []).slice(0, n).map((x) => str(x, m)).filter(Boolean);
+    try {
+      const session = readSession(req);
+      let sections;
+      if (session) {
+        const stored = await loadResume(session.sub);
+        if (!stored) return res.status(409).json({ error: "Upload your resume first.", needResume: true });
+        sections = stored.sanitized.sections;
+      } else {
+        const b64 = str(req.body?.resumePdf, 8 * 1024 * 1024);
+        if (!b64) return res.status(409).json({ error: "Upload your resume first.", needResume: true });
+        sections = sanitize(await pdfToLines(Buffer.from(b64, "base64"))).sections;
+      }
+      // Only Experience / Projects / Skills / Education, with identifiers already redacted.
+      const resumeText = Object.entries(sections)
+        .filter(([, v]) => v.length)
+        .map(([k, v]) => `${k.toUpperCase()}\n${v.join("\n")}`)
+        .join("\n\n");
+      const tips = await tailorResume({
+        jobTitle: str(job.title, 300),
+        company: str(job.company, 200),
+        requirements: list(req.body?.requirements, 12, 400),
+        missingSkills: list(req.body?.missingSkills, 15, 60),
+        gaps: list(req.body?.gaps, 6, 400),
+        resumeText,
+      });
+      res.json({ tips });
+    } catch (err) {
+      if (err.status === 429) return res.status(429).json({ error: "Gemini's free quota is used up for now. Try again later." });
+      if (err.busy) return res.status(503).json({ error: "Gemini is busy right now. Try again in a minute." });
+      fail(res, err, "suggestions");
+    }
+  });
+
   // ---- Ask Gemini ----
   app.post("/api/ginny/chat", requireXhr, express.json({ limit: "64kb" }), async (req, res) => {
     if (!geminiEnabled()) return res.status(503).json({ error: "Ask Gemini isn't set up yet (missing GEMINI_API_KEY)." });
@@ -136,6 +176,7 @@ export function ginnyRoutes(app, { readSession, requireXhr, requireUser }) {
       res.json(await askGemini(messages, ctx));
     } catch (err) {
       if (err.status === 429) return res.status(429).json({ error: "Gemini's free quota is used up for now. Try again later." });
+      if (err.busy) return res.status(503).json({ error: "Gemini is busy right now. Try again in a minute." });
       fail(res, err, "answer");
     }
   });
