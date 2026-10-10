@@ -267,18 +267,19 @@ app.get("/api/postings", (req, res) => {
   res.json(queryPostings({ level, maxHours, visaFriendly: req.query.visa === "1", limit, offset }));
 });
 
-// Companies in the Home "Company tiers" launchpad (src/data/tiers.json) also get logos.
-const TIER_DOMAINS = new Set(
-  JSON.parse(fs.readFileSync(new URL("../src/data/tiers.json", import.meta.url), "utf8")).tiers.flatMap((t) =>
-    t.companies.map((c) => c.domain),
-  ),
-);
+// Launchpad logos: companies in "Company tiers" (src/data/tiers.json) and the programs &
+// organizations suggested on Profile (src/data/communities.json).
+const readData = (file) => JSON.parse(fs.readFileSync(new URL(`../src/data/${file}`, import.meta.url), "utf8"));
+const LAUNCHPAD_DOMAINS = new Set([
+  ...readData("tiers.json").tiers.flatMap((t) => t.companies.map((c) => c.domain)),
+  ...readData("communities.json").orgs.map((o) => o.domain),
+]);
 
 // Company logo, fetched once and cached (see server/jobs/logos.js). Only domains that appear in
-// current postings or the tier list are served, so this can't be used as an open proxy.
+// current postings or a launchpad are served, so this can't be used as an open proxy.
 app.get("/api/logo/:domain", async (req, res) => {
   const domain = String(req.params.domain).toLowerCase();
-  if (!knownDomain(domain) && !TIER_DOMAINS.has(domain)) return res.status(404).end();
+  if (!knownDomain(domain) && !LAUNCHPAD_DOMAINS.has(domain)) return res.status(404).end();
   try {
     const logo = await getLogo(domain);
     if (!logo) {
@@ -319,8 +320,8 @@ app.get("/api/postings/stream", (_req, res) => {
 });
 
 startJobFeed();
-// Warm the logo cache for the tier list so the launchpad loads instantly.
-Promise.allSettled([...TIER_DOMAINS].map((d) => getLogo(d)));
+// Warm the logo cache so launchpads load instantly.
+Promise.allSettled([...LAUNCHPAD_DOMAINS].map((d) => getLogo(d)));
 
 app.listen(Number(PORT), "127.0.0.1", () => {
   console.log(`[auth] listening on http://127.0.0.1:${PORT} (redirect URI ${REDIRECT_URI})`);

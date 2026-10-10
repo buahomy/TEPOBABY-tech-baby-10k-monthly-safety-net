@@ -1,5 +1,5 @@
-import { useState } from "react";
 import tierData from "../data/tiers.json";
+import AppIcon from "./AppIcon";
 
 // Company tiers as a launchpad: every logo is a shortcut that opens that company's careers page.
 
@@ -7,29 +7,6 @@ type Company = { name: string; domain: string; careers: string };
 type Tier = { id: string; label: string; detail: string; color: string; companies: Company[] };
 
 const TIERS = tierData.tiers as Tier[];
-
-function AppIcon({ company }: { company: Company }) {
-  const [failed, setFailed] = useState(false);
-  return (
-    <a
-      className="app-icon"
-      href={company.careers}
-      target="_blank"
-      rel="noreferrer"
-      title={`${company.name} careers`}
-      aria-label={`${company.name} careers (opens in a new tab)`}
-    >
-      <span className="app-icon-tile" aria-hidden="true">
-        {failed ? (
-          <span className="app-icon-letter">{company.name[0]}</span>
-        ) : (
-          <img src={`/api/logo/${company.domain}`} alt="" loading="lazy" decoding="async" onError={() => setFailed(true)} />
-        )}
-      </span>
-      <span className="app-icon-name">{company.name}</span>
-    </a>
-  );
-}
 
 export default function TierLaunchpad() {
   return (
@@ -41,7 +18,7 @@ export default function TierLaunchpad() {
           </div>
           <div className="tier-apps">
             {t.companies.map((c) => (
-              <AppIcon key={c.name} company={c} />
+              <AppIcon key={c.name} name={c.name} domain={c.domain} href={c.careers} title={`${c.name} careers`} />
             ))}
           </div>
         </div>

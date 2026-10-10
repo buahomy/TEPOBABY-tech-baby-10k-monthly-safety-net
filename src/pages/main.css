@@ -582,6 +582,41 @@
   white-space: nowrap;
 }
 
+/* Programs & organizations launchpad (Profile → Demographic & Identity Information) */
+.m01 .community {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 6px;
+  padding-top: 14px;
+  border-top: 1px solid var(--stroke);
+}
+
+.m01 .community-title {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}
+
+.m01 .community-label {
+  margin-bottom: 8px;
+  color: #b8bdfb;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+.m01 .community-apps {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(62px, 1fr));
+  gap: 12px 4px;
+  padding: 10px 6px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
 /* Resources */
 .m01 .kind {
   flex: 0 0 auto;
