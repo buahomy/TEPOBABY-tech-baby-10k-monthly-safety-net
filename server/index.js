@@ -339,13 +339,14 @@ app.post("/api/neetcode/expected", requireXhr, async (req, res) => {
 
 // ---- Job postings (public: guests see them too) ----
 
-const LEVELS = new Set(["underclassmen", "internship", "entry"]);
+const LEVELS = new Set(["underclassmen", "internship", "entry", "rotational"]);
 
 app.get("/api/postings", async (req, res) => {
   await syncFromStore();
   const level = String(req.query.level || "internship");
   if (!LEVELS.has(level)) return res.status(400).json({ error: "Unknown level." });
-  const maxHours = req.query.window === "week" ? 168 : 72;
+  // "open": every program still listed (they're kept 60 days).
+  const maxHours = { week: 168, open: 60 * 24 }[req.query.window] || 72;
   const limit = Math.min(Math.max(Number.parseInt(req.query.limit, 10) || 30, 1), 100);
   const offset = Math.max(Number.parseInt(req.query.offset, 10) || 0, 0);
   res.set("Cache-Control", "public, max-age=60");

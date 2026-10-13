@@ -2,7 +2,7 @@
 // company sites, so this is the legitimate way to cover them (scraping those sites directly is
 // against their terms). Enabled only when SERPAPI_KEY is set.
 
-import { DAY, classify, cleanText, fetchJson, isTech, normalizeUrl } from "../classify.js";
+import { DAY, classify, cleanText, fetchJson, isProgram, isRelevant, normalizeUrl } from "../classify.js";
 import { domainFromUrl } from "../logos.js";
 
 const QUERIES = [
@@ -10,6 +10,7 @@ const QUERIES = [
   "software engineer new grad",
   "entry level software engineer",
   "data science intern",
+  "rotational program new grad",
 ];
 
 const ATS = /(greenhouse\.io|lever\.co|ashbyhq\.com|myworkdayjobs\.com|icims\.com|smartrecruiters\.com|workable\.com|jobvite\.com|oraclecloud\.com|successfactors)/i;
@@ -70,7 +71,7 @@ export async function fetchGoogleJobs() {
         const posted = parseAgo(ago);
         const apply = pickApply(j.apply_options || [], j.company_name || "");
         const url = apply?.link || j.share_link;
-        if (!posted || !url || !isTech(title)) continue;
+        if (!posted || !url || !isRelevant(title)) continue;
         const level = classify(title, /intern/i.test(q) ? undefined : "entry");
         if (!level) continue;
         postings.push({
@@ -86,6 +87,7 @@ export async function fetchGoogleJobs() {
           sponsorship: null,
           // Logo only from the company's own site; otherwise the name lookup decides.
           domain: apply?.ownSite ? domainFromUrl(apply.link) : null,
+          program: isProgram(title),
         });
       }
     } catch (err) {

@@ -18,10 +18,11 @@ import { EventEmitter } from "node:events";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { MAX_AGE_MS } from "./classify.js";
+import { MAX_AGE_MS, PROGRAM_MAX_AGE_MS, isProgram } from "./classify.js";
 import { addDomains } from "./logos.js";
 import * as store from "../store.js";
 import { fetchCompanyBoards } from "./sources/ats.js";
+import { fetchCareerSites } from "./sources/careers.js";
 import { fetchGithubLists } from "./sources/github.js";
 import { fetchGoogleJobs } from "./sources/googleJobs.js";
 import { fetchHackerNews } from "./sources/hackernews.js";
@@ -36,6 +37,7 @@ export const DAILY_TIME = /^\d{1,2}:\d{2}$/.test(process.env.JOBS_DAILY_TIME || 
 const SOURCES = [
   { id: "github", run: fetchGithubLists },
   { id: "ats", run: fetchCompanyBoards },
+  { id: "careers", run: fetchCareerSites },
   { id: "hn", run: fetchHackerNews },
   { id: "google", run: fetchGoogleJobs },
 ];
@@ -99,7 +101,8 @@ function rebuild() {
   const byKey = new Map();
   for (const s of SOURCES) {
     for (const p of state.sources[s.id]?.postings || []) {
-      if (now - new Date(p.postedAt).getTime() > MAX_AGE_MS) continue;
+      p.program = isProgram(p.title); // recomputed, so rule fixes apply to stored postings too
+      if (now - new Date(p.postedAt).getTime() > (p.program ? PROGRAM_MAX_AGE_MS : MAX_AGE_MS)) continue;
       const key = p.url.toLowerCase();
       const fuzzy = `${p.company}|${p.title}|${p.location}`.toLowerCase();
       if (byKey.has(key) || byKey.has(fuzzy)) continue;
@@ -123,6 +126,13 @@ async function runSource(s) {
   const started = Date.now();
   try {
     const results = await s.run();
+    // When one site in a source fails (e.g. Microsoft rate-limits us), keep its postings from the last
+    // good run instead of dropping them until tomorrow.
+    const previous = state.sources[s.id]?.postings || [];
+    for (const r of results) {
+      if (r.error && !r.postings.length) r.postings = previous.filter((p) => p.from === r.name);
+      for (const p of r.postings) p.from = r.name;
+    }
     const postings = await addDomains(results.flatMap((r) => r.postings));
     state.sources[s.id] = {
       ranAt: new Date().toISOString(),
@@ -218,19 +228,24 @@ export async function startJobFeed() {
 
 // ---- Queries ----
 
-/** Postings for one level and time window, plus counts for every tab. */
+/** Postings for one level and time window, plus counts for every tab. "rotational" lists programs. */
 export function queryPostings({ level, maxHours = 72, visaFriendly = false, limit = 30, offset = 0 }) {
   const now = Date.now();
   const inWindow = (p, hours) => now - new Date(p.postedAt).getTime() <= hours * 3600e3;
   const visaOk = (p) => !visaFriendly || (p.sponsorship !== "no" && p.sponsorship !== "citizens");
+  const inLevel = (p, lv) => (lv === "rotational" ? p.program : p.level === lv);
 
   const counts = {};
-  for (const lv of ["underclassmen", "internship", "entry"]) {
-    const pool = merged.filter((p) => p.level === lv && visaOk(p));
-    counts[lv] = { fresh: pool.filter((p) => inWindow(p, 72)).length, week: pool.filter((p) => inWindow(p, 168)).length };
+  for (const lv of ["underclassmen", "internship", "entry", "rotational"]) {
+    const pool = merged.filter((p) => inLevel(p, lv) && visaOk(p));
+    counts[lv] = {
+      fresh: pool.filter((p) => inWindow(p, 72)).length,
+      week: pool.filter((p) => inWindow(p, 168)).length,
+      open: pool.length,
+    };
   }
 
-  const matching = merged.filter((p) => p.level === level && visaOk(p) && inWindow(p, maxHours));
+  const matching = merged.filter((p) => inLevel(p, level) && visaOk(p) && inWindow(p, maxHours));
   return {
     updatedAt,
     nextUpdateAt: nextRunAt().toISOString(),
