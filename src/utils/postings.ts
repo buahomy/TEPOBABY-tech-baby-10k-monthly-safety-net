@@ -14,6 +14,7 @@ export type Posting = {
   level: Level;
   sponsorship: "yes" | "no" | "citizens" | null;
   domain: string | null; // company website, used for its logo
+  program?: boolean; // rotational / development program
 };
 
 export type PostingsResponse = {
@@ -21,7 +22,7 @@ export type PostingsResponse = {
   nextUpdateAt: string;
   schedule: string;
   total: number;
-  counts: Record<Level, { fresh: number; week: number }>;
+  counts: Record<Level, { fresh: number; week: number; open: number }>;
   postings: Posting[];
 };
 

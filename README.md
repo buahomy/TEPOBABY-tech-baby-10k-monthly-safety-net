@@ -31,7 +31,12 @@ Tap **I'll just browse around** to use Tepobaby without signing in. You'll answe
 After the questions, you land on **Home**. The bar at the bottom has **Home**, **Interview**, a big **＋** (Ginny), **Connect** and **Profile**. Home has three sections: live job postings, company tiers, and contractor & startup roles.
 
 ### Job postings
-Live postings for students: switch between **Underclassmen Programs**, **Internship** and **Entry-level**, and between **Last 48–72h** and **This week**. Tepobaby opens on the level that fits your answers, and if you need visa sponsorship you can hide roles that say they don't sponsor.
+Live postings for students: switch between **Underclassmen Programs**, **Internship**, **Entry-level** and **Rotational Programs**, and between **Last 48–72h** and **This week**. Tepobaby opens on the level that fits your answers, and if you need visa sponsorship you can hide roles that say they don't sponsor.
+
+**Rotational Programs** lists rotational and early-career development programs in any field: finance, sales, product, operations and engineering. Examples include Microsoft's Finance Rotation Program (FRP), Amazon's Finance Rotational Program (AFRP), Intel's Sales and Marketing Rotation Program, NVIDIA's new-college-grad rotation, Micron's Catalyst Rotation Program, and Bank of America's development programs.
+- **How long they stay listed:** programs stay open for weeks, so this tab adds an **All open** window that lists every program posted in the last 60 days, and opens on it. Other postings are kept for 7 days.
+- **Elsewhere in the feed:** program postings in the other tabs get a **Rotational program** badge.
+- **Your default tab:** if you picked only "Rotational Program / LDP" in the questionnaire, Home opens on this tab.
 
 Postings update **once a day, every morning at 7:00 AM Eastern Time (ET)**, so 30–31 times a month. The time follows daylight saving, and if the server was off at 7:00 AM it catches up as soon as it starts. Each morning the server checks every source in parallel in the background, keeps only roles posted in the last 7 days, removes duplicates, and pushes the new postings to the app as soon as each source finishes.
 
@@ -41,10 +46,11 @@ Postings update **once a day, every morning at 7:00 AM Eastern Time (ET)**, so 3
 | [speedyapply 2027 SWE College Jobs](https://github.com/speedyapply/2027-SWE-College-Jobs) | More SWE internships and new grad roles (age in days only) |
 | [Pitt CSC](https://github.com/pittcsc/Summer2027-Internships), [vanshb03](https://github.com/vanshb03/Summer2027-Internships) | Extra community-curated internships |
 | Company job boards: [Greenhouse](https://developers.greenhouse.io/job-board.html), [Lever](https://github.com/lever/postings-api), [Ashby](https://developers.ashbyhq.com/docs/public-job-posting-api) | Early-career roles straight from about 80 companies (Stripe, Figma, OpenAI, Ramp, Palantir…). Add more in [server/jobs/companies.json](server/jobs/companies.json) |
+| Company career sites: [Microsoft](https://apply.careers.microsoft.com), [Amazon](https://www.amazon.jobs), and Workday sites for NVIDIA, Salesforce, Adobe, Intel, HP, Workday, PayPal, Autodesk, Micron, Red Hat, T-Mobile, Capital One, Mastercard, Bank of America, Fidelity, Target, Boeing, Disney and Chevron | Rotational programs and new grad roles straight from big companies' own sites, the same day they're posted, including non-engineering programs like Microsoft's Finance Rotation Program. Only U.S. roles are kept. Add Workday companies in [server/jobs/sources/careers.js](server/jobs/sources/careers.js) |
 | [Hacker News "Who is hiring?"](https://github.com/HackerNews/API) | Startup posts that mention internships, new grad or junior roles |
 | [Google Jobs via SerpApi](https://serpapi.com/google-jobs-api) | Roles indexed from LinkedIn, Indeed, Glassdoor and company sites. Runs when `SERPAPI_KEY` is set (see below) |
 
-**Google Jobs (SerpApi)**: each morning Tepobaby runs 4 searches ("software engineer intern", "software engineer new grad", "entry level software engineer", "data science intern"), about 120–124 searches a month. That fits [SerpApi's free plan](https://serpapi.com/pricing) of 250 searches a month. Each result links to the best place to apply: the company's own site first, then its hiring platform (like Greenhouse or Workday), then LinkedIn, Indeed or Glassdoor. To turn it on, create a free account at [serpapi.com](https://serpapi.com), copy your API key into `.env.local` as `SERPAPI_KEY=...`, and restart the server. Keep the key out of git and out of any `VITE_` variable.
+**Google Jobs (SerpApi)**: each morning Tepobaby runs 5 searches ("software engineer intern", "software engineer new grad", "entry level software engineer", "data science intern", "rotational program new grad"), about 150–155 searches a month. That fits [SerpApi's free plan](https://serpapi.com/pricing) of 250 searches a month. Each result links to the best place to apply: the company's own site first, then its hiring platform (like Greenhouse or Workday), then LinkedIn, Indeed or Glassdoor. To turn it on, create a free account at [serpapi.com](https://serpapi.com), copy your API key into `.env.local` as `SERPAPI_KEY=...`, and restart the server. Keep the key out of git and out of any `VITE_` variable.
 
 The Simplify.jobs site doesn't need its own scraper, because the SimplifyJobs GitHub lists above already carry its data.
 
@@ -331,8 +337,8 @@ How I built Tepobaby (with Claude Code): each decision, why I made it, and the p
 - **Keyword-filter Hacker News posts.**
   - *Why:* "Who is hiring?" has real startup roles.
   - *Pain point:* posts are free text. I keep ones that mention intern, new grad or junior roles, and read the "Company | Role | Location" first line most posts use.
-- **Google Jobs through SerpApi, 4 searches each morning.**
-  - *Why:* it's the legitimate way to reach roles indexed from LinkedIn, Indeed and Glassdoor, and 4 a day (about 124 a month) fits the free 250.
+- **Google Jobs through SerpApi, 5 searches each morning.**
+  - *Why:* it's the legitimate way to reach roles indexed from LinkedIn, Indeed and Glassdoor, and 5 a day (about 155 a month) fits the free 250. The 5th search, "rotational program new grad", was added for the Rotational Programs tab.
   - *Pain point:* it's a different, search-based workflow, so I have to pick keywords that match what I'm looking for. Google also moved the posting age to a different field.
 - **Re-rank Google Jobs apply links:** official careers site → Greenhouse / Lever / Ashby / Workday → LinkedIn / Indeed / Glassdoor → reposting sites last.
   - *Why:* students should apply where the company actually reviews applications.
@@ -352,6 +358,17 @@ How I built Tepobaby (with Claude Code): each decision, why I made it, and the p
 - **Explain empty Underclassmen results instead of filling them.**
   - *Why:* made-up programs would waste students' time.
   - *Pain point:* freshman and sophomore programs are rare and seldom appear within 7 days.
+- **Read big companies' own career sites for rotational and new grad programs.**
+  - *Why:* Microsoft's Finance Rotation Program went live on Microsoft's own site, but no source picked it up. The community lists track software roles, and the feed kept only tech titles, so "Financial Analyst: Finance Rotation Program (FRP)" was filtered out.
+  - *How:* each site's search page loads its results from a public JSON endpoint, and Tepobaby reads those directly, with no HTML scraping:
+    - Microsoft: `apply.careers.microsoft.com/api/pcsx/search`;
+    - Amazon: `amazon.jobs/en/search.json`;
+    - Workday sites: `/wday/cxs/{tenant}/{site}/jobs`.
+  - *What's kept:* results are filtered by title. A role must be early-career and either a program, a tech role, or, at tech companies, any early-career role, since a finance role at Microsoft is still a tech-industry job.
+  - *Pain point:* these searches are loose and global. "rotation" also matched "Senior Software Engineer" and "Weekend Rotation" schedules, and Salesforce's graduate programs came back for German, Hebrew and Nordic markets. So titles go through a program rule (rotation, development program, LDP, FRP, …, minus work schedules and experienced-hire programs), and locations through a U.S. check (state codes and names, major U.S. cities, a list of other countries, and "New Mexico" ≠ Mexico).
+  - *Pain point:* Microsoft returns `429 Too Many Requests` when searched quickly. Its searches run one at a time, 3 seconds apart, and back off after a 429. If a site still fails, the feed keeps that site's postings from the last good run instead of dropping them.
+- **A Rotational Programs tab with an "All open" window.**
+  - *Why:* programs open for weeks and hire in cohorts, so a 7-day window hides most of them. Programs are kept for 60 days, and the tab opens on **All open**.
 - **A separate section for startup and contract job boards.**
   - *Why:* small teams post on their own sites and niche boards.
   - *Pain point:* these roles rarely show up on the big lists.
@@ -602,7 +619,7 @@ To deploy your own copy:
 | `GOOGLE_CLIENT_SECRET` | Server | Your OAuth client secret. Never put this in a `VITE_` variable. |
 | `SESSION_SECRET` | Server | Random string of 32+ characters: `openssl rand -base64 48` |
 | `APP_ORIGIN` | Server | Public URL of the app, no trailing slash. `http://localhost:5173` locally. |
-| `SERPAPI_KEY` | Server | Optional. Your SerpApi key; adds Google Jobs results (4 searches each morning, about 124 a month). |
+| `SERPAPI_KEY` | Server | Optional. Your SerpApi key; adds Google Jobs results (5 searches each morning, about 155 a month). |
 | `JOBS_FEED` | Server | Optional. Set to `off` to stop checking job sources. |
 | `JOBS_DAILY_TIME` | Server | Optional. Daily update time in Eastern Time, `HH:MM` (default `07:00`). |
 | `VOYAGE_API_KEY` | Server | Voyage AI key for Ginny's semantic matching (free tier). Optional: without it, ATS analysis uses BM25 + the local reranker. |

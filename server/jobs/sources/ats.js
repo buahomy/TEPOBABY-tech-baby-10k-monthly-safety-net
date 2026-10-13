@@ -4,7 +4,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { MAX_AGE_MS, classify, cleanText, fetchJson, isTech, mapLimit, normalizeUrl } from "../classify.js";
+import { classify, cleanText, fetchJson, isProgram, isRelevant, mapLimit, maxAgeFor, normalizeUrl } from "../classify.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 
@@ -56,9 +56,9 @@ async function fromBoard(provider, slug, company, domain, now) {
   for (const raw of p.jobs(data)) {
     const j = p.map(raw);
     const posted = new Date(j.posted).getTime();
-    if (!j.url || !posted || now - posted > MAX_AGE_MS) continue;
     const title = cleanText(j.title);
-    if (!isTech(title)) continue;
+    if (!j.url || !posted || now - posted > maxAgeFor(title)) continue;
+    if (!isRelevant(title)) continue;
     const level = classify(title);
     if (!level) continue;
     out.push({
@@ -73,6 +73,7 @@ async function fromBoard(provider, slug, company, domain, now) {
       level,
       sponsorship: null,
       domain: domain || null,
+      program: isProgram(title),
     });
   }
   return out;

@@ -11,10 +11,11 @@ import { SavedJobsApi } from "../../utils/savedJobs";
 
 type Props = { firstName: string; profile: Profile; saved: SavedJobsApi };
 
-/** Starts on the level that fits the student: underclassmen programs, internships, or new grad roles. */
+/** Starts on the level that fits the student: underclassmen programs, internships, new grad roles, or rotational programs. */
 function defaultLevel(profile: Profile): Level {
   const a = profile.answers;
   if (a.academicLevel === "freshman" || a.academicLevel === "sophomore") return "underclassmen";
+  if (a.positionTypes?.length && a.positionTypes.every((p) => p === "rotational_ldp")) return "rotational";
   const wantsFullTime = a.positionTypes?.includes("full_time_new_grad") || a.positionTypes?.includes("rotational_ldp");
   const onlyFullTime = wantsFullTime && !a.positionTypes?.some((p) => p.includes("internship"));
   return onlyFullTime || a.academicLevel === "senior" ? "entry" : "internship";
@@ -25,7 +26,8 @@ const FALLBACK_REFRESH_MS = 10 * 60 * 1000;
 
 export default function HomeTab({ firstName, profile, saved }: Props) {
   const [level, setLevel] = useState<Level>(() => defaultLevel(profile));
-  const [windowId, setWindowId] = useState<WindowId>("fresh");
+  const [windowId, setWindowId] = useState<WindowId>(() => (defaultLevel(profile) === "rotational" ? "open" : "fresh"));
+  const windows = WINDOWS.filter((w) => w.id !== "open" || level === "rotational");
   const needsSponsorship =
     profile.answers.needsSponsorship === "yes" || profile.answers.workAuthorized === "no";
   const [hideNoSponsorship, setHideNoSponsorship] = useState(needsSponsorship);
@@ -103,7 +105,12 @@ export default function HomeTab({ firstName, profile, saved }: Props) {
               role="tab"
               aria-selected={level === l.id}
               className={`level-tab${level === l.id ? " is-active" : ""}`}
-              onClick={() => setLevel(l.id)}
+              onClick={() => {
+                setLevel(l.id);
+                // Programs stay open for weeks, so show them all; other tabs have no "All open".
+                if (l.id === "rotational") setWindowId("open");
+                else if (windowId === "open") setWindowId("fresh");
+              }}
             >
               <span>{l.label}</span>
               {feed && <span className="tab-count">{feed.counts[l.id][windowId]}</span>}
@@ -111,8 +118,8 @@ export default function HomeTab({ firstName, profile, saved }: Props) {
           ))}
         </div>
 
-        <div className="segmented" role="tablist" aria-label="Posted">
-          {WINDOWS.map((w) => (
+        <div className={`segmented${windows.length === 3 ? " segmented--3" : ""}`} role="tablist" aria-label="Posted">
+          {windows.map((w) => (
             <button
               key={w.id}
               type="button"
@@ -149,7 +156,9 @@ export default function HomeTab({ firstName, profile, saved }: Props) {
           <p className="empty">
             {level === "underclassmen"
               ? "Programs for freshmen & sophomores (like Microsoft Explore) are rare and mostly open Aug–Oct. None were posted in this window. Try “This week”, or check Internship: many internships accept every class year."
-              : "No new postings in this window. Try “This week”."}
+              : level === "rotational"
+                ? "No rotational programs in this window. Try “All open”: most programs stay open for weeks."
+                : "No new postings in this window. Try “This week”."}
           </p>
         ) : (
           <ul className="posting-list">
@@ -162,6 +171,7 @@ export default function HomeTab({ firstName, profile, saved }: Props) {
                     <span className="posting-title">{p.title}</span>
                     <span className="posting-meta">
                       <span className="posting-loc">{p.location}</span> · {timeAgo(p.postedAt, p.postedApprox)}
+                      {p.program && level !== "rotational" && <span className="chip-program">Rotational program</span>}
                       {p.sponsorship === "yes" && <span className="chip-ok">Sponsors visa</span>}
                       {p.sponsorship === "no" && <span className="chip-warn">No sponsorship</span>}
                       {p.sponsorship === "citizens" && <span className="chip-warn">U.S. citizens only</span>}
@@ -186,8 +196,8 @@ export default function HomeTab({ firstName, profile, saved }: Props) {
         )}
         <p className="block-foot">
           Updated every morning at 7:00 AM ET{feed?.updatedAt ? ` · last update ${timeAgo(feed.updatedAt)}` : ""}. From
-          SimplifyJobs, speedyapply, company job boards (Greenhouse, Lever, Ashby) and Hacker News. Links open the
-          original application.
+          SimplifyJobs, speedyapply, company job boards (Greenhouse, Lever, Ashby), company career sites (Microsoft,
+          Amazon, Workday), Hacker News and Google Jobs. Links open the original application.
         </p>
       </section>
 
