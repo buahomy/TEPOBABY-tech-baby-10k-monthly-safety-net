@@ -300,7 +300,7 @@ Under **My jobs**, the Apply agent does the daily grind of a job search for you:
 2. **Checks each one with the ATS match** (the same analysis as Ginny), 10 at a time. Roles at your target score (**85+** by default; 70–90 to choose from) go to **✅ Ready**, and the rest go to **🛠 Below 85**.
 
 **Tailoring roles below the target** (**Tailor below 85**, up to 3 rounds per role):
-- **Who writes the rewrites:** your choice of **Claude** (Claude Opus 5.5, on your own Anthropic API key, kept in your browser and sent only to Anthropic) or **Gemini** (free, through Tepobaby, but often busy on the free tier).
+- **Who writes the rewrites:** **Gemini** first (free, through Tepobaby). When Gemini runs out of free quota, is overloaded or fails, the agent switches to **Claude** (Claude Opus 5.5) automatically. Claude runs on your own Anthropic API key, kept in your browser and sent only to Anthropic. If you haven't added a key yet, the agent says Gemini is out and asks for one.
 - **What's applied automatically:** rewrites that only reword what your bullet already says. The new version is re-scored after every round, and a round that lowers the score is undone.
 - **What needs you:** a rewrite with a placeholder like [X%] waits until you type the real number. Missing skills (e.g. "Docker", with **required** ones marked) are only added to your Skills after you check **I've really used this**.
 - **When it can't get there:** if a role tops out below the target, the agent says so plainly and lists the real skill gaps. You can **Apply anyway** or **Skip**.
@@ -605,8 +605,8 @@ How I built Tepobaby (with Claude Code): each decision, why I made it, and the p
 - **Filter by graduation date, start date, visa and field before scoring.**
   - *Why:* every ATS check fetches a job description and calls Voyage AI, so checking roles a student can't take wastes their hourly limit.
   - *Pain point:* the first test scored a software résumé against NVIDIA circuit-board and chip-verification roles (0–24). Hence the field chips (Software and Data & AI by default) and the title rules for class years and start seasons (`server/apply/queue.js`).
-- **Claude on the student's own key, with Gemini as the free option.**
-  - *Why:* while building this, Gemini's free tier returned "high demand" on 3.8 and 3.7 Flash and a used-up quota on 3.5 Flash, so tailoring failed. The agent can use Claude Opus 5.5 on the student's own Anthropic key: the `@anthropic-ai/sdk` runs in the browser, so the key goes only to Anthropic, and it loads only when used. Replies use structured output (a Zod schema via `beta.messages.parse`) and Anthropic's server-side refusal fallback (`fallbacks: "default"`).
+- **Gemini first, Claude when Gemini runs out.**
+  - *Why:* while building this, Gemini's free tier returned "high demand" on 3.8 and 3.7 Flash and a used-up quota on 3.5 Flash, so tailoring failed. Gemini stays first because it's free. Any Gemini quota, overload or server error (429, 502, 503, 504) moves that round to Claude Opus 5.5 on the student's own Anthropic key: the `@anthropic-ai/sdk` runs in the browser, so the key goes only to Anthropic, and it loads only when used. Replies use structured output (a Zod schema via `beta.messages.parse`) and Anthropic's server-side refusal fallback (`fallbacks: "default"`).
   - *Pain point:* Gemini calls also waited 90 seconds on a hung model before failing. Each attempt now times out after 45 seconds and moves to the next fallback model.
 - **Re-score with the student's edited copy.**
   - *Why:* `/api/ginny/ats` and `/api/ginny/tailor` accept an edited `sections` object, and ATS returns the job description it used. Re-scores don't parse the PDF or fetch the posting again, and the stored résumé is never changed.

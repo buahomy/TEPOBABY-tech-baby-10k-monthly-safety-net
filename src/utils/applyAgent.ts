@@ -3,8 +3,8 @@
 // the target score (85 by default), or reports that it can't honestly get there.
 //
 // Honesty rules, enforced here:
-//   - Rewrites come from Claude (the student's own Anthropic key) or Gemini, both told they may only
-//     reword facts already in a bullet.
+//   - Rewrites come from Gemini, or from Claude (the student's own Anthropic key) when Gemini runs out;
+//     both are told they may only reword facts already in a bullet.
 //   - Rewrites with a placeholder like [X%] are never applied until the student fills in a real value.
 //   - Missing skills are only added after the student confirms they've used them.
 //   - Nothing is submitted for the student: they open the posting, review, and submit.
@@ -147,8 +147,19 @@ export async function checkRole(signedIn: boolean, role: QueueRole, agent: Agent
  * One improvement round: asks Gemini for rewrites of the current tailored copy, applies the ones that
  * need no new facts, queues the ones with [placeholders] for the student, and re-scores.
  */
-/** Which model writes the rewrites: Claude on the student's own key, or Gemini through Tepobaby. */
-export type Writer = { kind: "claude"; apiKey: string } | { kind: "gemini" };
+/**
+ * Who writes the rewrites: Gemini first (free, through Tepobaby), then Claude on the student's own
+ * Anthropic key whenever Gemini is out of quota, overloaded or failing.
+ */
+export type Writer = { claudeKey: string | null; onSwitch?: (reason: string) => void };
+
+/** Gemini can't answer right now (quota, overload, timeout) — worth trying Claude instead. */
+export class GeminiUnavailableError extends Error {}
+
+const geminiOut = (e: unknown) => {
+  const status = (e as { status?: number }).status;
+  return status === 429 || status === 503 || status === 502 || status === 504 || /gemini/i.test((e as Error).message || "");
+};
 
 /** The resume as text, in the same shape the server sends to Gemini. */
 const sectionText = (s: ResumeSections) =>
@@ -159,8 +170,16 @@ const sectionText = (s: ResumeSections) =>
 
 async function tipsFor(writer: Writer, role: QueueRole, st: RoleState, current: ResumeSections): Promise<TailorTips> {
   const facts = { requirements: st.requirements, missingSkills: st.missingSkills, gaps: st.gaps };
-  if (writer.kind === "gemini") return getTailorTipsFor(role, facts, current);
-  return claudeTailor(writer.apiKey, {
+  try {
+    return await getTailorTipsFor(role, facts, current);
+  } catch (e) {
+    if (!geminiOut(e)) throw e;
+    if (!writer.claudeKey) {
+      throw new GeminiUnavailableError(`${(e as Error).message} Add your Anthropic API key to keep going with Claude.`);
+    }
+    writer.onSwitch?.((e as Error).message);
+  }
+  return claudeTailor(writer.claudeKey, {
     jobTitle: role.title,
     company: role.company,
     requirements: facts.requirements,
