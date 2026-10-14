@@ -61,6 +61,7 @@ export default function InterviewTab({ profile }: Props) {
 
 function Behavioral({ profile }: { profile: Profile }) {
   const [enabled, setEnabled] = useState<boolean | null>(null);
+  const [sharedKey, setSharedKey] = useState(false); // this account uses Tepobaby's key
   const [apiKey, setApiKey] = useState(getOpenAIKey);
   const [editingKey, setEditingKey] = useState(() => !getOpenAIKey());
   const [company, setCompany] = useState("generic");
@@ -105,7 +106,10 @@ function Behavioral({ profile }: { profile: Profile }) {
 
   useEffect(() => {
     getInterviewStatus()
-      .then((s) => setEnabled(s.enabled))
+      .then((s) => {
+        setEnabled(s.enabled);
+        setSharedKey(!!s.sharedKey);
+      })
       .catch(() => setEnabled(false));
     return () => {
       stopRef.current?.();
@@ -125,7 +129,7 @@ function Behavioral({ profile }: { profile: Profile }) {
   }, [seconds]);
 
   const start = async () => {
-    if (!apiKey) {
+    if (!apiKey && !sharedKey) {
       setEditingKey(true);
       return;
     }
@@ -143,7 +147,7 @@ function Behavioral({ profile }: { profile: Profile }) {
           level: profile.answers.academicLevel || "",
           target: targetFrom(profile),
         },
-        apiKey,
+        sharedKey ? null : apiKey,
         {
           onState: (st) => {
             setState(st);
@@ -210,7 +214,11 @@ function Behavioral({ profile }: { profile: Profile }) {
           Focus: {picked.focus}.
         </p>
 
-        {editingKey ? (
+        {enabled === null ? null : sharedKey ? (
+          <div className="iv-keyrow">
+            <span>🔑 Using Tepobaby's OpenAI key for your account</span>
+          </div>
+        ) : editingKey ? (
           <KeyForm
             current={apiKey}
             onSaved={(k) => {
@@ -306,7 +314,7 @@ function Behavioral({ profile }: { profile: Profile }) {
             type="button"
             className={`iv-orb${live ? " is-live" : ""}${speaking ? ` is-${speaking}` : ""}`}
             onClick={live ? stop : start}
-            disabled={enabled === false || state === "connecting" || (!apiKey && !live)}
+            disabled={enabled === false || state === "connecting" || (!apiKey && !sharedKey && !live)}
             aria-label={live ? "End practice" : "Start practice"}
           >
             <img className="iv-orb-logo" src="/logos/openai-white.png" alt="" />
