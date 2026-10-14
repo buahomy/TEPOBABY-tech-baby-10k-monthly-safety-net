@@ -1,6 +1,8 @@
-// Browser side of behavioral voice practice: WebRTC straight to the OpenAI Realtime API, using a
-// short-lived client secret from our server. Interviewer audio plays through an <audio> element;
-// STAR tool calls and transcripts arrive on the "oai-events" data channel.
+// Browser side of behavioral voice practice: WebRTC straight to the OpenAI Realtime API. Our server
+// only provides the session setup (persona, rules, STAR tools); the browser exchanges it for a
+// short-lived client secret using the student's own OpenAI API key, which never reaches our server.
+// Interviewer audio plays through an <audio> element; STAR tool calls and transcripts arrive on the
+// "oai-events" data channel.
 
 export type StarPhase = "Situation" | "Task" | "Action" | "Result";
 export type StarStatus = "complete" | "needs_clarification" | "missing_detail";
@@ -20,13 +22,16 @@ const XHR = { "X-Requested-With": "XmlHttpRequest", "Content-Type": "application
 const PHASES: StarPhase[] = ["Situation", "Task", "Action", "Result"];
 const STATUSES: StarStatus[] = ["complete", "needs_clarification", "missing_detail"];
 
+/** Thrown when OpenAI rejects the student's key, so the app can ask for a new one. */
+export class BadKeyError extends Error {}
+
 export async function getInterviewStatus(): Promise<{ enabled: boolean; companies: { id: string; label: string }[] }> {
   const res = await fetch("/api/interview/status");
   return res.json();
 }
 
 /** Starts a live voice interview. Returns a function that ends it. */
-export async function startVoiceInterview(opts: InterviewOptions, h: InterviewHandlers): Promise<() => void> {
+export async function startVoiceInterview(opts: InterviewOptions, apiKey: string, h: InterviewHandlers): Promise<() => void> {
   h.onState("connecting");
   let mic: MediaStream | null = null;
   let pc: RTCPeerConnection | null = null;
@@ -57,9 +62,18 @@ export async function startVoiceInterview(opts: InterviewOptions, h: InterviewHa
   }
 
   try {
-    const res = await fetch("/api/interview/session", { method: "POST", headers: XHR, body: JSON.stringify(opts) });
-    const session = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(session.error || "Couldn't start a voice session.");
+    const res = await fetch("/api/interview/config", { method: "POST", headers: XHR, body: JSON.stringify(opts) });
+    const config = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(config.error || "Couldn't start a voice session.");
+
+    // Short-lived secret for this one session, created with the student's own key.
+    const secretRes = await fetch("https://api.openai.com/v1/realtime/client_secrets", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ session: config.session }),
+    });
+    const session = await secretRes.json().catch(() => ({}));
+    if (!secretRes.ok) throw keyError(secretRes.status, JSON.stringify(session));
 
     pc = new RTCPeerConnection();
     pc.ontrack = (e) => {
@@ -143,14 +157,7 @@ export async function startVoiceInterview(opts: InterviewOptions, h: InterviewHa
       body: offer.sdp,
       headers: { Authorization: `Bearer ${session.value}`, "Content-Type": "application/sdp" },
     });
-    if (!sdp.ok) {
-      const detail = await sdp.text().catch(() => "");
-      if (sdp.status === 429 && /insufficient_quota|credit/i.test(detail)) {
-        throw new Error("Voice practice is paused: the OpenAI account behind Tepobaby is out of credits.");
-      }
-      if (sdp.status === 429) throw new Error("OpenAI is busy right now. Try again in a minute.");
-      throw new Error("OpenAI didn't accept the voice connection. Try again.");
-    }
+    if (!sdp.ok) throw keyError(sdp.status, await sdp.text().catch(() => ""));
     await pc.setRemoteDescription({ type: "answer", sdp: await sdp.text() });
   } catch (err) {
     stop();
@@ -158,4 +165,16 @@ export async function startVoiceInterview(opts: InterviewOptions, h: InterviewHa
   }
 
   return stop;
+}
+
+/** Plain-words errors for problems with the student's OpenAI account. */
+function keyError(status: number, detail: string): Error {
+  if (status === 401) return new BadKeyError("OpenAI didn't accept your API key. Enter it again below.");
+  if (status === 403) return new BadKeyError("Your API key doesn't have access to the Realtime API. Check its permissions on platform.openai.com.");
+  if (status === 429 && /insufficient_quota|billing|credit/i.test(detail)) {
+    return new Error("Your OpenAI account is out of credits. Add credits at platform.openai.com/settings/organization/billing, then try again.");
+  }
+  if (status === 429) return new Error("OpenAI is busy right now. Try again in a minute.");
+  if (status === 404 && /model/i.test(detail)) return new Error("Your OpenAI account can't use the realtime voice model yet. Check your account's model access.");
+  return new Error("OpenAI didn't accept the voice connection. Try again.");
 }

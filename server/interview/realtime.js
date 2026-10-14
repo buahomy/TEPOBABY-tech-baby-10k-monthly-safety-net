@@ -1,15 +1,15 @@
 // Behavioral mock interviews with the OpenAI Realtime API (voice, over WebRTC).
 //
-// The browser never sees our OpenAI key: the server mints a short-lived client secret
-// (POST /v1/realtime/client_secrets) with the whole session baked in — the interviewer's persona,
-// company focus, rigor and evaluation criteria (system instructions), the voice, turn detection,
-// and the STAR feedback tools. The browser then connects straight to OpenAI with that secret
-// (POST /v1/realtime/calls, SDP over WebRTC) and gets tool calls on the "oai-events" data channel.
+// Students bring their own OpenAI API key, which stays in their browser. The server builds the session
+// setup (the interviewer's persona, company focus, rigor and evaluation criteria as system
+// instructions, plus the voice, turn detection and STAR feedback tools). The browser sends it to
+// OpenAI with the student's key (POST /v1/realtime/client_secrets) to get a short-lived secret, then
+// connects straight to OpenAI with that secret (POST /v1/realtime/calls, SDP over WebRTC) and gets
+// tool calls on the "oai-events" data channel.
 
 export const REALTIME_MODEL = process.env.OPENAI_REALTIME_MODEL || "gpt-realtime-2.1";
 const VOICE = process.env.OPENAI_REALTIME_VOICE || "marin";
 
-export const realtimeEnabled = () => !!process.env.OPENAI_API_KEY;
 
 // ---- Interviewer personas ----
 
@@ -107,9 +107,13 @@ const TOOLS = [
   },
 ];
 
-/** Mints a short-lived client secret for one interview session. Returns { value, expiresAt, model }. */
-export async function createSession({ company, level, target }) {
-  const session = {
+/**
+ * The Realtime session setup for one interview: model, persona instructions, voice, turn detection
+ * and STAR tools. Students bring their own OpenAI API key: the browser sends this setup to OpenAI
+ * with their key to get a short-lived client secret, so the key never reaches Tepobaby's server.
+ */
+export function sessionConfig({ company, level, target }) {
+  return {
     type: "realtime",
     model: REALTIME_MODEL,
     instructions: instructions(company, { level, target }),
@@ -123,18 +127,4 @@ export async function createSession({ company, level, target }) {
     tools: TOOLS,
     tool_choice: "auto",
   };
-
-  const res = await fetch("https://api.openai.com/v1/realtime/client_secrets", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ session }),
-    signal: AbortSignal.timeout(20000),
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const err = new Error(data?.error?.message || `OpenAI ${res.status}`);
-    err.status = res.status;
-    throw err;
-  }
-  return { value: data.value, expiresAt: data.expires_at ?? null, model: REALTIME_MODEL };
 }

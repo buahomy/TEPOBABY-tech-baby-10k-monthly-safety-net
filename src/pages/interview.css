@@ -415,3 +415,120 @@
     animation: none;
   }
 }
+
+/* Your own OpenAI API key (voice practice) */
+.m01 .iv-keyform {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid rgba(165, 180, 252, 0.3);
+  border-radius: 14px;
+  background: var(--indigo-soft);
+}
+
+.m01 .iv-keyform h3 {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.m01 .iv-keyform p {
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.m01 .iv-keyform a {
+  color: #a5b4fc;
+  font-weight: 600;
+}
+
+.m01 .iv-keyform input[type="password"] {
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--stroke-strong);
+  border-radius: 11px;
+  color: var(--text);
+  background: rgba(0, 0, 0, 0.25);
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 13px;
+}
+
+.m01 .iv-keyform input[type="password"]:focus {
+  border-color: var(--indigo-bright);
+  outline: none;
+}
+
+.m01 .iv-remember {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.m01 .iv-remember input {
+  accent-color: var(--indigo);
+}
+
+.m01 .iv-keyactions {
+  display: flex;
+  gap: 8px;
+}
+
+.m01 .iv-keysave {
+  flex: 1;
+  height: 40px;
+  border-radius: 11px;
+  color: white;
+  background: linear-gradient(135deg, #6366f1, #5558db);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.m01 .iv-keysave:disabled {
+  opacity: 0.55;
+}
+
+.m01 .iv-keycancel {
+  height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--stroke-strong);
+  border-radius: 11px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.m01 .iv-keyform .iv-keynote {
+  color: var(--text-tertiary);
+  font-size: 11px;
+}
+
+.m01 .iv-keyrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.m01 .iv-keyrow span {
+  flex: 1;
+}
+
+.m01 .iv-keyrow code {
+  color: var(--text);
+  font-family: "SF Mono", Menlo, monospace;
+}
+
+.m01 .iv-keyrow button {
+  color: #a5b4fc;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.m01 .iv-keyrow button:disabled {
+  opacity: 0.4;
+}

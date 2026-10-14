@@ -18,7 +18,7 @@ import fs from "node:fs";
 import { getProfile, saveAnswers } from "./profileStore.js";
 import { importSaved, listSaved, removeSaved, upsertSaved } from "./savedJobsStore.js";
 import { ginnyRoutes } from "./ginny/routes.js";
-import { companyOptions, createSession, realtimeEnabled } from "./interview/realtime.js";
+import { companyOptions, sessionConfig } from "./interview/realtime.js";
 import { customExpected, getProblem, problemList, warmCache } from "./neetcode/index.js";
 import { schoolForDomain } from "./connect/schools.js";
 
@@ -271,31 +271,27 @@ ginnyRoutes(app, {
 });
 
 // ---- Interview: behavioral voice practice (OpenAI Realtime API) ----
-// The browser gets a short-lived client secret; our OPENAI_API_KEY never leaves the server.
+// Students use their own OpenAI API key, which stays in their browser: the server only hands out the
+// interviewer setup (persona, rules, STAR tools), and the browser asks OpenAI for a short-lived
+// session with the student's key. Tepobaby's server never sees or pays for it.
 
 const interviewHits = new Map();
 app.get("/api/interview/status", (_req, res) => {
-  res.json({ enabled: realtimeEnabled(), companies: companyOptions() });
+  res.json({ enabled: true, ownKey: true, companies: companyOptions() });
 });
 
-app.post("/api/interview/session", requireXhr, express.json({ limit: "4kb" }), async (req, res) => {
-  if (!realtimeEnabled()) return res.status(503).json({ error: "Voice practice isn't set up yet (missing OPENAI_API_KEY)." });
+app.post("/api/interview/config", requireXhr, express.json({ limit: "4kb" }), (req, res) => {
   const session = readSession(parseCookies(req.headers.cookie)[SESSION_COOKIE]);
   const key = session?.sub || `ip:${req.ip}`;
   const now = Date.now();
   const recent = (interviewHits.get(key) || []).filter((t) => now - t < 3600e3);
-  if (recent.length >= 10) return res.status(429).json({ error: "You've started a lot of practice sessions. Try again in a bit." });
+  if (recent.length >= 30) return res.status(429).json({ error: "You've started a lot of practice sessions. Try again in a bit." });
   interviewHits.set(key, [...recent, now]);
 
   const company = ["generic", "google", "amazon", "meta"].includes(req.body?.company) ? req.body.company : "generic";
   const level = typeof req.body?.level === "string" ? req.body.level.slice(0, 30) : "";
   const target = typeof req.body?.target === "string" ? req.body.target.slice(0, 120) : "";
-  try {
-    res.json(await createSession({ company, level, target }));
-  } catch (err) {
-    console.error("[interview] session failed:", err.message);
-    res.status(err.status === 401 ? 503 : 502).json({ error: "Couldn't start a voice session. Please try again." });
-  }
+  res.json({ session: sessionConfig({ company, level, target }) });
 });
 
 // ---- Connect: the signed-in student's school, from their .edu email domain ----
