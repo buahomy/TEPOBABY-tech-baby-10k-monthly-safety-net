@@ -128,3 +128,34 @@ export function sessionConfig({ company, level, target }) {
     tool_choice: "auto",
   };
 }
+
+// ---- Tepobaby's own key, for allowed accounts only ----
+// OPENAI_API_KEY is used only for signed-in accounts listed in INTERVIEW_SHARED_KEY_EMAILS
+// (comma-separated). Everyone else brings their own key.
+
+const sharedEmails = () =>
+  (process.env.INTERVIEW_SHARED_KEY_EMAILS || "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+
+/** True when this signed-in email may use Tepobaby's own OpenAI key. */
+export const canUseSharedKey = (email) => !!process.env.OPENAI_API_KEY && !!email && sharedEmails().includes(String(email).toLowerCase());
+
+/** Mints a short-lived client secret with Tepobaby's own key. Returns { value, expiresAt }. */
+export async function createClientSecret(session) {
+  const res = await fetch("https://api.openai.com/v1/realtime/client_secrets", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ session }),
+    signal: AbortSignal.timeout(20000),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = new Error(data?.error?.message || `OpenAI ${res.status}`);
+    err.status = res.status;
+    err.detail = JSON.stringify(data);
+    throw err;
+  }
+  return { value: data.value, expiresAt: data.expires_at ?? null };
+}

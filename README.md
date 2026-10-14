@@ -130,6 +130,7 @@ North West grades each part by calling the `update_star_progress` tool (phase, s
 - **Your key:** it stays in your browser and is only ever sent to OpenAI, never to Tepobaby's server. For each interview, your browser uses it to get a short-lived session secret from OpenAI. Use a key with a spending limit, and don't save it on a shared computer.
 - **Cost:** sessions are billed to your own OpenAI account; Tepobaby pays nothing and sees nothing. Sessions end automatically after 15 minutes, so a forgotten session doesn't keep charging you.
 - **Clear errors:** a rejected key, an account without access, or an account that's out of credits each gets a plain-words message. A rejected key reopens the key card.
+- **The author's account:** signed-in accounts listed in `INTERVIEW_SHARED_KEY_EMAILS` (only the author's) skip the key card and use Tepobaby's own `OPENAI_API_KEY`. For them, the server creates the short-lived session, so that key still never reaches the browser.
 
 ### Technical: NeetCode 150
 **Interview → Technical** is built entirely on the [NeetCode 150](https://neetcode.io/practice), with two sub-tabs side by side: **Card Game** and **Roadmap**.
@@ -636,6 +637,8 @@ To deploy your own copy:
 | `VOYAGE_MODEL` | Server | Optional. Default `voyage-4`. |
 | `GEMINI_API_KEY` | Server | Gemini key for Ask Gemini and tailored rewrites (free tier). Server-only, never sent to the browser. |
 | `GEMINI_MODEL` | Server | Optional. Default `gemini-3.8-flash` (Interactions API). |
+| `OPENAI_API_KEY` | Server | Optional. Tepobaby's own OpenAI key, used for voice practice only by the accounts in `INTERVIEW_SHARED_KEY_EMAILS`. Everyone else uses their own key. |
+| `INTERVIEW_SHARED_KEY_EMAILS` | Server | Optional. Comma-separated signed-in emails allowed to use `OPENAI_API_KEY` for voice practice (e.g. the author's). |
 | `OPENAI_REALTIME_MODEL` | Server | Optional. Default `gpt-realtime-2.1`. |
 | `OPENAI_REALTIME_VOICE` | Server | Optional. Default `marin`. |
 | `OPENAI_TRANSCRIBE_MODEL` | Server | Optional. Transcribes what you say. Default `gpt-4o-mini-transcribe`. |

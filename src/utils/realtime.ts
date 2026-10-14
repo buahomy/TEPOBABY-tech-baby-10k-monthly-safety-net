@@ -25,13 +25,14 @@ const STATUSES: StarStatus[] = ["complete", "needs_clarification", "missing_deta
 /** Thrown when OpenAI rejects the student's key, so the app can ask for a new one. */
 export class BadKeyError extends Error {}
 
-export async function getInterviewStatus(): Promise<{ enabled: boolean; companies: { id: string; label: string }[] }> {
+export async function getInterviewStatus(): Promise<{ enabled: boolean; sharedKey?: boolean; companies: { id: string; label: string }[] }> {
   const res = await fetch("/api/interview/status");
   return res.json();
 }
 
 /** Starts a live voice interview. Returns a function that ends it. */
-export async function startVoiceInterview(opts: InterviewOptions, apiKey: string, h: InterviewHandlers): Promise<() => void> {
+/** `apiKey` is the student's own key; null when the server provides the session (allowed accounts). */
+export async function startVoiceInterview(opts: InterviewOptions, apiKey: string | null, h: InterviewHandlers): Promise<() => void> {
   h.onState("connecting");
   let mic: MediaStream | null = null;
   let pc: RTCPeerConnection | null = null;
@@ -66,14 +67,21 @@ export async function startVoiceInterview(opts: InterviewOptions, apiKey: string
     const config = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(config.error || "Couldn't start a voice session.");
 
-    // Short-lived secret for this one session, created with the student's own key.
-    const secretRes = await fetch("https://api.openai.com/v1/realtime/client_secrets", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ session: config.session }),
-    });
-    const session = await secretRes.json().catch(() => ({}));
-    if (!secretRes.ok) throw keyError(secretRes.status, JSON.stringify(session));
+    // Short-lived secret for this one session: from our server for allowed accounts, otherwise
+    // created with the student's own key.
+    let session: { value: string };
+    if (config.secret) {
+      session = config.secret;
+    } else {
+      if (!apiKey) throw new BadKeyError("Add your OpenAI API key to start.");
+      const secretRes = await fetch("https://api.openai.com/v1/realtime/client_secrets", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ session: config.session }),
+      });
+      session = await secretRes.json().catch(() => ({}));
+      if (!secretRes.ok) throw keyError(secretRes.status, JSON.stringify(session));
+    }
 
     pc = new RTCPeerConnection();
     pc.ontrack = (e) => {

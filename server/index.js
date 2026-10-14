@@ -18,7 +18,7 @@ import fs from "node:fs";
 import { getProfile, saveAnswers } from "./profileStore.js";
 import { importSaved, listSaved, removeSaved, upsertSaved } from "./savedJobsStore.js";
 import { ginnyRoutes } from "./ginny/routes.js";
-import { companyOptions, sessionConfig } from "./interview/realtime.js";
+import { canUseSharedKey, companyOptions, createClientSecret, sessionConfig } from "./interview/realtime.js";
 import { customExpected, getProblem, problemList, warmCache } from "./neetcode/index.js";
 import { schoolForDomain } from "./connect/schools.js";
 
@@ -274,13 +274,18 @@ ginnyRoutes(app, {
 // Students use their own OpenAI API key, which stays in their browser: the server only hands out the
 // interviewer setup (persona, rules, STAR tools), and the browser asks OpenAI for a short-lived
 // session with the student's key. Tepobaby's server never sees or pays for it.
+// Exception: signed-in accounts listed in INTERVIEW_SHARED_KEY_EMAILS use Tepobaby's OPENAI_API_KEY;
+// the server mints their short-lived secret, and the key itself still never reaches the browser.
 
 const interviewHits = new Map();
-app.get("/api/interview/status", (_req, res) => {
-  res.json({ enabled: true, ownKey: true, companies: companyOptions() });
+app.get("/api/interview/status", (req, res) => {
+  const session = readSession(parseCookies(req.headers.cookie)[SESSION_COOKIE]);
+  const shared = canUseSharedKey(session?.email);
+  res.set("Cache-Control", "private, no-store"); // differs per account
+  res.json({ enabled: true, ownKey: !shared, sharedKey: shared, companies: companyOptions() });
 });
 
-app.post("/api/interview/config", requireXhr, express.json({ limit: "4kb" }), (req, res) => {
+app.post("/api/interview/config", requireXhr, express.json({ limit: "4kb" }), async (req, res) => {
   const session = readSession(parseCookies(req.headers.cookie)[SESSION_COOKIE]);
   const key = session?.sub || `ip:${req.ip}`;
   const now = Date.now();
@@ -291,7 +296,18 @@ app.post("/api/interview/config", requireXhr, express.json({ limit: "4kb" }), (r
   const company = ["generic", "google", "amazon", "meta"].includes(req.body?.company) ? req.body.company : "generic";
   const level = typeof req.body?.level === "string" ? req.body.level.slice(0, 30) : "";
   const target = typeof req.body?.target === "string" ? req.body.target.slice(0, 120) : "";
-  res.json({ session: sessionConfig({ company, level, target }) });
+  const setup = sessionConfig({ company, level, target });
+  if (!canUseSharedKey(session?.email)) return res.json({ session: setup });
+
+  try {
+    res.json({ session: setup, secret: await createClientSecret(setup) });
+  } catch (err) {
+    console.error("[interview] shared-key session failed:", err.status, (err.message || "").replace(/sk-[\w-]+/g, "sk-***"));
+    if (err.status === 429 && /insufficient_quota|billing|credit/i.test(err.detail || "")) {
+      return res.status(402).json({ error: "Tepobaby's OpenAI account is out of credits. Add credits at platform.openai.com/settings/organization/billing." });
+    }
+    res.status(502).json({ error: "Couldn't start a voice session. Please try again." });
+  }
 });
 
 // ---- Connect: the signed-in student's school, from their .edu email domain ----
