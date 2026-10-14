@@ -180,6 +180,12 @@ export function useSavedJobs(signedIn: boolean) {
         jobs,
       );
     },
+    /** Apply agent: record a posting as applied, saving it first if needed. */
+    markApplied: (p: Posting) => {
+      const now = new Date().toISOString();
+      const base = jobs.find((j) => j.id === p.id) ?? fromPosting(p);
+      upsert({ ...base, status: "applied", appliedAt: base.appliedAt ?? now, stage: base.stage ?? "applied", stageUpdatedAt: base.stageUpdatedAt ?? now }, jobs);
+    },
     /** Applied jobs: update the hiring stage (OA, phone, on-site, …). */
     setStage: (id: string, stage: Stage) => {
       const job = jobs.find((j) => j.id === id);

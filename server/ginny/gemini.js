@@ -25,7 +25,7 @@ async function interactOnce(model, body) {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY },
     body: JSON.stringify({ model, store: false, ...body }),
-    signal: AbortSignal.timeout(90000),
+    signal: AbortSignal.timeout(45000),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
@@ -45,7 +45,10 @@ async function interact(body) {
         return await interactOnce(model, body);
       } catch (err) {
         last = err;
-        if (err.status !== 503 && err.status !== 500) throw err;
+        // Overloaded or too slow: try again / move to the next model.
+        const slow = err.name === "TimeoutError" || err.name === "AbortError";
+        if (err.status !== 503 && err.status !== 500 && !slow) throw err;
+        if (slow) break;
         if (attempt < 2 && model === MODEL) await sleep(1500 * (attempt + 1));
       }
     }

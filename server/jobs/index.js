@@ -257,6 +257,9 @@ export function queryPostings({ level, maxHours = 72, visaFriendly = false, limi
   };
 }
 
+/** Every current posting (the merged, deduped feed). */
+export const allPostings = () => merged;
+
 /** Only domains that appear in current postings are served by /api/logo. */
 export function knownDomain(domain) {
   return merged.some((p) => p.domain === domain);

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Suspense, lazy, useState } from "react";
 import CommunityLaunchpad from "../../components/CommunityLaunchpad";
 import CompanyLogo from "../../components/CompanyLogo";
 import HeartButton from "../../components/HeartButton";
@@ -8,8 +8,11 @@ import { timeAgo } from "../../utils/postings";
 import { Profile, SECTIONS, STEPS, labelFor } from "../../utils/profile";
 import { JobStatus, STAGES, SavedJob, SavedJobsApi, Stage } from "../../utils/savedJobs";
 
-// Profile tab: account, saved / applied jobs, every onboarding answer grouped by section,
-// and edit / sign-out actions.
+// Profile tab: account, saved / applied jobs, the Apply agent, every onboarding answer grouped by
+// section, and edit / sign-out actions.
+
+// Loaded on first visit to Profile, so it's not part of the app's first download.
+const ApplyAgent = lazy(() => import("../ApplyAgent"));
 
 type Props = {
   user: User | null; // null = guest
@@ -177,6 +180,9 @@ export default function ProfileTab({ user, profile, saved, onBrowse, onEdit, onS
       </header>
 
       <MyJobs saved={saved} onBrowse={onBrowse} signedIn={!!user} />
+      <Suspense fallback={<section className="block"><p className="empty">Loading the Apply agent…</p></section>}>
+        <ApplyAgent signedIn={!!user} profile={profile} saved={saved} />
+      </Suspense>
 
       {SECTIONS.map((section) => (
         <section className="block" key={section.id} aria-label={section.title}>

@@ -144,6 +144,53 @@ export async function deleteResume(signedIn: boolean) {
 
 // ---- ATS analysis ----
 
+/** The resume as the server reads it: one list of lines per section (identifiers removed). */
+export type ResumeSections = { experience: string[]; projects: string[]; skills: string[]; education: string[] };
+
+/**
+ * ATS analysis plus what it was run on: the job description (to re-score without fetching it again)
+ * and the resume sections (the Apply agent edits a copy of these).
+ */
+export async function runAtsDetailed(
+  signedIn: boolean,
+  job: Pick<SavedJob, "title" | "company" | "url">,
+  opts: { description?: string; sections?: ResumeSections } = {},
+): Promise<{ result: AtsResult; description: string; sections: ResumeSections }> {
+  const body: Record<string, unknown> = { job: { title: job.title, company: job.company, url: job.url } };
+  if (opts.description) body.description = opts.description;
+  if (opts.sections) body.sections = opts.sections;
+  else if (!signedIn) {
+    const r = guestResumeInMemory || readGuestResume();
+    if (r) body.resumePdf = r.base64;
+  }
+  const res = await fetch("/api/ginny/ats", {
+    method: "POST",
+    headers: { ...XHR, "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  return json(res);
+}
+
+/** Gemini rewrites for a job, on an edited copy of the resume. */
+export async function getTailorTipsFor(
+  job: Pick<SavedJob, "title" | "company">,
+  result: Pick<AtsResult, "requirements" | "missingSkills" | "gaps">,
+  sections: ResumeSections,
+): Promise<TailorTips> {
+  const res = await fetch("/api/ginny/tailor", {
+    method: "POST",
+    headers: { ...XHR, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      job: { title: job.title, company: job.company },
+      requirements: result.requirements,
+      missingSkills: result.missingSkills.map((m) => m.skill),
+      gaps: result.gaps,
+      sections,
+    }),
+  });
+  return (await json<{ tips: TailorTips }>(res)).tips;
+}
+
 export async function runAts(signedIn: boolean, job: SavedJob, description?: string): Promise<AtsResult> {
   const body: Record<string, unknown> = { job: { title: job.title, company: job.company, url: job.url } };
   if (description) body.description = description;
