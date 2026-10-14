@@ -56,7 +56,7 @@ export type ChatMessage = { role: "user" | "model"; text: string; sources?: { ti
 
 async function json<T>(res: Response): Promise<T> {
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw Object.assign(new Error(data.error || "Something went wrong."), data);
+  if (!res.ok) throw Object.assign(new Error(data.error || "Something went wrong."), data, { status: res.status });
   return data as T;
 }
 

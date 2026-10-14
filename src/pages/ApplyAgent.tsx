@@ -5,6 +5,7 @@ import {
   MAX_ROUNDS,
   QueueRole,
   RoleState,
+  GeminiUnavailableError,
   applyStudentInput,
   checkRole,
   fetchQueue,
@@ -169,11 +170,15 @@ export default function ApplyAgent({ signedIn, profile, saved }: Props) {
         while (st.status === "below" && st.rounds < MAX_ROUNDS && !stopRef.current) {
           setBusy(`Tailoring ${i + 1} of ${ids.length}: ${role.company}, round ${st.rounds + 1}`);
           try {
-            st = await improveRole(signedIn, role, st, agentRef.current, anthropicKey ? { kind: "claude", apiKey: anthropicKey } : { kind: "gemini" });
+            const round = st.rounds + 1;
+            st = await improveRole(signedIn, role, st, agentRef.current, {
+              claudeKey: anthropicKey || null,
+              onSwitch: () => setBusy(`Gemini is out, so Claude is tailoring ${role.company}, round ${round}`),
+            });
             put(role.id, st);
           } catch (e) {
             setError((e as Error).message);
-            if (e instanceof AnthropicKeyError) setKeyOpen(true);
+            if (e instanceof AnthropicKeyError || e instanceof GeminiUnavailableError) setKeyOpen(true);
             stopRef.current = true;
           }
         }
@@ -276,28 +281,24 @@ export default function ApplyAgent({ signedIn, profile, saved }: Props) {
       </div>
 
       <div className="ag-writer">
-        {anthropicKey && !keyOpen ? (
+        {!keyOpen ? (
           <span>
-            ✍️ Rewrites by <strong>Claude</strong> (your Anthropic key sk-ant-…{anthropicKey.slice(-4)}){" "}
+            ✍️ Rewrites by <strong>Gemini</strong> (free), switching to <strong>Claude</strong> when Gemini runs out
+            {anthropicKey ? ` (your Anthropic key sk-ant-…${anthropicKey.slice(-4)})` : ", once you add an Anthropic key"}.{" "}
             <button type="button" onClick={() => setKeyOpen(true)}>
-              Change
+              {anthropicKey ? "Change key" : "Add Anthropic key"}
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                clearAnthropicKey();
-                setAnthropicKey("");
-              }}
-            >
-              Use Gemini
-            </button>
-          </span>
-        ) : !keyOpen ? (
-          <span>
-            ✍️ Rewrites by <strong>Gemini</strong> (free, can be busy).{" "}
-            <button type="button" onClick={() => setKeyOpen(true)}>
-              Use Claude with my Anthropic key
-            </button>
+            {anthropicKey && (
+              <button
+                type="button"
+                onClick={() => {
+                  clearAnthropicKey();
+                  setAnthropicKey("");
+                }}
+              >
+                Remove
+              </button>
+            )}
           </span>
         ) : (
           <form
