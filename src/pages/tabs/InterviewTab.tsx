@@ -1,6 +1,7 @@
 import { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { Profile } from "../../utils/profile";
-import { StarPhase, StarStatus, getInterviewStatus, startVoiceInterview } from "../../utils/realtime";
+import { checkOpenAIKey, clearOpenAIKey, getOpenAIKey, looksLikeKey, maskKey, saveOpenAIKey } from "../../utils/openaiKey";
+import { BadKeyError, StarPhase, StarStatus, getInterviewStatus, startVoiceInterview } from "../../utils/realtime";
 import "../interview.css";
 
 // Interview tab: Behavioral (live AI voice interviewer, STAR tracker) and Technical (NeetCode 150
@@ -60,6 +61,8 @@ export default function InterviewTab({ profile }: Props) {
 
 function Behavioral({ profile }: { profile: Profile }) {
   const [enabled, setEnabled] = useState<boolean | null>(null);
+  const [apiKey, setApiKey] = useState(getOpenAIKey);
+  const [editingKey, setEditingKey] = useState(() => !getOpenAIKey());
   const [company, setCompany] = useState("generic");
   const [state, setState] = useState<"idle" | "connecting" | "live" | "ended">("idle");
   const [speaking, setSpeaking] = useState<"agent" | "user" | null>(null);
@@ -122,6 +125,10 @@ function Behavioral({ profile }: { profile: Profile }) {
   }, [seconds]);
 
   const start = async () => {
+    if (!apiKey) {
+      setEditingKey(true);
+      return;
+    }
     setError("");
     setBoxes(emptyBoxes());
     setLastPhase(null);
@@ -136,6 +143,7 @@ function Behavioral({ profile }: { profile: Profile }) {
           level: profile.answers.academicLevel || "",
           target: targetFrom(profile),
         },
+        apiKey,
         {
           onState: (st) => {
             setState(st);
@@ -159,6 +167,7 @@ function Behavioral({ profile }: { profile: Profile }) {
       setError((e as Error).message);
       setState("idle");
       stopCamera();
+      if (e instanceof BadKeyError) setEditingKey(true);
     }
   };
 
@@ -200,6 +209,38 @@ function Behavioral({ profile }: { profile: Profile }) {
           North West, a Senior Software Engineer{company === "generic" ? "" : ` at ${picked.label}`}, interviews you out loud.
           Focus: {picked.focus}.
         </p>
+
+        {editingKey ? (
+          <KeyForm
+            current={apiKey}
+            onSaved={(k) => {
+              setApiKey(k);
+              setEditingKey(false);
+              setError("");
+            }}
+            onCancel={apiKey ? () => setEditingKey(false) : undefined}
+          />
+        ) : (
+          <div className="iv-keyrow">
+            <span>
+              🔑 Your OpenAI key <code>{maskKey(apiKey)}</code>
+            </span>
+            <button type="button" disabled={live} onClick={() => setEditingKey(true)}>
+              Change
+            </button>
+            <button
+              type="button"
+              disabled={live}
+              onClick={() => {
+                clearOpenAIKey();
+                setApiKey("");
+                setEditingKey(true);
+              }}
+            >
+              Remove
+            </button>
+          </div>
+        )}
 
         <div className="iv-stage">
           <div className="star-col" aria-label="STAR progress">
@@ -265,7 +306,7 @@ function Behavioral({ profile }: { profile: Profile }) {
             type="button"
             className={`iv-orb${live ? " is-live" : ""}${speaking ? ` is-${speaking}` : ""}`}
             onClick={live ? stop : start}
-            disabled={enabled === false || state === "connecting"}
+            disabled={enabled === false || state === "connecting" || (!apiKey && !live)}
             aria-label={live ? "End practice" : "Start practice"}
           >
             <img className="iv-orb-logo" src="/logos/openai-white.png" alt="" />
@@ -290,13 +331,83 @@ function Behavioral({ profile }: { profile: Profile }) {
         )}
         {caption && state === "live" && <p className="iv-caption">North West: “{caption}”</p>}
         {error && <p className="ob-error">{error}</p>}
-        {enabled === false && <p className="gs-note">Voice practice isn't set up yet: the server needs an OPENAI_API_KEY.</p>}
+        {enabled === false && <p className="gs-note">Couldn't reach Tepobaby's server. Check your connection and try again.</p>}
         <p className="block-foot">
-          🔒 Your voice goes straight to OpenAI to run the interview. Your camera is only shown to you on this screen and
-          is never sent anywhere. Tepobaby doesn't record or store your audio or video. Use headphones for the best
-          experience.
+          🔒 Your voice goes straight to OpenAI to run the interview, billed to your own OpenAI account. Your API key is
+          kept only in this browser and only sent to OpenAI, never to Tepobaby. Your camera is only shown to you on this
+          screen and is never sent anywhere. Tepobaby doesn't record or store your audio or video. Use headphones for the
+          best experience.
         </p>
       </section>
     </>
   );
 }
+
+/** Asks for the student's own OpenAI API key, checks it with OpenAI, and keeps it in this browser. */
+function KeyForm({ current, onSaved, onCancel }: { current: string; onSaved: (key: string) => void; onCancel?: () => void }) {
+  const [value, setValue] = useState("");
+  const [remember, setRemember] = useState(true);
+  const [checking, setChecking] = useState(false);
+  const [problem, setProblem] = useState("");
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const key = value.trim();
+    if (!looksLikeKey(key)) {
+      setProblem("That doesn't look like an OpenAI API key. It starts with “sk-”.");
+      return;
+    }
+    setChecking(true);
+    setProblem("");
+    const issue = await checkOpenAIKey(key);
+    setChecking(false);
+    if (issue) {
+      setProblem(issue);
+      return;
+    }
+    saveOpenAIKey(key, remember);
+    onSaved(key);
+  };
+
+  return (
+    <form className="iv-keyform" onSubmit={submit}>
+      <h3>Use your OpenAI API key</h3>
+      <p>
+        Voice practice runs on OpenAI's Realtime API, which is paid and billed to your own OpenAI account. Create a key at{" "}
+        <a href="https://platform.openai.com/api-keys" target="_blank" rel="noreferrer">
+          platform.openai.com/api-keys
+        </a>{" "}
+        and make sure your account has credits.
+      </p>
+      <input
+        type="password"
+        value={value}
+        placeholder={current ? `Replace ${maskKey(current)}` : "sk-…"}
+        autoComplete="off"
+        spellCheck={false}
+        aria-label="OpenAI API key"
+        onChange={(e) => setValue(e.target.value)}
+      />
+      <label className="iv-remember">
+        <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
+        Remember on this device
+      </label>
+      {problem && <p className="ob-error">{problem}</p>}
+      <div className="iv-keyactions">
+        <button type="submit" className="iv-keysave" disabled={checking || !value.trim()}>
+          {checking ? "Checking with OpenAI…" : "Save key"}
+        </button>
+        {onCancel && (
+          <button type="button" className="iv-keycancel" onClick={onCancel}>
+            Cancel
+          </button>
+        )}
+      </div>
+      <p className="iv-keynote">
+        🔒 Your key stays in this browser and is only sent to OpenAI. Tepobaby's server never sees it. Use a key with a
+        spending limit, and don't save it on a shared computer.
+      </p>
+    </form>
+  );
+}
+

@@ -119,11 +119,17 @@ North West grades each part by calling the `update_star_progress` tool (phase, s
 - **Agent badge:** in the panel's top-left corner, an OpenAI badge shows "North West · speaking / listening". It wiggles, with a pulsing ring and sound bars, while North West talks, the way AI voice agents usually show they're speaking.
 - **If you skip the camera:** you can say no to camera access and keep practicing audio-only.
 
+**Use your own OpenAI API key.** Voice practice runs on OpenAI's paid Realtime API, so each student uses their own key:
+1. The first time you open **Interview → Behavioral**, a card asks for your OpenAI API key. Create one at [platform.openai.com/api-keys](https://platform.openai.com/api-keys), and make sure your OpenAI account has credits.
+2. Tepobaby checks the key with OpenAI before saving it. A wrong key is never saved, and the start button stays off until a key works.
+3. By default the key is remembered on your device. Uncheck **Remember on this device** to keep it only until you close the tab.
+4. After that you'll see **🔑 Your OpenAI key sk-…abcd** with **Change** and **Remove**.
+
 **Privacy & cost.**
 - **Audio & video:** your voice goes straight from your browser to OpenAI. Your camera is only shown to you on screen and is never sent anywhere. Tepobaby doesn't record or store either one.
-- **Key safety:** the server mints a short-lived client secret for each session, so the OpenAI key never reaches the browser.
-- **Limits:** sessions end automatically after 15 minutes, and each user can start up to 10 sessions an hour.
-- **Credits:** the Realtime API has no free tier, so the OpenAI account needs credits; if it runs out, the app says so instead of failing silently.
+- **Your key:** it stays in your browser and is only ever sent to OpenAI, never to Tepobaby's server. For each interview, your browser uses it to get a short-lived session secret from OpenAI. Use a key with a spending limit, and don't save it on a shared computer.
+- **Cost:** sessions are billed to your own OpenAI account; Tepobaby pays nothing and sees nothing. Sessions end automatically after 15 minutes, so a forgotten session doesn't keep charging you.
+- **Clear errors:** a rejected key, an account without access, or an account that's out of credits each gets a plain-words message. A rejected key reopens the key card.
 
 ### Technical: NeetCode 150
 **Interview → Technical** is built entirely on the [NeetCode 150](https://neetcode.io/practice), with two sub-tabs side by side: **Card Game** and **Roadmap**.
@@ -393,9 +399,13 @@ How I built Tepobaby (with Claude Code): each decision, why I made it, and the p
   - *Pain point:* job lists lag behind company sites.
 
 ### Interview: behavioral voice practice
-- **OpenAI Realtime API over WebRTC, with a short-lived client secret from the server.**
-  - *Why:* WebRTC gives low-latency, two-way voice straight from the browser, with echo cancellation. The server keeps `OPENAI_API_KEY` and only hands out a per-session secret, with the instructions, voice, turn detection and tools baked in.
-  - *Pain point:* a voice agent needs real-time audio, but the API key must never reach the browser. The GA Realtime API also changed from beta (`/v1/realtime/client_secrets` and `/v1/realtime/calls`, model `gpt-realtime-2.1`).
+- **OpenAI Realtime API over WebRTC, with each student's own API key.**
+  - *Why:* WebRTC gives low-latency, two-way voice straight from the browser, with echo cancellation. The Realtime API is paid per minute, so one shared key on Tepobaby's account would make every student's practice the author's bill.
+  - *How:*
+    - The server only returns the interviewer setup: instructions, voice, turn detection and STAR tools, from `POST /api/interview/config`.
+    - The browser sends that setup to OpenAI with the student's key (`POST /v1/realtime/client_secrets`). OpenAI's API allows browser requests (CORS), so the key goes straight from the student's browser to OpenAI.
+    - The browser then connects with the short-lived secret it gets back (`/v1/realtime/calls`).
+  - *Pain point:* students' keys must not pass through or be stored on our server, where they could leak in logs or a breach, so the server never receives them. The key is checked with OpenAI (`GET /v1/models`) before it's saved, so a typo shows up right away instead of as a failed interview. The GA Realtime API also changed from beta (`/v1/realtime/client_secrets` and `/v1/realtime/calls`, model `gpt-realtime-2.1`).
 - **Company personas as system instructions** (Generic, Google, Amazon, Meta), with "North West, Senior Software Engineer at (company)".
   - *Why:* each company grades behavioral answers differently: Google on scale and "I" vs. "we", Amazon on Leadership Principles and metrics, Meta on speed and ownership.
   - *Pain point:* generic mock interviews don't prepare students for company-specific bars.
@@ -626,7 +636,6 @@ To deploy your own copy:
 | `VOYAGE_MODEL` | Server | Optional. Default `voyage-4`. |
 | `GEMINI_API_KEY` | Server | Gemini key for Ask Gemini and tailored rewrites (free tier). Server-only, never sent to the browser. |
 | `GEMINI_MODEL` | Server | Optional. Default `gemini-3.8-flash` (Interactions API). |
-| `OPENAI_API_KEY` | Server | OpenAI key for Interview → Behavioral voice practice (Realtime API, paid: the account needs credits). Server-only; the browser gets short-lived session secrets. |
 | `OPENAI_REALTIME_MODEL` | Server | Optional. Default `gpt-realtime-2.1`. |
 | `OPENAI_REALTIME_VOICE` | Server | Optional. Default `marin`. |
 | `OPENAI_TRANSCRIBE_MODEL` | Server | Optional. Transcribes what you say. Default `gpt-4o-mini-transcribe`. |
@@ -663,7 +672,7 @@ API routes (the Vite dev server forwards `/api` to the auth server):
 | `GET` / `PUT` / `DELETE /api/ginny/resume` | The signed-in student's resume (PUT body = PDF bytes) |
 | `POST /api/ginny/ats` | ATS match analysis for one job (guests send their PDF with the request) |
 | `GET /api/interview/status` | Whether voice practice is set up, and the interviewer options |
-| `POST /api/interview/session` | Short-lived OpenAI Realtime client secret for one behavioral interview (company persona + STAR tools baked in) |
+| `POST /api/interview/config` | The Realtime session setup for one behavioral interview (company persona, rules and STAR tools). No key involved: the browser exchanges it with OpenAI using the student's own key |
 | `GET /api/cron/jobs` | The daily job update, called by Vercel Cron (needs `Authorization: Bearer $CRON_SECRET`) |
 | `GET /api/connect/school` | The signed-in student's school name, from their `.edu` email domain |
 | `GET /api/neetcode` | The NeetCode 150 list (number, title, difficulty, category) and the 18 concepts |
