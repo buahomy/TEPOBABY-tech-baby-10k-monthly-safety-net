@@ -33,6 +33,22 @@ function limit(key, max, windowMs) {
 const HOUR = 3600e3;
 const str = (v, max) => (typeof v === "string" ? v.slice(0, max) : "");
 
+/**
+ * An edited copy of the student's own resume sections (the Apply agent's tailored version), or
+ * null. Same shape the server builds from the PDF: { experience, projects, skills, education }.
+ */
+function editedSections(v) {
+  if (!v || typeof v !== "object" || Array.isArray(v)) return null;
+  const out = {};
+  let total = 0;
+  for (const k of ["experience", "projects", "skills", "education"]) {
+    const lines = (Array.isArray(v[k]) ? v[k] : []).slice(0, 80).map((x) => str(x, 600).trim()).filter(Boolean);
+    total += lines.join("").length;
+    out[k] = lines;
+  }
+  return total >= 80 && total <= 40000 ? out : null;
+}
+
 export function ginnyRoutes(app, { readSession, requireXhr, requireUser }) {
   warmReranker();
   const who = (req) => readSession(req)?.sub || `ip:${req.ip}`;
@@ -80,7 +96,7 @@ export function ginnyRoutes(app, { readSession, requireXhr, requireUser }) {
 
   // ---- ATS analysis ----
   app.post("/api/ginny/ats", requireXhr, express.json({ limit: "8mb" }), async (req, res) => {
-    if (!limit(`ats:${who(req)}`, 30, HOUR)) return res.status(429).json({ error: "You've run a lot of analyses. Try again in a bit." });
+    if (!limit(`ats:${who(req)}`, 80, HOUR)) return res.status(429).json({ error: "You've run a lot of analyses. Try again in a bit." });
     const job = req.body?.job || {};
     const title = str(job.title, 300);
     const company = str(job.company, 200);
@@ -88,10 +104,13 @@ export function ginnyRoutes(app, { readSession, requireXhr, requireUser }) {
     if (!title || !company) return res.status(400).json({ error: "Pick a job first." });
 
     try {
-      // Resume: stored one for signed-in students, otherwise the PDF sent from the device.
+      // Resume: an edited copy (Apply agent), the stored one for signed-in students, otherwise the
+      // PDF sent from the device.
       const session = readSession(req);
-      let sections;
-      if (session) {
+      let sections = editedSections(req.body?.sections);
+      if (sections) {
+        // use it
+      } else if (session) {
         const stored = await loadResume(session.sub);
         if (!stored) return res.status(409).json({ error: "Upload your resume first.", needResume: true });
         sections = stored.sanitized.sections;
@@ -107,7 +126,8 @@ export function ginnyRoutes(app, { readSession, requireXhr, requireUser }) {
         return res.status(422).json({ error: "Couldn't load this job's description. Paste it below to continue.", needDescription: true });
       }
 
-      res.json({ result: await analyze({ sections, jobTitle: title, company, description }) });
+      // The description is returned so re-scores of the same job don't fetch it again.
+      res.json({ result: await analyze({ sections, jobTitle: title, company, description }), description, sections });
     } catch (err) {
       fail(res, err, "analysis");
     }
@@ -116,13 +136,15 @@ export function ginnyRoutes(app, { readSession, requireXhr, requireUser }) {
   // ---- Tailored rewrites (opt-in: sends the sanitized resume sections to Gemini) ----
   app.post("/api/ginny/tailor", requireXhr, express.json({ limit: "8mb" }), async (req, res) => {
     if (!geminiEnabled()) return res.status(503).json({ error: "Tailored suggestions need GEMINI_API_KEY on the server." });
-    if (!limit(`tailor:${who(req)}`, 15, HOUR)) return res.status(429).json({ error: "You've asked for a lot of rewrites. Try again in a bit." });
+    if (!limit(`tailor:${who(req)}`, 40, HOUR)) return res.status(429).json({ error: "You've asked for a lot of rewrites. Try again in a bit." });
     const job = req.body?.job || {};
     const list = (v, n, m) => (Array.isArray(v) ? v : []).slice(0, n).map((x) => str(x, m)).filter(Boolean);
     try {
       const session = readSession(req);
-      let sections;
-      if (session) {
+      let sections = editedSections(req.body?.sections);
+      if (sections) {
+        // the Apply agent's edited copy
+      } else if (session) {
         const stored = await loadResume(session.sub);
         if (!stored) return res.status(409).json({ error: "Upload your resume first.", needResume: true });
         sections = stored.sanitized.sections;

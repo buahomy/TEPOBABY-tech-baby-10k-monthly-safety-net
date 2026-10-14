@@ -13,6 +13,7 @@
     "check:neetcode": "node scripts/check-neetcode.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.133.0",
     "@codemirror/commands": "^6.11.1",
     "@codemirror/lang-javascript": "^6.2.2",
     "@codemirror/lang-python": "^6.1.6",
@@ -26,7 +27,8 @@
     "google-auth-library": "^10.9.1",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "unpdf": "1.6.0"
+    "unpdf": "1.6.0",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/react": "18.3.3",

@@ -289,6 +289,34 @@ Your **Profile** has your saved and applied jobs, all your answers, programs and
 - **Save jobs with ♥**: tap the heart on any job posting to save it. Saved jobs appear under **My jobs** on your Profile, with **Saved** and **Applied** tabs; tap **Mark applied** to track where you've applied. Each saved job keeps its details, so it stays there after the posting leaves the 7-day feed. When signed in, saved jobs are stored on your account; as a guest, they stay on your device and move to your account when you sign in.
 - **Track your applications**: in **My jobs → Applied**, tap a job's stage to update it: **Applied → OA → Phone → On-site → Final → Team match → Offer**, or **Ghosted** / **Not proceeding**. A pipeline summary shows how many jobs are at each stage, and each job shows when its stage last changed. Applied jobs stay until you remove them: the daily job update never touches this list, and changing a stage never reshuffles it (it's ordered by when you applied).
 
+### 🤖 Apply agent
+Under **My jobs**, the Apply agent does the daily grind of a job search for you: it finds roles that fit, checks your résumé against each one, tailors it, and gets each application ready to submit.
+
+**Every day, automatically** (the first time you open Profile that day, or whenever you tap **Check next 10 roles**):
+1. **Finds roles that fit you** from the live feed (Entry-level and Rotational Programs):
+   - **Timing:** full-time roles that fit your **graduation date** and **start date**. For example, a December 2026 graduate starting January 2027 never sees "New Grad 2025" or "Summer 2026" roles. Titles that name your class or start ("New Grad 2027", "2027 University Graduate") come first.
+   - **Visa:** if you need sponsorship (OPT, STEM OPT, H-1B…), roles that say "no sponsorship", "U.S. citizens only" or need a security clearance are hidden. Roles that don't say are kept and labeled **Sponsorship not stated**.
+   - **Your fields:** only the kinds of roles you pick: Software, Data & AI, Hardware, Security, Product & program, Finance & business, Sales & solutions.
+2. **Checks each one with the ATS match** (the same analysis as Ginny), 10 at a time. Roles at your target score (**85+** by default; 70–90 to choose from) go to **✅ Ready**, and the rest go to **🛠 Below 85**.
+
+**Tailoring roles below the target** (**Tailor below 85**, up to 3 rounds per role):
+- **Who writes the rewrites:** your choice of **Claude** (Claude Opus 5.5, on your own Anthropic API key, kept in your browser and sent only to Anthropic) or **Gemini** (free, through Tepobaby, but often busy on the free tier).
+- **What's applied automatically:** rewrites that only reword what your bullet already says. The new version is re-scored after every round, and a round that lowers the score is undone.
+- **What needs you:** a rewrite with a placeholder like [X%] waits until you type the real number. Missing skills (e.g. "Docker", with **required** ones marked) are only added to your Skills after you check **I've really used this**.
+- **When it can't get there:** if a role tops out below the target, the agent says so plainly and lists the real skill gaps. You can **Apply anyway** or **Skip**.
+
+**Ready to apply** (each role):
+- **Résumé edits:** the exact changes to make in your résumé for this role (old → new), plus **Copy tailored resume text**.
+- **Form answers:** copy-ready answers from your profile: graduation date, earliest start date, work authorization ("Yes (F-1 Visa (OPT / STEM OPT))") and sponsorship ("Yes").
+- **Submitting:** **Open application ↗**. You review and submit on the company's site, then tap **✓ I applied**. The role moves to **📨 Applied** here and into **My jobs → Applied** with the hiring-stage tracker.
+
+**What it won't do:**
+- **Submit for you:** application sites need your account and CAPTCHAs, and ask you to confirm your work authorization yourself. Answering those wrong on OPT is how offers get rescinded.
+- **Invent experience:** no made-up experience, numbers or skills.
+- **Promise an interview:** the score is Tepobaby's ATS estimate. Each company's own system differs, so a higher score improves your odds without guaranteeing one.
+
+Progress is saved on your device.
+
 ### Programs & organizations for you
 On your **Profile**, inside **Demographic & Identity Information**, Tepobaby suggests organizations, clubs, non-profits and programs you can join, based on your answers. For example, first-gen and low-income students see programs like Career Pathways Initiative (founded by Ken Lang), America Needs You and Braven, and Black students see ColorStack, NSBE and Code2040. Every program is something **U.S. college students** can join: no high school or college-admissions programs. A few professional networks (/dev/color, NAAAP, Blacks In Technology, Out in Tech, Lesbians Who Tech, Latinas in Tech) are included too, because joining early builds the network you'll use when you start working. Like the company tiers, each one shows as its logo, and tapping it opens the site so you can join. **Show all programs** lists every one, so students who chose "Prefer not to say" can browse too.
 
@@ -567,6 +595,22 @@ How I built Tepobaby (with Claude Code): each decision, why I made it, and the p
   - *Why:* Google's own programs only showed Google's logo, and Hispanic Scholarship Fund is mainly a scholarship.
   - *Pain point:* a launchpad full of company programs and scholarships blurs its purpose.
 
+### Apply agent
+- **Prepare everything, but let the student submit.**
+  - *Why:* tools like AIApply and JobCopilot submit applications with bots. That means getting past CAPTCHAs, creating accounts on Workday and similar sites, and answering legal questions (work authorization, sponsorship, "is everything true?") on the student's behalf. A wrong answer about OPT can cost an offer, so the agent does everything up to the Submit button.
+  - *Pain point:* the request was to "guarantee" getting past ATS. No tool can: each company runs its own system and humans review after it. The agent maximizes the honest score instead and says when a role is out of reach.
+- **A target score with a truthfulness gate.**
+  - *Why:* the only way to keep pushing a score up without real experience is to stuff keywords or invent skills. Rewrites may only reword existing facts, placeholders must be filled by the student, and skills need their confirmation. Rounds stop at 3.
+  - *Pain point:* keyword stuffing does raise ATS scores, and recruiters catch it in interviews.
+- **Filter by graduation date, start date, visa and field before scoring.**
+  - *Why:* every ATS check fetches a job description and calls Voyage AI, so checking roles a student can't take wastes their hourly limit.
+  - *Pain point:* the first test scored a software résumé against NVIDIA circuit-board and chip-verification roles (0–24). Hence the field chips (Software and Data & AI by default) and the title rules for class years and start seasons (`server/apply/queue.js`).
+- **Claude on the student's own key, with Gemini as the free option.**
+  - *Why:* while building this, Gemini's free tier returned "high demand" on 3.8 and 3.7 Flash and a used-up quota on 3.5 Flash, so tailoring failed. The agent can use Claude Opus 5.5 on the student's own Anthropic key: the `@anthropic-ai/sdk` runs in the browser, so the key goes only to Anthropic, and it loads only when used. Replies use structured output (a Zod schema via `beta.messages.parse`) and Anthropic's server-side refusal fallback (`fallbacks: "default"`).
+  - *Pain point:* Gemini calls also waited 90 seconds on a hung model before failing. Each attempt now times out after 45 seconds and moves to the next fallback model.
+- **Re-score with the student's edited copy.**
+  - *Why:* `/api/ginny/ats` and `/api/ginny/tailor` accept an edited `sections` object, and ATS returns the job description it used. Re-scores don't parse the PDF or fetch the posting again, and the stored résumé is never changed.
+
 ### Deploying to Vercel
 - **Keep Express, and run it as one Vercel Function.**
   - *Why:* one codebase for local and production. `server/index.js` exports the app, and [api/index.js](api/index.js) hands it to Vercel.
@@ -673,10 +717,11 @@ API routes (the Vite dev server forwards `/api` to the auth server):
 | `GET /api/postings/stream` | Live updates (Server-Sent Events): sends `update` when the morning update brings new postings |
 | `GET /api/ginny/status` | Which Ginny pieces are set up (Voyage, Gemini, reranker) and the tier cutoffs |
 | `GET` / `PUT` / `DELETE /api/ginny/resume` | The signed-in student's resume (PUT body = PDF bytes) |
-| `POST /api/ginny/ats` | ATS match analysis for one job (guests send their PDF with the request) |
+| `POST /api/ginny/ats` | ATS match analysis for one job (guests send their PDF with the request; the Apply agent can send an edited `sections` copy). Returns the result plus the job description used |
 | `GET /api/interview/status` | Whether voice practice is set up, and the interviewer options |
 | `POST /api/interview/config` | The Realtime session setup for one behavioral interview (company persona, rules and STAR tools). No key involved: the browser exchanges it with OpenAI using the student's own key |
 | `GET /api/cron/jobs` | The daily job update, called by Vercel Cron (needs `Authorization: Bearer $CRON_SECRET`) |
+| `GET /api/apply/queue?gradYear=&gradMonth=&startYear=&startMonth=&visa=` | Apply agent: today's Entry-level and rotational roles that fit the graduation and start dates (and, with `visa=1`, don't exclude sponsorship), ranked by fit |
 | `GET /api/connect/school` | The signed-in student's school name, from their `.edu` email domain |
 | `GET /api/neetcode` | The NeetCode 150 list (number, title, difficulty, category) and the 18 concepts |
 | `GET /api/neetcode/problem/:slug` | One problem: statement (from LeetCode, cached), signature, starter code, accepted concepts, example tests and hidden tests with expected answers |
