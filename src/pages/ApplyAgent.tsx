@@ -209,7 +209,10 @@ export default function ApplyAgent({ signedIn, profile, saved }: Props) {
   return (
     <section className="block ag" aria-labelledby="h-agent">
       <div className="block-head">
-        <h2 id="h-agent">🤖 Apply agent</h2>
+        <h2 id="h-agent" className="ag-title">
+          <AgentMark />
+          Apply agent
+        </h2>
         <span className="block-sub">target {agent.target}+</span>
       </div>
       <p className="block-note">
@@ -650,3 +653,24 @@ function RoleDetail({ role, st, agent, profile, grad, start, busy, onImprove, on
     </div>
   );
 }
+
+/** The Apply agent's mark: a glowing cyan ring with a bright core, inside a faint dashed orbit. */
+function AgentMark() {
+  return (
+    <svg className="ag-mark" viewBox="0 0 64 64" aria-hidden="true">
+      <defs>
+        <filter id="ag-glow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="2.2" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+      <circle cx="32" cy="32" r="29" fill="none" stroke="#22d3ee" strokeOpacity="0.45" strokeWidth="1" strokeDasharray="2.5 3" />
+      <circle cx="32" cy="32" r="21" fill="#071a2b" stroke="#38d6f5" strokeWidth="3.2" filter="url(#ag-glow)" />
+      <circle cx="32" cy="32" r="7.5" fill="#22d3ee" filter="url(#ag-glow)" />
+    </svg>
+  );
+}
+
