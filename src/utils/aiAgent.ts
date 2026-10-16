@@ -2,8 +2,10 @@
 // against their experience bank. Then, per role, one round at a time:
 //   1. Job text: fetched by the server from the posting's own API (Greenhouse, Lever, Ashby, Workday,
 //      Eightfold sites like Microsoft…).
-//   2. Curate with Claude Code: the app builds a prompt (rules + bank + job + last score); the student
-//      pastes it into Claude Code and pastes the JSON reply back. No API keys involved.
+//   2. Curate with Claude: "Generate" asks the server for each round (Claude Code headless when
+//      Tepobaby runs on a computer with Claude Code, else the Claude API on the live site; see
+//      server/agent/engine.js). Without either, the student copies the prompt into Claude Code and
+//      pastes the JSON reply back.
 //   3. Check: the reply is held to the bank (checkCuration).
 //   4. Rebuild: a one-page PDF in EB Garamond (resumePdf.ts).
 //   5. Rescore: that PDF is read back like any upload (personal details removed) and scored
@@ -61,7 +63,13 @@ export type RoleState = {
   at: string;
 };
 
-export type AgentState = { target: number; roles: Record<string, RoleState>; lastAutoRun?: string };
+export type AgentState = {
+  target: number;
+  roles: Record<string, RoleState>;
+  lastAutoRun?: string;
+  auto?: boolean; // check new roles automatically once a day (default on)
+  picked?: Record<string, QueueRole>; // saved jobs the student added to the agent by hand
+};
 
 const KEY = "tepobaby.aiAgent.v1";
 export const MAX_ROUNDS = 4;
@@ -192,6 +200,69 @@ export function nextPrompt(role: QueueRole, st: RoleState, bank: Bank, target: n
     round: st.rounds + 1,
   });
 }
+
+/** One round from the server's engine (Claude Code locally, the Claude API on the live site). */
+export async function generateRound(role: QueueRole, st: RoleState, bank: Bank, target: number): Promise<RawCuration> {
+  const res = await fetch("/api/agent/generate", {
+    method: "POST",
+    headers: { "X-Requested-With": "XmlHttpRequest", "Content-Type": "application/json" },
+    body: JSON.stringify({
+      jobTitle: role.title,
+      company: role.company,
+      requirements: st.requirements,
+      missingSkills: st.missingSkills.map((m) => m.skill),
+      gaps: st.gaps,
+      bank,
+      target,
+      lastScore: st.history.length ? st.score : null,
+      round: st.rounds + 1,
+    }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || "Generate couldn't finish this round.");
+  return parseReply(JSON.stringify(data.curated));
+}
+
+/**
+ * "Generate": curate → rebuild PDF → rescore, back to back, until the role is ready, needs the
+ * student's info, or stops improving. `onRound` reports each round.
+ */
+export async function runGenerate(
+  signedIn: boolean,
+  role: QueueRole,
+  start: RoleState,
+  bank: Bank,
+  target: number,
+  onRound: (st: RoleState, msg: string) => void,
+  stopped: () => boolean,
+): Promise<RoleState> {
+  let st: RoleState = { ...start, status: "working" };
+  while (st.status === "working" && !stopped()) {
+    onRound(st, `Round ${st.rounds + 1}: Claude is writing ${role.company}'s resume`);
+    const raw = await generateRound(role, st, bank, target);
+    onRound(st, `Round ${st.rounds + 1}: rebuilding the PDF and checking the ATS score`);
+    st = await scoreReply(signedIn, role, st, bank, target, raw);
+    onRound(st, `Round ${st.rounds}: scored ${st.history[st.history.length - 1]}`);
+  }
+  return st;
+}
+
+/** A saved job, as a role the agent can work on. */
+export const roleFromSaved = (j: { id: string; company: string; title: string; url: string; location: string; domain: string | null; postedAt: string | null; source: string }): QueueRole => ({
+  id: j.id,
+  source: j.source,
+  company: j.company,
+  title: j.title,
+  location: j.location,
+  url: j.url,
+  postedAt: j.postedAt || new Date().toISOString(),
+  postedApprox: true,
+  level: "entry",
+  sponsorship: null,
+  domain: j.domain,
+  fit: "open",
+  sponsorshipNote: null,
+});
 
 /** Reads Claude Code's pasted reply (tolerates code fences or text around the JSON). */
 export function parseReply(text: string): RawCuration {

@@ -617,3 +617,43 @@
 .m01 .ag-bank .ag-file {
   width: 100%;
 }
+
+.m01 .ag-auto {
+  padding: 5px 9px;
+  border: 1px solid var(--stroke);
+  border-radius: 999px;
+  color: var(--text-tertiary);
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.m01 .ag-auto.is-on {
+  border-color: rgba(34, 211, 238, 0.5);
+  color: #67e8f9;
+}
+
+.m01 .ag-pick {
+  display: flex;
+  gap: 6px;
+}
+
+.m01 .ag-pick select {
+  min-width: 0;
+  flex: 1;
+  height: 38px;
+  padding: 0 10px;
+  border: 1px solid var(--stroke-strong);
+  border-radius: 11px;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
+  font: inherit;
+  font-size: 12.5px;
+}
+
+.m01 .ag-pick option {
+  color: #111;
+}
+
+.m01 .ag-generate {
+  flex: 1;
+}
