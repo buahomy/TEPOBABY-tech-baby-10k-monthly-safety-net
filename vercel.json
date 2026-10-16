@@ -11,7 +11,7 @@
     "api/index.js": {
       "maxDuration": 300,
       "includeFiles": "{server/**,shared/**,src/data/**,node_modules/onnxruntime-node/bin/napi-v3/linux/x64/**}",
-      "excludeFiles": "{server/data/**,node_modules/onnxruntime-web/**,node_modules/onnxruntime-node/bin/napi-v3/darwin/**,node_modules/onnxruntime-node/bin/napi-v3/win32/**,node_modules/onnxruntime-node/bin/napi-v3/linux/arm64/**,node_modules/onnxruntime-node/bin/**/*cuda*,node_modules/onnxruntime-node/bin/**/*tensorrt*,node_modules/@huggingface/transformers/dist/*.wasm,node_modules/@huggingface/transformers/dist/*.map}"
+      "excludeFiles": "{server/data/**,node_modules/onnxruntime-web/**,node_modules/onnxruntime-node/bin/napi-v3/{darwin,win32,linux/arm64}/**,node_modules/@huggingface/transformers/dist/*.{wasm,map}}"
     }
   },
   "crons": [{ "path": "/api/cron/jobs", "schedule": "0 11 * * *" }]
