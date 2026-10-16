@@ -4,7 +4,7 @@
 //   GET  /api/agent/bank      the signed-in student's experience bank
 //   PUT  /api/agent/bank      save it
 //   GET  /api/agent/access    whether this student can use the AI Agent, and which Generate engine runs
-//   POST /api/agent/generate  one curation round: Claude Code (local) or the Claude API (live site)
+//   POST /api/agent/generate  one curation round with Claude Code (when it's installed where the server runs)
 //
 // Subscription: the AI Agent is a subscription feature. During the demo it's free for everyone.
 // Set AGENT_SUBSCRIPTION_REQUIRED=on to require it; then only signed-in accounts listed in
@@ -186,7 +186,6 @@ export function agentRoutes(app, { readSession, requireXhr, requireUser }) {
             lastScore: Number.isFinite(b.lastScore) ? b.lastScore : null,
             round: Number(b.round) || 1,
           },
-          { sub: readSession(req)?.sub },
         ),
       );
     } catch (err) {

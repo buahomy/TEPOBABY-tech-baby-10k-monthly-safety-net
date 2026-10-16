@@ -657,3 +657,41 @@
 .m01 .ag-generate {
   flex: 1;
 }
+
+/* Uploaded resumes */
+.m01 .ag-files {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  list-style: none;
+}
+
+.m01 .ag-files li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 12px;
+}
+
+.m01 .ag-file-name {
+  overflow: hidden;
+  min-width: 0;
+  flex: 1;
+  color: var(--text-secondary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.m01 .ag-files small {
+  color: var(--text-tertiary);
+  font-size: 10.5px;
+  white-space: nowrap;
+}
+
+.m01 .ag-file-x {
+  color: var(--text-tertiary);
+  font-size: 11px;
+}
