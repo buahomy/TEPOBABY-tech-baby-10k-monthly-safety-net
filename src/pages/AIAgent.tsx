@@ -89,7 +89,7 @@ export default function AIAgent({ signedIn, profile, saved }: Props) {
   const [tab, setTab] = useState<Tab>("working");
   const [open, setOpen] = useState<string | null>(null);
   const [fields, setFields] = useState<FieldId[]>(loadFields);
-  const [access, setAccess] = useState<{ allowed: boolean; demo: boolean; engine?: "claude-code" | null } | null>(null);
+  const [access, setAccess] = useState<{ allowed: boolean; demo: boolean; engine?: "claude-code" | "relay" | null } | null>(null);
   const [pick, setPick] = useState("");
   const stopRef = useRef(false);
 
@@ -702,7 +702,7 @@ type DetailProps = {
   grad: { month: number; year: number };
   start: { month: number; year: number };
   busy: boolean;
-  engine: "claude-code" | null;
+  engine: "claude-code" | "relay" | null;
   onGenerate: () => void;
   onReply: (text: string) => void;
   onAnswers: (questions: Question[], answers: Record<string, { yes?: boolean; text?: string }>) => void;

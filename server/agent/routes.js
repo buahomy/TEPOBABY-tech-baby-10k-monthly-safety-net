@@ -4,7 +4,9 @@
 //   GET  /api/agent/bank      the signed-in student's experience bank
 //   PUT  /api/agent/bank      save it
 //   GET  /api/agent/access    whether this student can use the AI Agent, and which Generate engine runs
-//   POST /api/agent/generate  one curation round with Claude Code (when it's installed where the server runs)
+//   POST /api/agent/generate  one curation round with Claude Code: on this computer, or (live site) on the
+//                             author's Mac through the relay, for the emails in AGENT_RELAY_EMAILS
+//   POST /api/agent/relay-register  the Mac's relay reports its current tunnel address (signed)
 //
 // Subscription: the AI Agent is a subscription feature. During the demo it's free for everyone.
 // Set AGENT_SUBSCRIPTION_REQUIRED=on to require it; then only signed-in accounts listed in
@@ -16,7 +18,43 @@
 import express from "express";
 import { MAX_PDF_BYTES, pdfToLines, sanitize } from "../ginny/resume.js";
 import * as store from "../store.js";
+import crypto from "node:crypto";
 import { engine, generateRound } from "./engine.js";
+
+// ---- Relay: Claude Code on the author's Mac, for the live site (see server/relay.js) ----
+
+const RELAY_FRESH_MS = 10 * 60 * 1000; // the Mac re-registers every 4 minutes
+const relayEmails = () =>
+  (process.env.AGENT_RELAY_EMAILS || "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+const relaySecretOk = (given) => {
+  const secret = process.env.AGENT_RELAY_SECRET || "";
+  const a = Buffer.from(String(given || ""));
+  const b = Buffer.from(secret);
+  return secret.length >= 32 && a.length === b.length && crypto.timingSafeEqual(a, b);
+};
+
+/** The relay's address if this student may use it and the Mac checked in recently, else null. */
+async function relayFor(session) {
+  if (!process.env.AGENT_RELAY_SECRET || !session?.email || !relayEmails().includes(String(session.email).toLowerCase())) return null;
+  const r = await store.get("meta", "agent-relay");
+  return r?.url && Date.now() - r.at < RELAY_FRESH_MS ? r.url : null;
+}
+
+async function relayGenerate(url, input) {
+  const res = await fetch(`${url}/generate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Relay-Secret": process.env.AGENT_RELAY_SECRET },
+    body: JSON.stringify(input),
+    signal: AbortSignal.timeout(280000),
+  }).catch(() => null);
+  if (!res) throw Object.assign(new Error("Couldn't reach your Mac. Is `npm run relay` still running?"), { status: 503 });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw Object.assign(new Error(data.error || "Your Mac couldn't finish this round."), { status: res.status === 401 ? 503 : res.status });
+  return data;
+}
 
 const hits = new Map();
 function limit(key, max, windowMs) {
@@ -132,9 +170,10 @@ export function agentRoutes(app, { readSession, requireXhr, requireUser }) {
   const requireAccess = (req, res, next) =>
     accessFor(readSession(req)).allowed ? next() : res.status(402).json({ error: "The AI Agent is a subscription feature.", subscribe: true });
 
-  app.get("/api/agent/access", (req, res) => {
+  app.get("/api/agent/access", async (req, res) => {
     res.set("Cache-Control", "private, no-store");
-    res.json({ ...accessFor(readSession(req)), engine: engine() });
+    const session = readSession(req);
+    res.json({ ...accessFor(session), engine: engine() || ((await relayFor(session)) ? "relay" : null) });
   });
 
   app.post("/api/agent/parse", requireXhr, requireAccess, express.raw({ type: "application/pdf", limit: MAX_PDF_BYTES }), async (req, res) => {
@@ -166,6 +205,14 @@ export function agentRoutes(app, { readSession, requireXhr, requireUser }) {
     res.json({ ok: true, updatedAt: bank.updatedAt });
   });
 
+  app.post("/api/agent/relay-register", express.json({ limit: "2kb" }), async (req, res) => {
+    if (!relaySecretOk(req.get("X-Relay-Secret"))) return res.status(401).json({ error: "Unauthorized" });
+    const url = str(req.body?.url, 200);
+    if (!/^https:\/\/[a-z0-9-]+\.trycloudflare\.com$/.test(url)) return res.status(400).json({ error: "Expected a Cloudflare tunnel address." });
+    await store.set("meta", "agent-relay", { url, at: Date.now() }, 3600);
+    res.json({ ok: true });
+  });
+
   app.post("/api/agent/generate", requireXhr, requireAccess, express.json({ limit: "512kb" }), async (req, res) => {
     if (!limit(`gen:${who(req)}`, 60, HOUR)) return res.status(429).json({ error: "Lots of Generate rounds this hour. Try again in a bit." });
     const b = req.body || {};
@@ -173,21 +220,21 @@ export function agentRoutes(app, { readSession, requireXhr, requireUser }) {
     if (!bank?.entries.length) return res.status(400).json({ error: "Add your experience first." });
     const list = (v, n, m) => (Array.isArray(v) ? v : []).slice(0, n).map((x) => str(x, m)).filter(Boolean);
     try {
-      res.json(
-        await generateRound(
-          {
-            jobTitle: str(b.jobTitle, 300),
-            company: str(b.company, 200),
-            requirements: list(b.requirements, 14, 400),
-            missingSkills: list(b.missingSkills, 15, 60),
-            gaps: list(b.gaps, 6, 400),
-            bank,
-            target: Number(b.target) || 85,
-            lastScore: Number.isFinite(b.lastScore) ? b.lastScore : null,
-            round: Number(b.round) || 1,
-          },
-        ),
-      );
+      const input = {
+        jobTitle: str(b.jobTitle, 300),
+        company: str(b.company, 200),
+        requirements: list(b.requirements, 14, 400),
+        missingSkills: list(b.missingSkills, 15, 60),
+        gaps: list(b.gaps, 6, 400),
+        bank,
+        target: Number(b.target) || 85,
+        lastScore: Number.isFinite(b.lastScore) ? b.lastScore : null,
+        round: Number(b.round) || 1,
+      };
+      if (engine()) return res.json(await generateRound(input));
+      const relay = await relayFor(readSession(req));
+      if (relay) return res.json(await relayGenerate(relay, input));
+      return res.status(503).json({ error: "Generate isn't available right now. Use the manual steps." });
     } catch (err) {
       if (err.status && err.status < 600) return res.status(err.status).json({ error: err.message });
       console.error("[agent] generate failed:", err.message);
