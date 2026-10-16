@@ -22,15 +22,44 @@ function defaultLevel(profile: Profile): Level {
 }
 
 const PAGE = 25;
+
+// What the student last looked at (tab, window, filters) and how far they expanded each list with
+// "Show more", kept on this device so leaving Home and coming back (or a quiet refresh when new
+// postings arrive) keeps it all as they left it. "Show less" resets a list to one page.
+const VIEW_KEY = "tepobaby.feed.view";
+type View = { level?: Level; windowId?: WindowId; hideNoSponsorship?: boolean; sponsorsOnly?: boolean; shown?: Record<string, number> };
+function readView(): View {
+  try {
+    return JSON.parse(localStorage.getItem(VIEW_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+function writeView(patch: View) {
+  try {
+    localStorage.setItem(VIEW_KEY, JSON.stringify({ ...readView(), ...patch }));
+  } catch {
+    // ignore
+  }
+}
 const FALLBACK_REFRESH_MS = 10 * 60 * 1000;
 
 export default function HomeTab({ firstName, profile, saved }: Props) {
-  const [level, setLevel] = useState<Level>(() => defaultLevel(profile));
-  const [windowId, setWindowId] = useState<WindowId>(() => (defaultLevel(profile) === "rotational" ? "open" : "fresh"));
+  const [level, setLevel] = useState<Level>(() => readView().level ?? defaultLevel(profile));
+  const [windowId, setWindowId] = useState<WindowId>(() => readView().windowId ?? (defaultLevel(profile) === "rotational" ? "open" : "fresh"));
   const windows = WINDOWS.filter((w) => w.id !== "open" || level === "rotational");
   const needsSponsorship =
     profile.answers.needsSponsorship === "yes" || profile.answers.workAuthorized === "no";
-  const [hideNoSponsorship, setHideNoSponsorship] = useState(needsSponsorship);
+  const [hideNoSponsorship, setHideNoSponsorship] = useState(() => readView().hideNoSponsorship ?? needsSponsorship);
+  const [sponsorsOnly, setSponsorsOnly] = useState(() => readView().sponsorsOnly ?? false);
+  // How many postings this list was expanded to ("Show more"), per tab + window + filter.
+  const listKey = `${level}|${windowId}|${sponsorsOnly ? 2 : hideNoSponsorship ? 1 : 0}`;
+  const shownFor = (key: string) => Math.max(PAGE, readView().shown?.[key] ?? PAGE);
+  const setShown = (key: string, n: number) => writeView({ shown: { ...(readView().shown ?? {}), [key]: n } });
+
+  useEffect(() => {
+    writeView({ level, windowId, hideNoSponsorship, sponsorsOnly });
+  }, [level, windowId, hideNoSponsorship, sponsorsOnly]);
 
   const [feed, setFeed] = useState<PostingsResponse | null>(null);
   const [postings, setPostings] = useState<Posting[]>([]);
@@ -45,7 +74,8 @@ export default function HomeTab({ firstName, profile, saved }: Props) {
     const ctrl = new AbortController();
     const load = (quiet: boolean) => {
       if (!quiet) setLoading(true);
-      fetchPostings({ level, window: windowId, hideNoSponsorship, limit: PAGE, signal: ctrl.signal })
+      // Reload as many as the student had expanded to, not just the first page.
+      fetchPostings({ level, window: windowId, hideNoSponsorship, sponsorsOnly, limit: shownFor(listKey), signal: ctrl.signal })
         .then((data) => {
           setFeed(data);
           setPostings(data.postings);
@@ -65,14 +95,28 @@ export default function HomeTab({ firstName, profile, saved }: Props) {
       stream();
       window.clearInterval(fallback);
     };
-  }, [level, windowId, hideNoSponsorship]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [level, windowId, hideNoSponsorship, sponsorsOnly]);
 
   const loadMore = () => {
     setLoadingMore(true);
-    fetchPostings({ level, window: windowId, hideNoSponsorship, limit: PAGE, offset: postings.length })
-      .then((data) => setPostings((prev) => [...prev, ...data.postings]))
+    const key = listKey;
+    fetchPostings({ level, window: windowId, hideNoSponsorship, sponsorsOnly, limit: PAGE, offset: postings.length })
+      .then((data) =>
+        setPostings((prev) => {
+          const next = [...prev, ...data.postings];
+          setShown(key, next.length);
+          return next;
+        }),
+      )
       .catch(() => setError("Couldn't load more postings."))
       .finally(() => setLoadingMore(false));
+  };
+
+  const showLess = () => {
+    setPostings((prev) => prev.slice(0, PAGE));
+    setShown(listKey, PAGE);
+    document.getElementById("h-postings")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   return (
@@ -140,7 +184,13 @@ export default function HomeTab({ firstName, profile, saved }: Props) {
               checked={hideNoSponsorship}
               onChange={(e) => setHideNoSponsorship(e.target.checked)}
             />
-            <span>Hide roles that say they don't sponsor visas</span>
+            <span>Hide roles that don't sponsor or need U.S. citizenship</span>
+          </label>
+        )}
+        {needsSponsorship && (
+          <label className="toggle-row">
+            <input type="checkbox" checked={sponsorsOnly} onChange={(e) => setSponsorsOnly(e.target.checked)} />
+            <span>Only roles that say they sponsor</span>
           </label>
         )}
 
@@ -174,7 +224,7 @@ export default function HomeTab({ firstName, profile, saved }: Props) {
                       {p.program && level !== "rotational" && <span className="chip-program">Rotational program</span>}
                       {p.sponsorship === "yes" && <span className="chip-ok">Sponsors visa</span>}
                       {p.sponsorship === "no" && <span className="chip-warn">No sponsorship</span>}
-                      {p.sponsorship === "citizens" && <span className="chip-warn">U.S. citizens only</span>}
+                      {p.sponsorship === "citizens" && <span className="chip-warn">U.S. citizens / clearance</span>}
                     </span>
                   </span>
                 </a>
@@ -189,10 +239,19 @@ export default function HomeTab({ firstName, profile, saved }: Props) {
         )}
         {saved.error && <p className="ob-error">{saved.error}</p>}
 
-        {!loading && feed && postings.length < feed.total && (
-          <button type="button" className="more-btn" onClick={loadMore} disabled={loadingMore}>
-            {loadingMore ? "Loading…" : `Show more (${feed.total - postings.length})`}
-          </button>
+        {!loading && feed && (postings.length < feed.total || postings.length > PAGE) && (
+          <div className="more-row">
+            {postings.length < feed.total && (
+              <button type="button" className="more-btn" onClick={loadMore} disabled={loadingMore}>
+                {loadingMore ? "Loading…" : `Show more (${feed.total - postings.length})`}
+              </button>
+            )}
+            {postings.length > PAGE && (
+              <button type="button" className="more-btn more-btn--less" onClick={showLess}>
+                Show less
+              </button>
+            )}
+          </div>
         )}
         <p className="block-foot">
           Updated every morning at 7:00 AM ET{feed?.updatedAt ? ` · last update ${timeAgo(feed.updatedAt)}` : ""}. From

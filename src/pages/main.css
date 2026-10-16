@@ -927,3 +927,19 @@
   opacity: 1;
   transform: translateY(0);
 }
+
+/* Show more / Show less */
+.m01 .more-row {
+  display: flex;
+  gap: 8px;
+}
+
+.m01 .more-row .more-btn {
+  flex: 1;
+}
+
+.m01 .more-btn--less {
+  flex: 0 0 auto !important;
+  padding: 0 16px;
+  color: var(--text-secondary);
+}

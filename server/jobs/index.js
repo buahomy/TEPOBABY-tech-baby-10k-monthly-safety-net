@@ -23,6 +23,7 @@ import { addDomains } from "./logos.js";
 import * as store from "../store.js";
 import { fetchCompanyBoards } from "./sources/ats.js";
 import { fetchCareerSites } from "./sources/careers.js";
+import { applyKnownSponsorship, enrichSponsorship } from "./sponsorship.js";
 import { fetchGithubLists } from "./sources/github.js";
 import { fetchGoogleJobs } from "./sources/googleJobs.js";
 import { fetchHackerNews } from "./sources/hackernews.js";
@@ -133,7 +134,7 @@ async function runSource(s) {
       if (r.error && !r.postings.length) r.postings = previous.filter((p) => p.from === r.name);
       for (const p of r.postings) p.from = r.name;
     }
-    const postings = await addDomains(results.flatMap((r) => r.postings));
+    const postings = await applyKnownSponsorship(await addDomains(results.flatMap((r) => r.postings)));
     state.sources[s.id] = {
       ranAt: new Date().toISOString(),
       sources: results.map((r) => ({ name: r.name, count: r.postings.length, error: r.error })),
@@ -155,12 +156,27 @@ async function runSource(s) {
 export async function runDailyUpdate() {
   if (updating) return;
   updating = true;
+  const started = Date.now();
   console.log(`[jobs] daily update started (${new Date().toLocaleString("en-US", { timeZone: TIME_ZONE })} ET)`);
   try {
     await Promise.allSettled(SOURCES.map(runSource));
     state.lastRunAt = new Date().toISOString();
     rebuild();
     await save();
+    // Then read job descriptions for sponsorship (the lists rarely say). Vercel's cron has a time
+    // limit, so it gets whatever's left of ~4 minutes; locally it can take longer.
+    try {
+      const budgetMs = store.onVercel ? Math.max(30000, 230000 - (Date.now() - started)) : 600000;
+      const r = await enrichSponsorship(merged, { budgetMs });
+      console.log(`[jobs] sponsorship: read ${r.checked} descriptions, ${r.found} say something, ${r.left} left for next run`);
+      if (r.checked) {
+        rebuild();
+        await save();
+        feedEvents.emit("update", { updatedAt, total: merged.length });
+      }
+    } catch (err) {
+      console.warn("[jobs] sponsorship check failed:", err.message);
+    }
   } finally {
     updating = false;
   }
@@ -228,11 +244,16 @@ export async function startJobFeed() {
 
 // ---- Queries ----
 
-/** Postings for one level and time window, plus counts for every tab. "rotational" lists programs. */
-export function queryPostings({ level, maxHours = 72, visaFriendly = false, limit = 30, offset = 0 }) {
+/**
+ * Postings for one level and time window, plus counts for every tab. "rotational" lists programs.
+ * visaFriendly: hide roles that say they don't sponsor (or need U.S. citizenship / a clearance).
+ * sponsorsOnly: only roles whose description says they sponsor.
+ */
+export function queryPostings({ level, maxHours = 72, visaFriendly = false, sponsorsOnly = false, limit = 30, offset = 0 }) {
   const now = Date.now();
   const inWindow = (p, hours) => now - new Date(p.postedAt).getTime() <= hours * 3600e3;
-  const visaOk = (p) => !visaFriendly || (p.sponsorship !== "no" && p.sponsorship !== "citizens");
+  const visaOk = (p) =>
+    sponsorsOnly ? p.sponsorship === "yes" : !visaFriendly || (p.sponsorship !== "no" && p.sponsorship !== "citizens");
   const inLevel = (p, lv) => (lv === "rotational" ? p.program : p.level === lv);
 
   const counts = {};
