@@ -16,6 +16,23 @@ const saveMine = (sub, mine) => store.set("saved-jobs", sub, mine);
 
 const str = (v, max) => (typeof v === "string" && v.length <= max ? v : null);
 
+/** The résumé's ATS score for this application (from the AI Agent), or null. */
+function cleanAts(a) {
+  if (!a || typeof a !== "object") return null;
+  const n = (v) => (Number.isFinite(v) && v >= 0 && v <= 100 ? Math.round(v) : null);
+  const score = n(a.score);
+  if (score === null) return null;
+  return {
+    score,
+    firstScore: n(a.firstScore) ?? score,
+    history: (Array.isArray(a.history) ? a.history : []).slice(0, 12).map(n).filter((x) => x !== null),
+    target: n(a.target),
+    rounds: Number.isInteger(a.rounds) && a.rounds >= 0 && a.rounds < 50 ? a.rounds : 0,
+    scoredAt: str(a.scoredAt, 40) ?? null,
+    via: str(a.via, 40) ?? "AI Agent",
+  };
+}
+
 /** Validates and normalizes a job sent by the app. Throws { status: 400 } on bad input. */
 function clean(job) {
   if (!job || typeof job !== "object") throw { status: 400, message: "Expected a job." };
@@ -49,6 +66,7 @@ function clean(job) {
     appliedAt: status === "applied" ? (str(job.appliedAt, 40) ?? now) : null,
     stage,
     stageUpdatedAt: stage ? (str(job.stageUpdatedAt, 40) ?? now) : null,
+    ats: cleanAts(job.ats),
   };
 }
 
@@ -68,6 +86,7 @@ export async function upsertSaved(sub, job) {
     savedAt: prev?.savedAt ?? next.savedAt,
     appliedAt: next.status === "applied" ? (prev?.appliedAt ?? next.appliedAt) : null,
     stageUpdatedAt: next.stage ? (prev?.stage === next.stage ? (prev.stageUpdatedAt ?? next.stageUpdatedAt) : new Date().toISOString()) : null,
+    ats: next.ats ?? prev?.ats ?? null,
   };
   await saveMine(sub, mine);
   return mine[next.id];

@@ -1,7 +1,7 @@
 // Fetches the full job description in real time, straight from the job posting's own website, every
 // time an analysis runs, so the resume is compared against what the posting says right now (roles
 // get edited or closed). Order:
-//   Greenhouse / Lever / Ashby public APIs → Workday's public job API → schema.org JobPosting on
+//   Greenhouse / Lever / Ashby public APIs → Workday's public job API → Microsoft's public jobs API → schema.org JobPosting on
 //   the page → the page's main text. Returns null if nothing usable is found (the app then asks
 //   the student to paste the description).
 
@@ -69,6 +69,15 @@ async function workday(u) {
   return d?.jobPostingInfo?.jobDescription ? keepLines(d.jobPostingInfo.jobDescription) : null;
 }
 
+async function microsoft(u) {
+  // apply.careers.microsoft.com/careers/job/{id}: the page is JavaScript-only, but the same site
+  // serves each posting from its public jobs API.
+  const id = u.pathname.match(/\/job\/(\d+)/)?.[1];
+  if (!id) return null;
+  const d = await get(`https://apply.careers.microsoft.com/api/apply/v2/jobs/${id}?domain=microsoft.com`);
+  return d?.job_description ? keepLines(d.job_description) : null;
+}
+
 async function genericPage(url) {
   const html = await get(url, "text");
   // schema.org JobPosting (used by most career sites for Google Jobs)
@@ -107,6 +116,7 @@ async function fetchLive(url) {
   if (/lever\.co$/.test(host)) tries.push(() => lever(u));
   if (/ashbyhq\.com$/.test(host)) tries.push(() => ashby(u));
   if (/myworkdayjobs\.com$/.test(host)) tries.push(() => workday(u));
+  if (/(^|\.)careers\.microsoft\.com$/.test(host)) tries.push(() => microsoft(u));
   tries.push(() => genericPage(url));
 
   let text = null;

@@ -1,9 +1,9 @@
-// Résumé tailoring with Claude, on the student's own Anthropic API key. The key stays in this
+// AI Agent: résumé curation with Claude, on the student's own Anthropic API key. The key stays in this
 // browser and goes only to Anthropic (the SDK runs client-side with dangerouslyAllowBrowser, which
 // is acceptable here because it's the student's own key on their own device).
 // The SDK is loaded on first use, so it isn't part of the app's first download.
 
-import type { TailorTips } from "./ginny";
+import { CURATE_SYSTEM, curatePrompt } from "../../shared/agentPrompt.js";
 
 const KEY = "tepobaby.anthropicKey";
 
@@ -57,44 +57,28 @@ export async function checkAnthropicKey(apiKey: string): Promise<string | null> 
 /** Thrown when the key itself is the problem, so the app can ask for a new one. */
 export class AnthropicKeyError extends Error {}
 
-const SYSTEM = [
-  "You are a senior tech recruiter helping a U.S. college student tailor their resume to one new grad or early-career job.",
-  "Hard rules:",
-  "- Never invent experience, employers, tools, numbers or results. Rewrite only using facts already in the original bullet.",
-  "- Where a number would help but isn't known, use a placeholder like [X%], [N users] or [Y ms] for the student to fill in honestly.",
-  "- Use the job's exact keywords only when the original bullet genuinely supports them.",
-  "- Each improved bullet: under 30 words, starts with a strong action verb, shows action, what, and result.",
-  "- Copy each `original` exactly, character for character, from the resume so it can be found and replaced.",
-].join("\n");
+/** One curation round, exactly as the model returned it (checked against the bank by the caller). */
+export type RawCuration = {
+  entries: { entryId: string; bullets: { bulletId: string; text: string }[] }[];
+  skills: string[];
+  note: string;
+  questions: { question: string; kind: "skill" | "detail"; skill: string; entryId: string }[];
+};
 
-/** Claude's rewrites for one job: same shape as Ginny's Gemini suggestions. */
-export async function claudeTailor(
-  apiKey: string,
-  input: { jobTitle: string; company: string; requirements: string[]; missingSkills: string[]; gaps: string[]; resumeText: string },
-): Promise<TailorTips> {
+/** Claude picks, orders and rewords material from the experience bank for one job. */
+export async function claudeCurate(apiKey: string, input: Parameters<typeof curatePrompt>[0]): Promise<RawCuration> {
   const [{ Anthropic, client: c }, { z }, { betaZodOutputFormat }] = await Promise.all([
     client(apiKey),
     import("zod"),
     import("@anthropic-ai/sdk/helpers/beta/zod"),
   ]);
 
-  const Tips = z.object({
-    summary: z.string(),
-    rewrites: z.array(z.object({ original: z.string(), improved: z.string(), requirement: z.string(), why: z.string() })),
-    addKeywords: z.array(z.object({ keyword: z.string(), where: z.string() })),
-    projectIdea: z.object({ title: z.string(), description: z.string(), skills: z.array(z.string()) }),
+  const Curation = z.object({
+    entries: z.array(z.object({ entryId: z.string(), bullets: z.array(z.object({ bulletId: z.string(), text: z.string() })) })),
+    skills: z.array(z.string()),
+    note: z.string(),
+    questions: z.array(z.object({ question: z.string(), kind: z.enum(["skill", "detail"]), skill: z.string(), entryId: z.string() })),
   });
-
-  const prompt = [
-    `Job: ${input.jobTitle} at ${input.company}`,
-    `Requirements:\n${input.requirements.map((r) => `- ${r}`).join("\n")}`,
-    input.missingSkills.length ? `Skills the job wants that the resume doesn't show: ${input.missingSkills.join(", ")}` : "",
-    input.gaps.length ? `Requirements with little evidence:\n${input.gaps.map((g) => `- ${g}`).join("\n")}` : "",
-    `Resume (personal info removed):\n${input.resumeText}`,
-    "Give 3 to 5 rewrites of the bullets that matter most for this job, keywords to add only where the student has really used them, a 2-sentence summary of advice, and one 1–2 weekend project that would honestly close the biggest gap.",
-  ]
-    .filter(Boolean)
-    .join("\n\n");
 
   try {
     const message = await c.beta.messages.parse({
@@ -103,19 +87,13 @@ export async function claudeTailor(
       // Server-side fallback: if Claude declines, Anthropic re-runs the request on its recommended model.
       betas: ["server-side-fallback-2026-07-01"],
       fallbacks: "default",
-      output_config: { effort: "medium", format: betaZodOutputFormat(Tips) },
-      system: SYSTEM,
-      messages: [{ role: "user", content: prompt }],
+      output_config: { effort: "medium", format: betaZodOutputFormat(Curation) },
+      system: CURATE_SYSTEM,
+      messages: [{ role: "user", content: curatePrompt(input) }],
     });
-    if (message.stop_reason === "refusal") throw new Error("Claude declined to rewrite this resume. Try again, or use Gemini.");
-    const tips = message.parsed_output;
-    if (!tips) throw new Error("Claude's suggestions came back in an unexpected format. Try again.");
-    return {
-      summary: tips.summary,
-      rewrites: tips.rewrites.slice(0, 5),
-      addKeywords: tips.addKeywords.slice(0, 8),
-      projectIdea: tips.projectIdea,
-    };
+    if (message.stop_reason === "refusal") throw new Error("Claude declined to curate this resume. Try again.");
+    if (!message.parsed_output) throw new Error("Claude's resume came back in an unexpected format. Try again.");
+    return message.parsed_output;
   } catch (e) {
     if (e instanceof Anthropic.AuthenticationError) throw new AnthropicKeyError("Anthropic didn't accept your API key. Enter it again.");
     if (e instanceof Anthropic.PermissionDeniedError) throw new AnthropicKeyError("Your Anthropic key doesn't have access to this model.");

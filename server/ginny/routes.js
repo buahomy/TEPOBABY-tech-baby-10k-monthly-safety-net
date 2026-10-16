@@ -107,7 +107,13 @@ export function ginnyRoutes(app, { readSession, requireXhr, requireUser }) {
       // Resume: an edited copy (Apply agent), the stored one for signed-in students, otherwise the
       // PDF sent from the device.
       const session = readSession(req);
-      let sections = editedSections(req.body?.sections);
+      let sections = null;
+      if (req.body?.usePdf) {
+        // AI Agent: score the PDF it just rebuilt, read back exactly like an uploaded resume.
+        const b64 = str(req.body?.resumePdf, 8 * 1024 * 1024);
+        if (!b64) return res.status(400).json({ error: "Missing the resume PDF." });
+        sections = sanitize(await pdfToLines(Buffer.from(b64, "base64"))).sections;
+      } else sections = editedSections(req.body?.sections);
       if (sections) {
         // use it
       } else if (session) {

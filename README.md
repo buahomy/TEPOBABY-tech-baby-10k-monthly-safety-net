@@ -289,33 +289,62 @@ Your **Profile** has your saved and applied jobs, all your answers, programs and
 - **Save jobs with ♥**: tap the heart on any job posting to save it. Saved jobs appear under **My jobs** on your Profile, with **Saved** and **Applied** tabs; tap **Mark applied** to track where you've applied. Each saved job keeps its details, so it stays there after the posting leaves the 7-day feed. When signed in, saved jobs are stored on your account; as a guest, they stay on your device and move to your account when you sign in.
 - **Track your applications**: in **My jobs → Applied**, tap a job's stage to update it: **Applied → OA → Phone → On-site → Final → Team match → Offer**, or **Ghosted** / **Not proceeding**. A pipeline summary shows how many jobs are at each stage, and each job shows when its stage last changed. Applied jobs stay until you remove them: the daily job update never touches this list, and changing a stage never reshuffles it (it's ordered by when you applied).
 
-### 🤖 Apply agent
-Under **My jobs**, the Apply agent does the daily grind of a job search for you: it finds roles that fit, checks your résumé against each one, tailors it, and gets each application ready to submit.
+### AI Agent (Pro, free during the demo)
+The AI Agent is a **Tepobaby Pro subscription feature**. During the demo, everyone can use it for free.
 
-**Every day, automatically** (the first time you open Profile that day, or whenever you tap **Check next 10 roles**):
-1. **Finds roles that fit you** from the live feed (Entry-level and Rotational Programs):
-   - **Timing:** full-time roles that fit your **graduation date** and **start date**. For example, a December 2026 graduate starting January 2027 never sees "New Grad 2025" or "Summer 2026" roles. Titles that name your class or start ("New Grad 2027", "2027 University Graduate") come first.
-   - **Visa:** if you need sponsorship (OPT, STEM OPT, H-1B…), roles that say "no sponsorship", "U.S. citizens only" or need a security clearance are hidden. Roles that don't say are kept and labeled **Sponsorship not stated**.
-   - **Your fields:** only the kinds of roles you pick: Software, Data & AI, Hardware, Security, Product & program, Finance & business, Sales & solutions.
-2. **Checks each one with the ATS match** (the same analysis as Ginny), 10 at a time. Roles at your target score (**85+** by default; 70–90 to choose from) go to **✅ Ready**, and the rest go to **🛠 Below 85**.
+Under **My jobs**, the AI Agent does the daily work of a job search:
+- **Experience bank:** it keeps every version of your résumé in one place.
+- **Daily roles:** it finds roles that fit you.
+- **Résumés:** it writes a one-page résumé for each role with Claude, and keeps checking it against the ATS until it scores **85+**.
+- **Ready to apply:** it marks each finished role **ready to apply**.
 
-**Tailoring roles below the target** (**Tailor below 85**, up to 3 rounds per role):
-- **Who writes the rewrites:** **Gemini** first (free, through Tepobaby). When Gemini runs out of free quota, is overloaded or fails, the agent switches to **Claude** (Claude Opus 5.5) automatically. Claude runs on your own Anthropic API key, kept in your browser and sent only to Anthropic. If you haven't added a key yet, the agent says Gemini is out and asks for one.
-- **What's applied automatically:** rewrites that only reword what your bullet already says. The new version is re-scored after every round, and a round that lowers the score is undone.
-- **What needs you:** a rewrite with a placeholder like [X%] waits until you type the real number. Missing skills (e.g. "Docker", with **required** ones marked) are only added to your Skills after you check **I've really used this**.
-- **When it can't get there:** if a role tops out below the target, the agent says so plainly and lists the real skill gaps. You can **Apply anyway** or **Skip**.
+#### How it works (the pipeline)
+```
+Job posting API ──► job text ──────────────┐
+                                           ├─► Tepobaby ATS scoring ──► score
+Your résumé PDFs ──► text, PII removed ────┘      ├─ BM25 skill keyword match   (local, 40%)
+       ▲             (experience bank)            ├─ Voyage AI embeddings        (API,   35%)
+       │                                          └─ Evidence per requirement    (25%)
+       └── Claude rewords & reorders → one-page PDF rebuilt (EB Garamond) → rescore
+```
 
-**Ready to apply** (each role):
-- **Résumé edits:** the exact changes to make in your résumé for this role (old → new), plus **Copy tailored resume text**.
-- **Form answers:** copy-ready answers from your profile: graduation date, earliest start date, work authorization ("Yes (F-1 Visa (OPT / STEM OPT))") and sponsorship ("Yes").
-- **Submitting:** **Open application ↗**. You review and submit on the company's site, then tap **✓ I applied**. The role moves to **📨 Applied** here and into **My jobs → Applied** with the hiring-stage tracker.
+| Step | Tool or API | Notes |
+| --- | --- | --- |
+| 1. Get the job posting | The posting's own public API: Greenhouse, Lever, Ashby, Workday, and Microsoft (`apply.careers.microsoft.com/api/apply/v2/jobs/<id>`) | Microsoft's job page is JavaScript-only, so a plain fetch gets nothing; the server reads the posting from Microsoft's jobs API and turns its HTML into text. Other sites fall back to the posting's schema.org data or page text |
+| 2. Read your résumé | Tepobaby's `pdfToLines()` and `sanitize()` (`server/ginny/resume.js`) | Removes your name, email, phone, address and links before anything is scored or sent to an AI. Every version you upload is merged into your experience bank |
+| 3. Score it | Tepobaby's `analyze()` (`server/ginny/ats.js`) | Three parts, below |
+| 3a. Skills (40%) | BM25 keyword matching | Local, no API |
+| 3b. Semantic fit (35%) | Voyage AI embeddings (`voyage-4`) | Compares your résumé and the job text as embeddings, mapped to 0–100 |
+| 3c. Evidence (25%) | MiniLM cross-encoder (`ms-marco-MiniLM-L-6-v2`) via Transformers.js | Finds your best line for each requirement. Runs locally in development; on the live site it's too big for Vercel's servers, so the closest line by Voyage similarity is used instead |
+| 4. Edit the résumé | Claude (Claude Opus 5.5, on your own Anthropic API key) | Rule: reword and reorder only, never add facts you didn't give it. Enforced in code too (see below) |
+| 5. Rebuild the PDF | jsPDF in your browser, with the free EB Garamond font | One page (smaller type, then the least relevant bullets left out if needed), with your header and clickable links. Your header stays on your device |
+| 6. Rescore | Back to step 2 with the new PDF | The rebuilt PDF is read exactly like an upload and scored again. Repeats until 85+, or until changes stop helping (two rounds in a row with no gain) |
 
-**What it won't do:**
-- **Submit for you:** application sites need your account and CAPTCHAs, and ask you to confirm your work authorization yourself. Answering those wrong on OPT is how offers get rescinded.
-- **Invent experience:** no made-up experience, numbers or skills.
-- **Promise an interview:** the score is Tepobaby's ATS estimate. Each company's own system differs, so a higher score improves your odds without guaranteeing one.
+#### Using it
+1. **Build your experience bank.**
+   - **Upload résumé versions:** as many PDFs as you have, several at once. They're read into experiences and projects (role, organization, dates), bullet points, skills and education, and duplicates across versions are merged.
+   - **Or type your experience in,** and edit anything under **Review & edit**.
+   - **PDF header:** add your name, email, phone, location and links. They stay on your device and only appear in your PDF.
+2. **Pick your fields** (Software, Data & AI, Finance & business…), your start date and your target score (85 by default).
+3. **Let it run.** Once a day when you open Profile (or when you tap **Run agent**), it checks 10 new roles against your bank and works on up to 5 below your target:
+   - **🔁 Working:** curating, rebuilding the PDF and rescoring, round by round. You can see the score after each round.
+   - **✍️ Needs your info:** the score is stuck and only your real experience can help. Answer specific questions ("Have you used Docker? Where?"), and your answers become new bullets and skills in your bank before it continues.
+   - **✅ Ready to apply:** at 85+. **Download PDF** (your one-page résumé for this job), check every reworded bullet against your original words (shown underneath), copy your form answers, and **Open application ↗**.
+4. **Apply on the company's site** (you submit it yourself), then tap **✓ I applied**.
 
-Progress is saved on your device.
+#### After you apply
+The job moves to **My jobs → Applied** with its hiring-stage tracker. Tap **Details ▾** to see the **résumé ATS score** for that application. Hover over (or tap) the score to see its history: the score by round (e.g. 41 → 63 → 87), the target, how many rounds the agent took, and when it was scored.
+
+#### Honesty rules (enforced in code, not only in Claude's instructions)
+- **Sources:** every bullet must come from a bullet in your bank.
+- **Rewrites:** a rewrite that adds a number, uses a placeholder like [X%] or rambles is replaced by your original words.
+- **Skills:** only skills already in your bank or written in your bullets.
+- **New facts:** these come only from your own answers.
+- **Submitting:** nothing is submitted for you, and the score is Tepobaby's ATS estimate (each company's own system differs), not a guarantee.
+
+#### Claude or Gemini
+- **Claude:** add an Anthropic API key from console.anthropic.com. It's billed to your Anthropic account, stays in your browser and goes only to Anthropic.
+- **Gemini:** without a key, Gemini (free, through Tepobaby) curates instead. When Gemini is out of quota or busy, the agent asks for your Anthropic key.
 
 ### Programs & organizations for you
 On your **Profile**, inside **Demographic & Identity Information**, Tepobaby suggests organizations, clubs, non-profits and programs you can join, based on your answers. For example, first-gen and low-income students see programs like Career Pathways Initiative (founded by Ken Lang), America Needs You and Braven, and Black students see ColorStack, NSBE and Code2040. Every program is something **U.S. college students** can join: no high school or college-admissions programs. A few professional networks (/dev/color, NAAAP, Blacks In Technology, Out in Tech, Lesbians Who Tech, Latinas in Tech) are included too, because joining early builds the network you'll use when you start working. Like the company tiers, each one shows as its logo, and tapping it opens the site so you can join. **Show all programs** lists every one, so students who chose "Prefer not to say" can browse too.
@@ -595,21 +624,41 @@ How I built Tepobaby (with Claude Code): each decision, why I made it, and the p
   - *Why:* Google's own programs only showed Google's logo, and Hispanic Scholarship Fund is mainly a scholarship.
   - *Pain point:* a launchpad full of company programs and scholarships blurs its purpose.
 
-### Apply agent
+### AI Agent
 - **Prepare everything, but let the student submit.**
   - *Why:* tools like AIApply and JobCopilot submit applications with bots. That means getting past CAPTCHAs, creating accounts on Workday and similar sites, and answering legal questions (work authorization, sponsorship, "is everything true?") on the student's behalf. A wrong answer about OPT can cost an offer, so the agent does everything up to the Submit button.
   - *Pain point:* the request was to "guarantee" getting past ATS. No tool can: each company runs its own system and humans review after it. The agent maximizes the honest score instead and says when a role is out of reach.
-- **A target score with a truthfulness gate.**
-  - *Why:* the only way to keep pushing a score up without real experience is to stuff keywords or invent skills. Rewrites may only reword existing facts, placeholders must be filled by the student, and skills need their confirmation. Rounds stop at 3.
-  - *Pain point:* keyword stuffing does raise ATS scores, and recruiters catch it in interviews.
+- **An experience bank instead of one résumé.**
+  - *Why:* students keep several résumé versions (one for SWE, one for data, one for finance), each holding experience the others leave out. Merging them, plus anything typed in, lets the agent choose the best material for each job instead of rewording one fixed résumé.
+  - *How:* `POST /api/agent/parse` reads each PDF in memory with Ginny's parser and redaction, then groups lines into entries: headers with role, organization and dates, followed by bullets. It joins wrapped lines and splits "Project: description" lines into named projects. The browser merges versions (same role means one entry, same bullet means one bullet). Signed-in students' banks are saved with `PUT /api/agent/bank` in Upstash Redis.
+  - *Pain point:* PDF text has no structure. In the first test, a bullet that wrapped onto a second line ("…from 2 hours / to 15 minutes") was read as a new job heading. The parser now joins lines that continue the previous bullet, and everything stays editable under **Review & edit**.
+- **Curate, check, repeat, with a truthfulness gate in code.**
+  - *Why:* the only way to keep pushing a score up without real experience is to stuff keywords or invent skills. Claude's instructions forbid it, and `checkCuration()` also enforces it after every round:
+    - every bullet must point at a bullet ID in the bank;
+    - a rewrite can't contain numbers its source bullet doesn't;
+    - placeholders and over-long rewrites fall back to the student's words;
+    - skills must already be in the bank.
+  - *Pain point:* a unit test fed it a curation that made up a bullet, added "serving 10,000 users", used [X%] and listed Kubernetes and AWS. All of them were removed or reverted.
+- **Ask instead of inventing.**
+  - *Why:* when a round doesn't improve the score and the model reports what's missing, the agent stops and asks the student specific questions. Answers become new bank bullets and skills, so the next round (and every other job) can use them.
 - **Filter by graduation date, start date, visa and field before scoring.**
   - *Why:* every ATS check fetches a job description and calls Voyage AI, so checking roles a student can't take wastes their hourly limit.
   - *Pain point:* the first test scored a software résumé against NVIDIA circuit-board and chip-verification roles (0–24). Hence the field chips (Software and Data & AI by default) and the title rules for class years and start seasons (`server/apply/queue.js`).
-- **Gemini first, Claude when Gemini runs out.**
-  - *Why:* while building this, Gemini's free tier returned "high demand" on 3.8 and 3.7 Flash and a used-up quota on 3.5 Flash, so tailoring failed. Gemini stays first because it's free. Any Gemini quota, overload or server error (429, 502, 503, 504) moves that round to Claude Opus 5.5 on the student's own Anthropic key: the `@anthropic-ai/sdk` runs in the browser, so the key goes only to Anthropic, and it loads only when used. Replies use structured output (a Zod schema via `beta.messages.parse`) and Anthropic's server-side refusal fallback (`fallbacks: "default"`).
+- **Claude curates (the student's own key); Gemini without a key.**
+  - *Why:* while building this, Gemini's free tier returned "high demand" on 3.8 and 3.7 Flash and a used-up quota on 3.5 Flash, so tailoring failed. Curation runs on Claude Opus 5.5 with the student's own Anthropic key, and both models follow the same rules (`shared/agentPrompt.js`). Without a key, Gemini curates through `POST /api/agent/curate`, and any Gemini quota, overload or server error asks for an Anthropic key: the `@anthropic-ai/sdk` runs in the browser, so the key goes only to Anthropic, and it loads only when used. Replies use structured output (a Zod schema via `beta.messages.parse`) and Anthropic's server-side refusal fallback (`fallbacks: "default"`).
   - *Pain point:* Gemini calls also waited 90 seconds on a hung model before failing. Each attempt now times out after 45 seconds and moves to the next fallback model.
-- **Re-score with the student's edited copy.**
-  - *Why:* `/api/ginny/ats` and `/api/ginny/tailor` accept an edited `sections` object, and ATS returns the job description it used. Re-scores don't parse the PDF or fetch the posting again, and the stored résumé is never changed.
+- **Rebuild a real PDF every round, and score that PDF.**
+  - *Why:* what a company's ATS reads is the PDF, not the text the agent meant to write. Each round, the curated résumé is rendered to a one-page PDF in the browser (jsPDF, EB Garamond, `src/utils/resumePdf.ts`). It's sent to `/api/ginny/ats` with `usePdf`, and the server reads it back with the same `pdfToLines()` and `sanitize()` as any upload before scoring. Layout or parsing problems therefore show up in the score.
+  - *Pain point:* the hand-built pipeline this follows used Python ReportLab, which can't run on Vercel's Node servers or in a phone browser. jsPDF in the browser produces the same one-page, linked PDF, and the header (name, email, phone, links) never leaves the device: it's added only to the PDF, and `sanitize()` strips it again before scoring.
+  - *Pain point:* in the first rendered test, the name's descenders touched the contact line, which needed more room. One-page fitting steps the font down (10.5, 10, 9.5 pt), then drops the last bullets of the last entries, and the PDF tells the student how many were left out.
+- **Stop when changes stop helping.**
+  - *Why:* the loop ends at the target, after 2 rounds in a row with no gain, or at 4 rounds. Each round costs a Claude call on the student's key.
+- **Read Microsoft postings from Microsoft's jobs API.**
+  - *Pain point:* `apply.careers.microsoft.com/careers/job/<id>` is JavaScript-only, so the description fetch returned nothing and those roles showed "Couldn't read this posting's description". `jobDescription.js` now reads `/api/apply/v2/jobs/<id>` (4,154 characters for the Finance Rotation Program).
+- **Keep the score with the application.**
+  - *Why:* "✓ I applied" saves the score record (score, starting score, history, target, rounds, date) with the saved job. `savedJobsStore.js` validates it, and Profile → Applied shows it under **Details** with a hover tooltip, so students can see which résumé went to which job.
+- **A subscription feature, free for the demo.**
+  - *Why:* the agent is the most expensive feature to run (Voyage calls, Gemini, the student's Claude calls), so it's planned as Tepobaby Pro. `GET /api/agent/access` decides access. While `AGENT_SUBSCRIPTION_REQUIRED` is unset, everyone has access, and the app shows "PRO · free for everyone during the demo". With it set to `on`, only accounts in `AGENT_SUBSCRIBER_EMAILS` can use it until billing is built, and everyone else sees a "Subscribe" card.
 
 ### Deploying to Vercel
 - **Keep Express, and run it as one Vercel Function.**
@@ -688,6 +737,8 @@ To deploy your own copy:
 | `OPENAI_TRANSCRIBE_MODEL` | Server | Optional. Transcribes what you say. Default `gpt-4o-mini-transcribe`. |
 | `CRON_SECRET` | Server (Vercel) | Random string; Vercel Cron sends it to `/api/cron/jobs`, and nobody else can trigger the update. |
 | `KV_REST_API_URL`, `KV_REST_API_TOKEN` | Server (Vercel) | Set automatically by the Upstash Redis integration (or use `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`). Without them, data is saved to `server/data/`. |
+| `AGENT_SUBSCRIPTION_REQUIRED` | Server | Optional. `on` makes the AI Agent subscription-only. Unset (the default during the demo), it's free for everyone. |
+| `AGENT_SUBSCRIBER_EMAILS` | Server | Optional. Comma-separated signed-in emails with AI Agent access when a subscription is required (until billing is built). |
 | `RERANK` | Server | Optional. `off` turns off the local reranker (it's always off on Vercel). |
 | `GEMINI_FALLBACK_MODELS` | Server | Optional. Comma-separated models to try when the main one is overloaded. Default `gemini-3.7-flash,gemini-3.5-flash`. |
 
@@ -717,11 +768,15 @@ API routes (the Vite dev server forwards `/api` to the auth server):
 | `GET /api/postings/stream` | Live updates (Server-Sent Events): sends `update` when the morning update brings new postings |
 | `GET /api/ginny/status` | Which Ginny pieces are set up (Voyage, Gemini, reranker) and the tier cutoffs |
 | `GET` / `PUT` / `DELETE /api/ginny/resume` | The signed-in student's resume (PUT body = PDF bytes) |
-| `POST /api/ginny/ats` | ATS match analysis for one job (guests send their PDF with the request; the Apply agent can send an edited `sections` copy). Returns the result plus the job description used |
+| `POST /api/ginny/ats` | ATS match analysis for one job (guests send their PDF with the request; the AI Agent sends each rebuilt one-page PDF with `usePdf: true`). Returns the result plus the job description used |
 | `GET /api/interview/status` | Whether voice practice is set up, and the interviewer options |
 | `POST /api/interview/config` | The Realtime session setup for one behavioral interview (company persona, rules and STAR tools). No key involved: the browser exchanges it with OpenAI using the student's own key |
 | `GET /api/cron/jobs` | The daily job update, called by Vercel Cron (needs `Authorization: Bearer $CRON_SECRET`) |
-| `GET /api/apply/queue?gradYear=&gradMonth=&startYear=&startMonth=&visa=` | Apply agent: today's Entry-level and rotational roles that fit the graduation and start dates (and, with `visa=1`, don't exclude sponsorship), ranked by fit |
+| `GET /api/apply/queue?gradYear=&gradMonth=&startYear=&startMonth=&visa=` | AI Agent: today's Entry-level and rotational roles that fit the graduation and start dates (and, with `visa=1`, don't exclude sponsorship), ranked by fit |
+| `POST /api/agent/parse` | AI Agent: one résumé PDF → experiences, bullets, skills and education for the experience bank (read in memory, not stored) |
+| `GET /api/agent/access` | Whether this student can use the AI Agent (`{ allowed, plan, demo }`; free for everyone during the demo) |
+| `GET` / `PUT /api/agent/bank` | The signed-in student's experience bank |
+| `POST /api/agent/curate` | One Gemini curation round, for students without an Anthropic key (Claude runs in the browser) |
 | `GET /api/connect/school` | The signed-in student's school name, from their `.edu` email domain |
 | `GET /api/neetcode` | The NeetCode 150 list (number, title, difficulty, category) and the 18 concepts |
 | `GET /api/neetcode/problem/:slug` | One problem: statement (from LeetCode, cached), signature, starter code, accepted concepts, example tests and hidden tests with expected answers |
