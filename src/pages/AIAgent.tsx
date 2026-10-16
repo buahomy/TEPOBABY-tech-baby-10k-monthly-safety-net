@@ -21,6 +21,7 @@ import {
 } from "../utils/aiAgent";
 import { Bank, BankEntry, bulletCount, emptyBank, loadBank, mergeParsed, mergeSkills, parseResume, saveBank, uid } from "../utils/experienceBank";
 import { copyText } from "../utils/linkedin";
+import { deleteResumeFile, saveResumeFile, storedIds, viewResumeFile } from "../utils/resumeFiles";
 import { MONTHS, Profile, labelFor } from "../utils/profile";
 import { ResumeHeader, buildResumePdf, downloadPdf, loadHeader, saveHeader } from "../utils/resumePdf";
 import { SavedJobsApi } from "../utils/savedJobs";
@@ -28,7 +29,7 @@ import "./aiAgent.css";
 
 // AI Agent (Profile → My jobs). Experience bank (upload resumes or add manually) → roles that fit (checked
 // daily, or a saved job picked by hand) → per role: "Generate" runs curate → one-page PDF → rescore back to
-// back with Claude (or copy/paste with Claude Code where Generate isn't set up) → ready to apply.
+// back with Claude Code (or copy/paste where Claude Code isn't available) → ready to apply.
 // Logic in src/utils/aiAgent.ts.
 
 type Props = { signedIn: boolean; profile: Profile; saved: SavedJobsApi };
@@ -88,7 +89,7 @@ export default function AIAgent({ signedIn, profile, saved }: Props) {
   const [tab, setTab] = useState<Tab>("working");
   const [open, setOpen] = useState<string | null>(null);
   const [fields, setFields] = useState<FieldId[]>(loadFields);
-  const [access, setAccess] = useState<{ allowed: boolean; demo: boolean; engine?: "claude-code" | "api" | null } | null>(null);
+  const [access, setAccess] = useState<{ allowed: boolean; demo: boolean; engine?: "claude-code" | null } | null>(null);
   const [pick, setPick] = useState("");
   const stopRef = useRef(false);
 
@@ -436,6 +437,10 @@ function BankPanel({ bank, busy, onChange, onError, onBusy }: { bank: Bank | nul
   const [mode, setMode] = useState<"upload" | "manual">("upload");
   const [kind, setKind] = useState<AddKind>("experience");
   const [editing, setEditing] = useState(false);
+  const [onDevice, setOnDevice] = useState<string[]>([]);
+  useEffect(() => {
+    storedIds().then(setOnDevice);
+  }, [bank?.sources.length]);
   if (!bank) return null;
   const experiences = bank.entries.filter((e) => e.kind !== "project").length;
 
@@ -446,6 +451,8 @@ function BankPanel({ bank, busy, onChange, onError, onBusy }: { bank: Bank | nul
       onBusy(`Reading ${i + 1}/${files.length}: ${f.name}`);
       try {
         next = mergeParsed(next, await parseResume(f));
+        // Keep the original PDF on this device so it can be opened again.
+        await saveResumeFile(next.sources[next.sources.length - 1].id, f);
       } catch (e) {
         onError((e as Error).message);
       }
@@ -466,10 +473,46 @@ function BankPanel({ bank, busy, onChange, onError, onBusy }: { bank: Bank | nul
       </div>
 
       {mode === "upload" ? (
-        <label className="ag-primary ag-file">
-          Upload resume (PDF)
-          <input type="file" accept="application/pdf" multiple disabled={busy} onChange={(e) => upload(e.target.files)} />
-        </label>
+        <>
+          <label className="ag-primary ag-file">
+            Upload resume (PDF)
+            <input type="file" accept="application/pdf" multiple disabled={busy} onChange={(e) => upload(e.target.files)} />
+          </label>
+          {bank.sources.length > 0 && (
+            <ul className="ag-files" aria-label="Uploaded resumes">
+              {[...bank.sources].reverse().map((src) => {
+                const here = onDevice.includes(src.id);
+                return (
+                  <li key={src.id}>
+                    <span className="ag-file-name" title={src.fileName}>
+                      📄 {src.fileName}
+                    </span>
+                    <small>{new Date(src.addedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</small>
+                    {here ? (
+                      <button type="button" className="ag-linkbtn" onClick={() => viewResumeFile(src.id)}>
+                        View
+                      </button>
+                    ) : (
+                      <small title="Open it on the device you uploaded it from">other device</small>
+                    )}
+                    <button
+                      type="button"
+                      className="ag-file-x"
+                      aria-label={`Remove ${src.fileName} from the list`}
+                      title="Remove from the list (its experience stays in your bank)"
+                      onClick={() => {
+                        deleteResumeFile(src.id);
+                        onChange({ ...bank, sources: bank.sources.filter((x) => x.id !== src.id) });
+                      }}
+                    >
+                      ✕
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </>
       ) : (
         <>
           <div className="ag-kinds" role="group" aria-label="What to add">
@@ -646,7 +689,7 @@ type DetailProps = {
   grad: { month: number; year: number };
   start: { month: number; year: number };
   busy: boolean;
-  engine: "claude-code" | "api" | null;
+  engine: "claude-code" | null;
   onGenerate: () => void;
   onReply: (text: string) => void;
   onAnswers: (questions: Question[], answers: Record<string, { yes?: boolean; text?: string }>) => void;

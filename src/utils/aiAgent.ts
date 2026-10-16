@@ -2,10 +2,9 @@
 // against their experience bank. Then, per role, one round at a time:
 //   1. Job text: fetched by the server from the posting's own API (Greenhouse, Lever, Ashby, Workday,
 //      Eightfold sites like Microsoft…).
-//   2. Curate with Claude: "Generate" asks the server for each round (Claude Code headless when
-//      Tepobaby runs on a computer with Claude Code, else the Claude API on the live site; see
-//      server/agent/engine.js). Without either, the student copies the prompt into Claude Code and
-//      pastes the JSON reply back.
+//   2. Curate with Claude Code: "Generate" asks the server to run each round with Claude Code headless
+//      (server/agent/engine.js), when Tepobaby runs on a computer with Claude Code. Elsewhere, the
+//      student copies the prompt into Claude Code and pastes the JSON reply back.
 //   3. Check: the reply is held to the bank (checkCuration).
 //   4. Rebuild: a one-page PDF in EB Garamond (resumePdf.ts).
 //   5. Rescore: that PDF is read back like any upload (personal details removed) and scored
@@ -201,7 +200,7 @@ export function nextPrompt(role: QueueRole, st: RoleState, bank: Bank, target: n
   });
 }
 
-/** One round from the server's engine (Claude Code locally, the Claude API on the live site). */
+/** One round from Claude Code, run by the server. */
 export async function generateRound(role: QueueRole, st: RoleState, bank: Bank, target: number): Promise<RawCuration> {
   const res = await fetch("/api/agent/generate", {
     method: "POST",
@@ -238,7 +237,7 @@ export async function runGenerate(
 ): Promise<RoleState> {
   let st: RoleState = { ...start, status: "working" };
   while (st.status === "working" && !stopped()) {
-    onRound(st, `Round ${st.rounds + 1}: Claude is writing ${role.company}'s resume`);
+    onRound(st, `Round ${st.rounds + 1}: Claude Code is writing ${role.company}'s resume`);
     const raw = await generateRound(role, st, bank, target);
     onRound(st, `Round ${st.rounds + 1}: rebuilding the PDF and checking the ATS score`);
     st = await scoreReply(signedIn, role, st, bank, target, raw);
