@@ -22,6 +22,7 @@ import { canUseSharedKey, companyOptions, createClientSecret, sessionConfig } fr
 import { customExpected, getProblem, problemList, warmCache } from "./neetcode/index.js";
 import { schoolForDomain } from "./connect/schools.js";
 import { applyQueue } from "./apply/queue.js";
+import { agentRoutes } from "./agent/routes.js";
 
 const {
   GOOGLE_CLIENT_ID,
@@ -266,6 +267,11 @@ app.post("/api/saved/import", requireXhr, requireUser, async (req, res) => {
 
 // ---- Ginny: ATS match analysis + Ask Gemini (see server/ginny) ----
 ginnyRoutes(app, {
+  readSession: (req) => readSession(parseCookies(req.headers.cookie)[SESSION_COOKIE]),
+  requireXhr,
+  requireUser,
+});
+agentRoutes(app, {
   readSession: (req) => readSession(parseCookies(req.headers.cookie)[SESSION_COOKIE]),
   requireXhr,
   requireUser,

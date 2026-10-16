@@ -34,7 +34,11 @@ export type SavedJob = {
   appliedAt: string | null;
   stage?: Stage | null;
   stageUpdatedAt?: string | null;
+  /** The résumé's ATS score for this application, when the AI Agent prepared it. */
+  ats?: AtsRecord | null;
 };
+
+export type AtsRecord = { score: number; firstScore: number; history: number[]; target: number | null; rounds: number; scoredAt: string | null; via: string };
 
 const GUEST_KEY = "tepobaby.savedJobs";
 const XHR = { "Content-Type": "application/json", "X-Requested-With": "XmlHttpRequest" };
@@ -180,11 +184,11 @@ export function useSavedJobs(signedIn: boolean) {
         jobs,
       );
     },
-    /** Apply agent: record a posting as applied, saving it first if needed. */
-    markApplied: (p: Posting) => {
+    /** AI Agent: record a posting as applied (saving it first if needed), with the résumé's ATS score. */
+    markApplied: (p: Posting, ats?: AtsRecord) => {
       const now = new Date().toISOString();
       const base = jobs.find((j) => j.id === p.id) ?? fromPosting(p);
-      upsert({ ...base, status: "applied", appliedAt: base.appliedAt ?? now, stage: base.stage ?? "applied", stageUpdatedAt: base.stageUpdatedAt ?? now }, jobs);
+      upsert({ ...base, status: "applied", appliedAt: base.appliedAt ?? now, stage: base.stage ?? "applied", stageUpdatedAt: base.stageUpdatedAt ?? now, ats: ats ?? base.ats ?? null }, jobs);
     },
     /** Applied jobs: update the hiring stage (OA, phone, on-site, …). */
     setStage: (id: string, stage: Stage) => {

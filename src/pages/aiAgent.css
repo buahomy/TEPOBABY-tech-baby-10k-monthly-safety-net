@@ -1,4 +1,4 @@
-/* Apply agent (Profile → My jobs). Built on the mess01.css tokens. */
+/* AI Agent (Profile → My jobs). Built on the mess01.css tokens. */
 
 .m01 .ag-facts {
   display: flex;
@@ -427,4 +427,262 @@
   height: 24px;
   flex: 0 0 auto;
   overflow: visible;
+}
+
+/* Experience bank */
+.m01 .ag-bank {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid rgba(34, 211, 238, 0.25);
+  border-radius: 14px;
+  background: rgba(34, 211, 238, 0.05);
+}
+
+.m01 .ag-bank-head h3 {
+  color: var(--text);
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.m01 .ag-bank-head span {
+  color: var(--text-secondary);
+  font-size: 11.5px;
+}
+
+.m01 .ag-file {
+  position: relative;
+  cursor: pointer;
+}
+
+.m01 .ag-file input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.m01 .ag-skillform,
+.m01 .ag-entryform {
+  display: flex;
+  gap: 6px;
+}
+
+.m01 .ag-entryform {
+  flex-direction: column;
+  padding: 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.m01 .ag-skillform input,
+.m01 .ag-entryform input,
+.m01 .ag-entryform select,
+.m01 .ag-entryform textarea,
+.m01 .ag-entries textarea,
+.m01 .ag-q textarea {
+  min-width: 0;
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid var(--stroke-strong);
+  border-radius: 9px;
+  color: var(--text);
+  background: rgba(0, 0, 0, 0.2);
+  font: inherit;
+  font-size: 12.5px;
+  resize: vertical;
+}
+
+.m01 .ag-entryform option {
+  color: #111;
+}
+
+.m01 .ag-skillchips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.m01 .ag-skillchips span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  color: #a5f3fc;
+  background: rgba(34, 211, 238, 0.12);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.m01 .ag-skillchips button {
+  color: var(--text-tertiary);
+  font-size: 10px;
+}
+
+.m01 .ag-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  list-style: none;
+}
+
+.m01 .ag-entries > li {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.m01 .ag-entries ul {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  list-style: none;
+}
+
+.m01 .ag-entries ul li {
+  display: flex;
+}
+
+.m01 .ag-entries ul textarea {
+  width: 100%;
+}
+
+.m01 .ag-entry-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.m01 .ag-entry-head strong {
+  color: var(--text);
+  font-size: 12.5px;
+}
+
+.m01 .ag-entry-head small {
+  color: var(--text-tertiary);
+  font-size: 11px;
+}
+
+.m01 .ag-entry-head button {
+  margin-left: auto;
+  color: #fca5a5;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+/* Questions & curated resume */
+.m01 .ag-q {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.m01 .ag-q p {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.m01 .ag-yes {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.m01 .ag-cv-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.m01 .ag-cv-entry strong {
+  color: var(--text);
+  font-size: 12.5px;
+}
+
+.m01 .ag-tabs {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.m01 .ag-tabs button {
+  font-size: 11px;
+}
+
+.m01 .ag-pro {
+  padding: 2px 7px;
+  border-radius: 6px;
+  color: #04212b;
+  background: linear-gradient(135deg, #67e8f9, #22d3ee);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.m01 .ag-demo {
+  padding: 8px 10px;
+  border-radius: 10px;
+  color: var(--text-secondary);
+  background: rgba(34, 211, 238, 0.08);
+  font-size: 12px;
+}
+
+.m01 .ag-demo strong {
+  color: #67e8f9;
+}
+
+.m01 .ag-how {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.m01 .ag-how summary {
+  color: #a5b4fc;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.m01 .ag-how ol {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 8px;
+  padding-left: 18px;
+  line-height: 1.45;
+}
+
+.m01 .ag-how strong {
+  color: var(--text);
+}
+
+.m01 .ag-paywall {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px;
+  border: 1px solid rgba(34, 211, 238, 0.3);
+  border-radius: 14px;
+  background: rgba(34, 211, 238, 0.06);
+}
+
+.m01 .ag-paywall h3 {
+  color: var(--text);
+  font-size: 14px;
+}
+
+.m01 .ag-paywall p {
+  color: var(--text-secondary);
+  font-size: 12.5px;
+}
+
+.m01 .ag-linkbtn {
+  color: #a5b4fc;
+  font-size: 12px;
+  font-weight: 700;
 }

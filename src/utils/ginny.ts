@@ -154,11 +154,12 @@ export type ResumeSections = { experience: string[]; projects: string[]; skills:
 export async function runAtsDetailed(
   signedIn: boolean,
   job: Pick<SavedJob, "title" | "company" | "url">,
-  opts: { description?: string; sections?: ResumeSections } = {},
+  opts: { description?: string; sections?: ResumeSections; pdfBase64?: string } = {},
 ): Promise<{ result: AtsResult; description: string; sections: ResumeSections }> {
   const body: Record<string, unknown> = { job: { title: job.title, company: job.company, url: job.url } };
   if (opts.description) body.description = opts.description;
-  if (opts.sections) body.sections = opts.sections;
+  if (opts.pdfBase64) Object.assign(body, { usePdf: true, resumePdf: opts.pdfBase64 });
+  else if (opts.sections) body.sections = opts.sections;
   else if (!signedIn) {
     const r = guestResumeInMemory || readGuestResume();
     if (r) body.resumePdf = r.base64;
@@ -169,26 +170,6 @@ export async function runAtsDetailed(
     body: JSON.stringify(body),
   });
   return json(res);
-}
-
-/** Gemini rewrites for a job, on an edited copy of the resume. */
-export async function getTailorTipsFor(
-  job: Pick<SavedJob, "title" | "company">,
-  result: Pick<AtsResult, "requirements" | "missingSkills" | "gaps">,
-  sections: ResumeSections,
-): Promise<TailorTips> {
-  const res = await fetch("/api/ginny/tailor", {
-    method: "POST",
-    headers: { ...XHR, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      job: { title: job.title, company: job.company },
-      requirements: result.requirements,
-      missingSkills: result.missingSkills.map((m) => m.skill),
-      gaps: result.gaps,
-      sections,
-    }),
-  });
-  return (await json<{ tips: TailorTips }>(res)).tips;
 }
 
 export async function runAts(signedIn: boolean, job: SavedJob, description?: string): Promise<AtsResult> {
