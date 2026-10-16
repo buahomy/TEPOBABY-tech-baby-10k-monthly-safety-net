@@ -1,4 +1,5 @@
 // Static content for the Home tab. Live job postings come from /api/postings (see src/utils/postings.ts).
+import resources from "./resources.json";
 
 export type Level = "underclassmen" | "internship" | "entry" | "rotational";
 
@@ -18,15 +19,8 @@ export const WINDOWS = [
 ] as const;
 export type WindowId = (typeof WINDOWS)[number]["id"];
 
-// Contractor & startup job boards.
-export type Resource = { name: string; detail: string; kind: "Startup" | "Contract"; url: string };
+// Contractor & startup job boards (src/data/resources.json; the server also reads it to serve their logos).
 
-export const RESOURCES: Resource[] = [
-  { name: "Work at a Startup (Y Combinator)", detail: "Apply once to hundreds of YC startups", kind: "Startup", url: "https://www.workatastartup.com/" },
-  { name: "Wellfound", detail: "Startup jobs with salary and equity upfront", kind: "Startup", url: "https://wellfound.com/jobs" },
-  { name: "Hacker News: Who is hiring?", detail: "Monthly thread of startups hiring now", kind: "Startup", url: "https://news.ycombinator.com/submitted?id=whoishiring" },
-  { name: "Lenny's Jobs", detail: "Product, growth, AI and startup roles curated by Lenny's Newsletter", kind: "Startup", url: "https://www.lennysjobs.com/" },
-  { name: "Contra", detail: "Freelance and contract projects, no fees for talent", kind: "Contract", url: "https://contra.com/" },
-  { name: "Upwork", detail: "Short-term dev, data and design contracts", kind: "Contract", url: "https://www.upwork.com/" },
-  { name: "Robert Half Technology", detail: "Contract and contract-to-hire tech roles", kind: "Contract", url: "https://www.roberthalf.com/us/en/jobs" },
-];
+export type Resource = { name: string; detail: string; kind: "Startup" | "Contract"; url: string; domain: string };
+
+export const RESOURCES = resources.boards as Resource[];
