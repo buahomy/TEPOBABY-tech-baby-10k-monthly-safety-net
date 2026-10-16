@@ -30,6 +30,7 @@ export async function fetchPostings(opts: {
   level: Level;
   window: WindowId;
   hideNoSponsorship: boolean;
+  sponsorsOnly?: boolean;
   offset?: number;
   limit?: number;
   signal?: AbortSignal;
@@ -40,7 +41,8 @@ export async function fetchPostings(opts: {
     limit: String(opts.limit ?? 25),
     offset: String(opts.offset ?? 0),
   });
-  if (opts.hideNoSponsorship) params.set("visa", "1");
+  if (opts.sponsorsOnly) params.set("visa", "2");
+  else if (opts.hideNoSponsorship) params.set("visa", "1");
   const res = await fetch(`/api/postings?${params}`, { signal: opts.signal });
   if (!res.ok) throw new Error("Couldn't load postings.");
   return res.json();

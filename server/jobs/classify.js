@@ -73,6 +73,83 @@ export function isUSLocation(location = "") {
 export const foreignTitle = (title = "") =>
   FOREIGN.test(title) || /\b(german|french|spanish|hebrew|danish|norwegian|swedish|dutch|italian|japanese|korean|mandarin|portuguese|polish|arabic|turkish|nordic|dach|bnl)\b[^-]*\b(speaking|market|path)\b|\b(speaking market)\b/i.test(title);
 
+// ---- Sponsorship, from the job description ----
+// Most lists no longer say whether a role sponsors visas (Simplify's field now reads "Other"), so the
+// description is the source of truth. Strongest statement wins: U.S. citizens / clearance only →
+// no sponsorship → sponsors. Anything else stays unknown (null): most postings don't say.
+
+const NEG = /\b(not|no|never|without|nor)\b|n't\b/;
+const US = "(?:u\\.?\\s?s\\.?|united states|us)";
+
+// After a "citizens / clearance" match: an alternative for visa holders ("…or F-1 on CPT accepted"),
+// or a value of "none" ("clearance level must be able to obtain: none") cancels it.
+const OPEN_ALTERNATIVE = /^[^.]{0,120}\bor\b[^.]{0,80}\b(?:f-?1|visa|opt|cpt|work authorization|sponsor\w*|eligible to work)\b/;
+const VALUE_NONE = /^[^.]{0,25}?[:\s]\s*(?:none|n\/a|not required|no)\b/;
+
+/** A match that isn't negated by "not / no / never / n't" in the few words before it. */
+function said(re, text, { strict = false } = {}) {
+  for (const m of text.matchAll(re)) {
+    const before = text.slice(Math.max(0, m.index - 32), m.index);
+    if (NEG.test(before)) continue;
+    if (strict) {
+      const after = text.slice(m.index + m[0].length, m.index + m[0].length + 200);
+      if (OPEN_ALTERNATIVE.test(after) || VALUE_NONE.test(after)) continue;
+    }
+    return true;
+  }
+  return false;
+}
+
+const CITIZENS = [
+  new RegExp(`\\b${US} citizenship (?:is |status is )?(?:required|needed|mandatory|a requirement)`, "g"),
+  new RegExp(`\\bmust (?:also )?(?:be|hold) (?:a |an )?${US} citizen`, "g"),
+  new RegExp(`\\b(?:only|solely|limited to) ${US} citizens`, "g"),
+  new RegExp(`\\brequires? (?:you to be )?(?:a |an )?${US} citizen`, "g"),
+  /\b(?:active |current )?(?:secret|top secret|ts\/sci|ts\s?\/\s?sci|public trust|dod|government) (?:security )?clearance (?:is |will be )?(?:required|needed|mandatory)/g,
+  /\b(?:requires?|must (?:have|hold|possess|obtain)|ability to obtain|able to obtain|eligib\w+ (?:to obtain|for)) (?:and maintain )?(?:an? )?(?:active )?(?:u\.?s\.? )?(?:government |security |secret |top secret |ts\/sci )+clearance/g,
+  /\bitar\b[^.]{0,120}\b(?:u\.?s\.? persons?|citizens?|permanent residents?)/g,
+  /\bexport control[^.]{0,120}\bu\.?s\.? persons?\b/g,
+];
+
+const NO_SPONSOR = [
+  /\b(?:unable|not able|cannot|can ?not|will not|won't|does not|do not|don't|doesn't|is not able|are not able|isn't able|not in a position)\s+(?:to\s+)?(?:currently\s+)?(?:offer|provide|support|consider|accommodate|pursue|file for|obtain)?\s*(?:any\s+)?(?:employment\s+|work\s+|visa\s+|immigration\s+|h-?1b\s+)*(?:visa\s+)?sponsor/g,
+  /\bno\s+(?:visa\s+|immigration\s+|h-?1b\s+|employment\s+|work\s+)*sponsorship\b/g,
+  // "Work authorization" + "require(s)" together: work authorization that must not need sponsorship.
+  /\bwork authori[sz]ation (?:that|which) does not (?:now or in the future |currently or in the future |now or later )?require (?:\w+ ){0,3}sponsorship/g,
+  /\b(?:requires?|required|must (?:have|possess|hold|already have)|need) (?:a |an )?(?:permanent|unrestricted|unlimited|indefinite|full) (?:u\.?\s?s\.? |united states |us )?work authori[sz]ation/g,
+  /\b(?:permanent|unrestricted|unlimited) (?:u\.?\s?s\.? |us )?work authori[sz]ation (?:is |will be )?required/g,
+  /\bnot (?:be )?eligible for (?:employer[- ]sponsored|company[- ]sponsored|sponsored) (?:work authori[sz]ation|visas?|employment authori[sz]ation)/g,
+  /\b(?:does not|do not|will not|cannot|unable to) (?:provide|offer|support) (?:immigration|visa)[- ]related (?:sponsorship|support)/g,
+  /\b(?:visa\s+|immigration\s+)?sponsorship\s*(?:available)?\s*[:\-–]\s*(?:not available|unavailable|none|no)\b/g,
+  /\bsponsorship\s+(?:is|will|would)?\s*(?:not|n't)\s+(?:be\s+)?(?:available|offered|provided|supported|possible|considered|an option)/g,
+  /\b(?:not|ineligible|isn't) (?:be )?eligible for (?:visa |immigration |employment |h-?1b )?sponsorship/g,
+  /\bwithout (?:a |the |any )?(?:need|needing|requiring|requirement|necessity) (?:for |of )?(?:any )?(?:current or future |future or current |present or future |now or in the future |either now or in the future )?(?:visa |immigration |employer |employment |work |authorization |h-?1b )*sponsorship/g,
+  /\b(?:eligible|authorized|able|permitted|legally authorized) to work in the (?:u\.?\s?s\.?|united states|us)\b[^.]{0,60}\bwithout (?:visa |employer |employment |immigration |any |the need for |requiring )*sponsorship/g,
+  /\b(?:does not|do not|will not|cannot|unable to)\s+(?:support|accept|sponsor)\s+(?:candidates|applicants)?\s*(?:on|with|requiring)?\s*(?:an?\s+)?(?:f-?1|opt|cpt|stem opt|h-?1b|tn|j-?1)\b/g,
+];
+
+const YES_SPONSOR = [
+  /\b(?:visa|h-?1b|immigration|work visa|employment visa) sponsorship (?:is |may be |will be |can be )?(?:available|offered|provided|supported|possible)/g,
+  /\b(?:we|company|employer|[a-z]+ (?:inc|llc)) (?:will |can |do |does |may |is able to |are able to )?(?:offer|provide|support)s? (?:visa |h-?1b |immigration )?sponsorship/g,
+  /\bwill sponsor\b/g,
+  /\bsponsorship (?:is )?available\b/g,
+  /\bopen to (?:sponsoring|sponsorship)\b/g,
+  /\b(?:visa\s+|immigration\s+)?sponsorship\s*(?:available)?\s*[:\-–]\s*yes\b/g,
+];
+
+/** "citizens" | "no" | "yes" | null from a job description. */
+export function sponsorshipFromText(raw = "") {
+  if (!raw) return null;
+  const text = String(raw)
+    .toLowerCase()
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/\s+/g, " ");
+  if (CITIZENS.some((re) => said(re, text, { strict: true }))) return "citizens";
+  if (NO_SPONSOR.some((re) => text.match(re))) return "no"; // these phrases carry their own negation
+  if (YES_SPONSOR.some((re) => said(re, text))) return "yes";
+  return null;
+}
+
 /** Simplify-style sponsorship text or emoji flags → yes / no / citizens / null (unknown). */
 export function sponsorship(value = "", title = "") {
   const v = String(value).toLowerCase();

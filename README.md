@@ -58,12 +58,20 @@ LinkedIn, Indeed, Glassdoor, Wellfound, Y Combinator's Work at a Startup, Ripple
 
 **On your Home page**
 - Each level tab shows how many postings it has, and **Last 48–72h** / **This week** filter by real posting times.
-- Newest first, with a **Live** badge and when the last morning update ran. New postings appear on their own, and **Show more** loads the next batch.
+- Newest first, with a **Live** badge and when the last morning update ran. New postings appear on their own.
+- **Show more** loads the next batch, and the list stays expanded when you leave Home and come back, reload the page, or new postings arrive. **Show less** shrinks it back to one page. Your last tab, time window and visa filters are remembered on your device too.
 - Each posting shows the company's logo: the site's icon via [Google's favicon service](https://www.google.com/s2/favicons) (with [DuckDuckGo's](https://icons.duckduckgo.com) as a backup), fetched and cached by our server, so your browser never contacts them. The company's website comes from the job list, the apply link, or a name lookup that has to match the company exactly. If there's no confident match, you see the company's first letter instead of a wrong logo.
 - Each posting's level comes from the list it was found in and its title (like "intern" or "new grad"). Senior roles are left out.
 
 **Good to know**
-- **Visa sponsorship is often unknown.** Many sources don't say whether a role sponsors. If you need sponsorship, the toggle hides roles that say they don't, and **Sponsors visa** only shows when a source confirms it.
+- **Visa sponsorship, read from each job description.**
+  - **Why Tepobaby reads the descriptions itself:** most job lists no longer say whether a role sponsors visas; SimplifyJobs' field now just reads "Other". So after each morning update, Tepobaby reads each posting's full job description and labels it:
+    - **No sponsorship:** e.g. "we are unable to sponsor", "not eligible for visa sponsorship", "must be authorized to work in the U.S. without the need for sponsorship now or in the future", "work authorization that does not require sponsorship", "requires permanent / unrestricted work authorization".
+    - **U.S. citizens / clearance:** e.g. "U.S. citizenship is required", "must be a U.S. citizen", "requires the ability to obtain a Secret clearance", ITAR / export-control "U.S. person" rules.
+    - **Sponsors visa:** e.g. "visa sponsorship is available".
+    - **Unknown:** the description doesn't say, which is still most postings.
+  - **Filters:** if you need sponsorship, **Hide roles that don't sponsor or need U.S. citizenship** removes the first two kinds (in a test, 113 of 568 internships and 54 of 300 entry-level roles this week). **Only roles that say they sponsor** shows only the third kind; few postings say so, so the list is short.
+  - **What it ignores:** equal-opportunity boilerplate ("without regard to … citizenship"), application questions ("Will you now or in the future require sponsorship?"), "does not require a clearance", "clearance required: none", and "U.S. citizen, permanent resident or F-1 student on CPT" are not counted as restrictions.
 - **Underclassmen Programs is often empty.** Programs for freshmen and sophomores (like Microsoft Explore) are rare and mostly open August–October. When none are new, Tepobaby suggests the Internship tab, since many internships accept every class year.
 - **Each link opens the original application** on the company's site or job board.
 
@@ -90,6 +98,16 @@ The tiers, careers links and logo websites all live in [src/data/tiers.json](src
 
 ### Contractor & startup roles
 Job boards for startup and contract work. These roles rarely show up on the big job lists, because small teams often post only on their own sites and a few niche boards, and the roles are very specific. Going straight to these sites is the best way to find them.
+
+| Board | Kind | What it's for |
+| --- | --- | --- |
+| [Work at a Startup (Y Combinator)](https://www.workatastartup.com/) | Startup | Apply once to hundreds of YC startups |
+| [Wellfound](https://wellfound.com/jobs) | Startup | Startup jobs with salary and equity upfront |
+| [Hacker News: Who is hiring?](https://news.ycombinator.com/submitted?id=whoishiring) | Startup | Monthly thread of startups hiring now |
+| [Lenny's Jobs](https://www.lennysjobs.com/) | Startup | Product, growth, AI and startup roles curated by Lenny's Newsletter |
+| [Contra](https://contra.com/) | Contract | Freelance and contract projects, no fees for talent |
+| [Upwork](https://www.upwork.com/) | Contract | Short-term dev, data and design contracts |
+| [Robert Half Technology](https://www.roberthalf.com/us/en/jobs) | Contract | Contract and contract-to-hire tech roles |
 
 ## Interview
 Two tabs side by side: **Behavioral** (a live AI voice interviewer) and **Technical** (the NeetCode 150 as a Card Game and a concept Roadmap).
@@ -395,6 +413,15 @@ How I built Tepobaby (with Claude Code): each decision, why I made it, and the p
 3. I add startup roles from Hacker News "Who is hiring?" through its official API.
 4. I add Google Jobs results through SerpApi.
 5. Every morning all sources run in parallel. I keep the last 7 days, label each role Underclassmen / Internship / Entry-level, drop senior roles, remove duplicates, and push new postings to the app.
+
+- **Read sponsorship from the job description, not the list.**
+  - *Pain point:* the visa filter had almost nothing to filter. SimplifyJobs' `sponsorship` field now reads "Other" on every recent listing, and no other source set it, so all 236 postings in the local feed were "unknown".
+  - *How:* after each daily update, `server/jobs/sponsorship.js` fetches the full description of every posting whose status is unknown. It uses the same posting APIs as Ginny (Greenhouse, Lever, Ashby, Workday, Eightfold/Microsoft, SmartRecruiters, or the page), 8 at a time, and `sponsorshipFromText()` (`server/jobs/classify.js`) labels it. The strongest statement wins: citizens / clearance, then no sponsorship, then sponsors. Results are cached per posting (Redis on Vercel), so each posting is read once. The cron gets a time budget, and whatever's left waits for the next run.
+  - *Accuracy:*
+    - **Checking against real descriptions:** I checked the patterns against 118 real descriptions, printing the sentence behind every verdict.
+    - **False positives fixed:** "must be a US citizen, permanent resident **or** an MS student… (F-1 on CPT accepted)" was marked citizens-only, and "clearance level must be able to obtain: **none**" was read as a clearance requirement. A match is now cancelled by a following visa-holder alternative or a "none" value, and by a "not / no / never" just before it.
+    - **Misses fixed:** "without visa sponsorship", "without a requirement for work authorization sponsorship", "work authorization that does not require sponsorship", "employer-sponsored work authorization", "immigration-related sponsorship" and "must also be a U.S. citizen".
+    - **Result:** a full run read all 883 current descriptions in about 3 minutes: 97 no sponsorship, 72 citizens / clearance, 3 sponsor, and the rest don't say.
 
 - **Read each repo's `listings.json` instead of scraping its README table.**
   - *Why:* it has exact timestamps for the 48–72h filter, sponsorship info, and an "active" flag.

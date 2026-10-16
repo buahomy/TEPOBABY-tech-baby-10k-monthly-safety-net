@@ -385,10 +385,12 @@ app.get("/api/postings", async (req, res) => {
   if (!LEVELS.has(level)) return res.status(400).json({ error: "Unknown level." });
   // "open": every program still listed (they're kept 60 days).
   const maxHours = { week: 168, open: 60 * 24 }[req.query.window] || 72;
-  const limit = Math.min(Math.max(Number.parseInt(req.query.limit, 10) || 30, 1), 100);
+  // Up to 500, so a list the student expanded with "Show more" can be reloaded in one request.
+  const limit = Math.min(Math.max(Number.parseInt(req.query.limit, 10) || 30, 1), 500);
   const offset = Math.max(Number.parseInt(req.query.offset, 10) || 0, 0);
   res.set("Cache-Control", "public, max-age=60");
-  res.json(queryPostings({ level, maxHours, visaFriendly: req.query.visa === "1", limit, offset }));
+  // visa=1: hide roles that say they don't sponsor · visa=2: only roles that say they sponsor
+  res.json(queryPostings({ level, maxHours, visaFriendly: req.query.visa === "1" || req.query.visa === "2", sponsorsOnly: req.query.visa === "2", limit, offset }));
 });
 
 // Launchpad logos: companies in "Company tiers" (src/data/tiers.json) and the programs &
