@@ -1,7 +1,7 @@
 // Types for shared/agentPrompt.js (used by the browser app).
 
 export type BankBullet = { id: string; text: string; source?: string };
-export type BankEntry = { id: string; kind: "experience" | "project" | "leadership"; title: string; org: string; dates: string; bullets: BankBullet[] };
+export type BankEntry = { id: string; kind: "experience" | "project" | "leadership"; title: string; org: string; dates: string; link?: string; bullets: BankBullet[] };
 export type BankForPrompt = { entries: BankEntry[]; skills: string[] };
 
 export const CURATE_SYSTEM: string;
@@ -17,3 +17,4 @@ export function curatePrompt(p: {
   lastScore?: number | null;
   round: number;
 }): string;
+export function claudeCodePrompt(p: Parameters<typeof curatePrompt>[0]): string;

@@ -1,5 +1,5 @@
 // AI Agent: rebuilds the curated resume as a one-page PDF in EB Garamond, with the student's header
-// (name, email, phone, location, clickable links). Runs in the browser with jsPDF; the header never
+// (name, email, phone, location, clickable links) and clickable project links. Runs in the browser with jsPDF; the header never
 // leaves this device except inside the PDF the student downloads. The same PDF (minus nothing) is
 // what the agent re-scores: the server reads it back with Ginny's parser, which strips the header.
 //
@@ -131,6 +131,18 @@ export async function buildResumePdf(header: ResumeHeader, curated: Curated, edu
         doc.setFontSize(size);
         const head = [e.title, e.org].filter(Boolean).join(", ");
         if (draw) doc.text(head, MARGIN.x, y);
+        // Project link, clickable, right after the title.
+        if (e.link) {
+          const x = MARGIN.x + doc.getTextWidth(head);
+          doc.setFont("EBGaramond", "normal");
+          if (draw) {
+            doc.text("  ·  ", x, y);
+            doc.setTextColor(30, 64, 175);
+            doc.textWithLink(linkLabel(e.link), x + doc.getTextWidth("  ·  "), y, { url: linkUrl(e.link) });
+            doc.setTextColor(17, 17, 17);
+          }
+          doc.setFont("EBGaramond", "bold");
+        }
         if (e.dates) {
           doc.setFont("EBGaramond", "italic");
           if (draw) doc.text(e.dates, PAGE.w - MARGIN.x, y, { align: "right" });

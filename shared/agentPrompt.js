@@ -1,5 +1,6 @@
-// AI Agent: the résumé-curation instructions, shared by Claude (in the browser, on the student's own
-// key) and Gemini (on the server), so both follow exactly the same rules.
+// AI Agent: the résumé-curation instructions the student hands to Claude Code. The app builds one
+// prompt per round (rules + experience bank + job + last score); the student pastes it into Claude
+// Code and pastes the JSON reply back, which the app checks against the bank before using it.
 //
 // The model picks and orders material from the student's experience bank for one job. It may only
 // reword a bullet using facts already in it, may only list skills already in the bank, and asks the
@@ -53,6 +54,17 @@ export function curatePrompt(p) {
     .join("\n\n");
 }
 
-/** The JSON shape both models return (described in words for Gemini; Claude gets a Zod schema). */
+/** The JSON shape Claude Code replies with. */
 export const CURATE_SHAPE =
   '{"entries": [{"entryId": "e1", "bullets": [{"bulletId": "b3", "text": "reworded or original bullet"}]}], "skills": ["..."], "note": "one sentence", "questions": [{"question": "...", "kind": "skill" | "detail", "skill": "", "entryId": ""}]}';
+
+/** The whole prompt to paste into Claude Code for one round. */
+export function claudeCodePrompt(p) {
+  return [
+    CURATE_SYSTEM,
+    "",
+    curatePrompt(p),
+    "",
+    `Reply with ONLY the JSON, no other text, in exactly this shape:\n${CURATE_SHAPE}`,
+  ].join("\n");
+}
