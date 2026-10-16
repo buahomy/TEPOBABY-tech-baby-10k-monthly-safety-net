@@ -1,0 +1,54 @@
+{
+  "_note": "Contractor & startup job boards on Home. `domain` is used for the board's logo (fetched from the site and cached by the server).",
+  "boards": [
+    {
+      "name": "Work at a Startup (Y Combinator)",
+      "detail": "Apply once to hundreds of YC startups",
+      "kind": "Startup",
+      "url": "https://www.workatastartup.com/",
+      "domain": "workatastartup.com"
+    },
+    {
+      "name": "Wellfound",
+      "detail": "Startup jobs with salary and equity upfront",
+      "kind": "Startup",
+      "url": "https://wellfound.com/jobs",
+      "domain": "wellfound.com"
+    },
+    {
+      "name": "Hacker News: Who is hiring?",
+      "detail": "Monthly thread of startups hiring now",
+      "kind": "Startup",
+      "url": "https://news.ycombinator.com/submitted?id=whoishiring",
+      "domain": "news.ycombinator.com"
+    },
+    {
+      "name": "Lenny's Jobs",
+      "detail": "Product, growth, AI and startup roles curated by Lenny's Newsletter",
+      "kind": "Startup",
+      "url": "https://www.lennysjobs.com/",
+      "domain": "lennysjobs.com"
+    },
+    {
+      "name": "Contra",
+      "detail": "Freelance and contract projects, no fees for talent",
+      "kind": "Contract",
+      "url": "https://contra.com/",
+      "domain": "contra.com"
+    },
+    {
+      "name": "Upwork",
+      "detail": "Short-term dev, data and design contracts",
+      "kind": "Contract",
+      "url": "https://www.upwork.com/",
+      "domain": "upwork.com"
+    },
+    {
+      "name": "Robert Half Technology",
+      "detail": "Contract and contract-to-hire tech roles",
+      "kind": "Contract",
+      "url": "https://www.roberthalf.com/us/en/jobs",
+      "domain": "roberthalf.com"
+    }
+  ]
+}

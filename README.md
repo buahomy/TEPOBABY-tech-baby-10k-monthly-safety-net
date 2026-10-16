@@ -99,6 +99,8 @@ The tiers, careers links and logo websites all live in [src/data/tiers.json](src
 ### Contractor & startup roles
 Job boards for startup and contract work. These roles rarely show up on the big job lists, because small teams often post only on their own sites and a few niche boards, and the roles are very specific. Going straight to these sites is the best way to find them.
 
+Each board shows its own logo, fetched from its site and cached by Tepobaby's server like the company tiers. The list lives in [src/data/resources.json](src/data/resources.json).
+
 | Board | Kind | What it's for |
 | --- | --- | --- |
 | [Work at a Startup (Y Combinator)](https://www.workatastartup.com/) | Startup | Apply once to hundreds of YC startups |

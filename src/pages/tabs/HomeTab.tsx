@@ -293,6 +293,7 @@ export default function HomeTab({ firstName, profile, saved }: Props) {
           {RESOURCES.map((r) => (
             <li key={r.name}>
               <a className="resource" href={r.url} target="_blank" rel="noreferrer">
+                <CompanyLogo company={r.name} domain={r.domain} />
                 <span className="resource-copy">
                   <span className="resource-name">{r.name}</span>
                   <span className="resource-detail">{r.detail}</span>

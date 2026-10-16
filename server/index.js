@@ -400,6 +400,7 @@ const readData = (file) => JSON.parse(fs.readFileSync(new URL(`../src/data/${fil
 const LAUNCHPAD = new Map([
   ...readData("tiers.json").tiers.flatMap((t) => t.companies.map((c) => [c.domain, {}])),
   ...readData("communities.json").orgs.map((o) => [o.domain, { site: o.url, logo: o.logo }]),
+  ...readData("resources.json").boards.map((b) => [b.domain, { site: b.url }]),
 ]);
 
 // Company logo, fetched once and cached (see server/jobs/logos.js). Only domains that appear in
