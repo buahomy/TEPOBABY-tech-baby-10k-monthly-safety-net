@@ -300,7 +300,7 @@ The AI Agent is a **Tepobaby Pro subscription feature**. During the demo, everyo
 Under **My jobs**, it does the daily work of a job search:
 - **Experience bank:** it keeps all your experience in one place.
 - **Daily roles:** it finds roles that fit you.
-- **Résumés:** for each role, it helps you make a one-page résumé with **Claude Code** and keeps re-checking it against the ATS until it scores **85+**.
+- **Résumés:** for each role, one tap on **✨ Generate** writes a one-page résumé with Claude and keeps re-checking it against the ATS until it scores **85+**.
 - **Ready to apply:** it marks each finished role **ready to apply**.
 
 #### How it works (the pipeline)
@@ -310,7 +310,7 @@ Job posting API ──► job text ──────────────┐
 Your résumé PDFs ──► text, PII removed ────┘      ├─ BM25 skill keyword match   (local, 40%)
        ▲             (experience bank)            ├─ Voyage AI embeddings        (API,   35%)
        │                                          └─ MiniLM reranker evidence    (25%)
-       └── Claude Code rewords & reorders → one-page PDF rebuilt (EB Garamond) → rescore
+       └── Claude rewords & reorders → one-page PDF rebuilt (EB Garamond) → rescore   (✨ Generate loops this)
 ```
 
 | Step | Tool or API | Notes |
@@ -321,21 +321,24 @@ Your résumé PDFs ──► text, PII removed ────┘      ├─ BM25 
 | 3a. Skills (40%) | BM25 keyword matching | Local, no API |
 | 3b. Semantic fit (35%) | Voyage AI embeddings (`voyage-4`) | Compares your résumé and the job text as embeddings, mapped to 0–100 |
 | 3c. Evidence (25%) | MiniLM cross-encoder (`ms-marco-MiniLM-L-6-v2`) via Transformers.js | Finds your best line for each requirement. Runs on Tepobaby's server (on Vercel too); if it can't load, the closest line by Voyage similarity is used instead |
-| 4. Edit the résumé | **Claude Code**, run by you on your Claude plan (no API key) | The agent gives you a ready prompt (rules + your experience bank + the job + the last score). Paste it into Claude Code, then paste its JSON reply back. Rule: reword and reorder only, never add facts you didn't give it, and the app enforces it in code (see below) |
+| 4. Edit the résumé | **Claude**, through **✨ Generate**: Claude Code (headless, on that computer's Claude plan) when Tepobaby runs on a computer with Claude Code installed; otherwise the Claude API (Claude Opus 5.5) on Tepobaby's server key | The prompt holds the rules, your experience bank, the job and the last score. Rule: reword and reorder only, never add facts you didn't give it, and the app enforces it in code (see below). Without either engine, **Manual** gives you the prompt to paste into Claude Code yourself |
 | 5. Rebuild the PDF | jsPDF in your browser, with the free EB Garamond font | One page (smaller type, then the least relevant bullets left out if needed), with your header and clickable links. Your header stays on your device |
-| 6. Rescore | Back to step 2 with the new PDF | The rebuilt PDF is read exactly like an upload and scored again. Repeat with a fresh prompt (it includes the new score) until 85+, or until changes stop helping (two rounds in a row with no gain, or 4 rounds) |
+| 6. Rescore | Back to step 2 with the new PDF | The rebuilt PDF is read exactly like an upload and scored again. **Generate** repeats steps 4–6 back to back (each round's prompt includes the new score) until 85+, or until changes stop helping (two rounds in a row with no gain, or 4 rounds) |
 
 #### Using it
 1. **Add your experience.** There are two tabs side by side:
    - **📄 Upload resume:** one button. Upload one or more résumé PDFs. They're read into experiences, projects, bullet points, skills and education, with duplicates across versions merged and your name and contact details removed.
    - **✏️ Add manually:** add an **Experience** (role, organization, dates, bullet points), a **Project** (name, **link**, dates, bullet points; the link becomes a hyperlink on your PDF), **Skills**, or **Name & links** for your PDF header (kept on your device). Tap **Edit** to fix or remove anything.
 2. **Pick your fields** (Software, Data & AI, Finance & business…), your start date and your target score (🎯, 85 by default).
-3. **Check roles.** Once a day when you open Profile (or when you tap **Check 10 new roles**), it checks new roles against your experience.
-4. **Curate each role with Claude Code** (**🔁 To curate** tab):
-   1. **Copy prompt for Claude Code.**
-   2. Paste it into Claude Code, then paste Claude Code's reply back.
-   3. **Score it.** The app checks the reply, rebuilds your one-page PDF, re-scores it, and shows the score by round (e.g. 28 → 41 → 63).
-   4. Repeat until it moves to **✅ Ready**. If only your real experience can raise the score, it moves to **✍️ Your info** with specific questions, and your answers are added to your bank.
+3. **Choose the roles.**
+   - **Automatically:** with **Auto daily on** (the default), it checks 10 new roles that fit you once a day when you open Profile. You can also tap **Check 10 new roles** anytime.
+   - **Only when you ask:** turn **Auto daily off**. Nothing runs by itself; you check roles or pick jobs yourself.
+   - **A specific saved job:** **Or pick a saved job…** lists your saved (♥) jobs. Pick one and tap **Add**, and it's checked right away.
+4. **Tap ✨ Generate** on a role (**🔁 To curate** tab). It runs the whole loop back to back: Claude writes the résumé, the PDF is rebuilt, the ATS score is checked, and it repeats with the new score. The progress line shows each round ("Round 2: rebuilding the PDF and checking the ATS score"), and **Stop** ends it anytime. It finishes as:
+   - **✅ Ready** at 85+;
+   - **✍️ Your info** when only your real experience can raise the score (e.g. 39 → 42 → 42). Answer its specific questions; they're added to your bank, and you can Generate again;
+   - **tops out** when changes stop helping.
+   - **Manual** instead shows the prompt-and-paste steps for Claude Code, used automatically when Generate isn't set up.
 5. **Apply.** On a ready role, use **⬇ PDF**, **Preview** (each reworded bullet shows your original words) and the copy-ready form answers. Then tap **Apply ↗**, submit on the company's site yourself, and tap **✓ Applied**.
 
 #### After you apply
@@ -651,7 +654,16 @@ How I built Tepobaby (with Claude Code): each decision, why I made it, and the p
   - *Pain point:* the first test scored a software résumé against NVIDIA circuit-board and chip-verification roles (0–24). Hence the field chips (Software and Data & AI by default) and the title rules for class years and start seasons (`server/apply/queue.js`).
 - **A minimal screen.**
   - *Why:* the agent's section had grown long (an intro, a "How it works" panel, key settings and a footer). It's now a heading with a PRO chip, two side-by-side tabs (**Upload resume**, **Add manually**), compact settings chips, and one check button. Each role shows only its score history and the next step. The explanations live in this README.
-- **Curate with Claude Code (copy and paste) instead of an AI API.**
+- **✨ Generate: one button for the whole loop, with Claude Code locally and the Claude API live.**
+  - *Why:* copying a prompt into Claude Code and pasting the reply back every round was tedious. Generate needs the server to call Claude, and Claude Code can't run on Vercel. So the engine depends on where Tepobaby runs (`server/agent/engine.js`):
+    - **Claude Code** when the server runs on a computer with Claude Code installed and signed in (`npm run dev` on the author's Mac): `claude -p --output-format json --tools "" --no-session-persistence` with the curation rules as the system prompt, on that computer's Claude plan. A round took about 11–17 seconds in testing.
+    - **The Claude API** (Claude Opus 5.5, structured output, server-side refusal fallback) on the live site, with Tepobaby's `ANTHROPIC_API_KEY`. Tepobaby pays for these calls (roughly $0.10–0.35 per job), so they're limited to signed-in students, `AGENT_API_STUDENT_DAILY` rounds per student per day (30 by default) and `AGENT_API_DAILY_CAP` for the whole site (300).
+    - **Neither:** the copy-and-paste steps.
+  - *How:* `runGenerate()` calls `POST /api/agent/generate` and runs `scoreReply()` (honesty checks → PDF → rescore) round after round until ready, needs info, or stale. The browser still checks every reply against the bank, whichever engine wrote it.
+  - *Pain point:* the first browser test seemed to do nothing after tapping Generate. The app was fine: the test's progress monitor had an escaping bug and quit after 4 seconds. Rerun, one tap ran two rounds back to back (39 → 42 → 42) and stopped with four questions about real gaps (GraphQL, Kubernetes, simulation tools, where Docker was used).
+- **Auto daily, or only on request, plus any saved job.**
+  - *Why:* not everyone wants roles checked automatically, and the best roles are often ones the student already saved. **Auto daily** can be turned off, and **Or pick a saved job…** adds any ♥ job to the agent and checks it at once (kept in the agent's state as a picked role).
+- **Curate with Claude Code (copy and paste) instead of an AI API** (now the fallback behind Generate).
   - *Why:* earlier versions called Claude through the Anthropic API (on the student's own key) or Gemini's free API.
     - Gemini's free tier kept failing ("high demand" on 3.8 and 3.7 Flash, a used-up quota on 3.5 Flash), and its rewrites added things that weren't in the bullets.
     - The API path meant every student needed a paid key.
@@ -749,6 +761,9 @@ To deploy your own copy:
 | `KV_REST_API_URL`, `KV_REST_API_TOKEN` | Server (Vercel) | Set automatically by the Upstash Redis integration (or use `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`). Without them, data is saved to `server/data/`. |
 | `AGENT_SUBSCRIPTION_REQUIRED` | Server | Optional. `on` makes the AI Agent subscription-only. Unset (the default during the demo), it's free for everyone. |
 | `AGENT_SUBSCRIBER_EMAILS` | Server | Optional. Comma-separated signed-in emails with AI Agent access when a subscription is required (until billing is built). |
+| `ANTHROPIC_API_KEY` | Server | Optional. Tepobaby's Anthropic key for the AI Agent's **Generate** on the live site (Claude Opus 5.5; Tepobaby pays). Without it, and without Claude Code, Generate falls back to copy and paste. |
+| `AGENT_API_STUDENT_DAILY`, `AGENT_API_DAILY_CAP` | Server | Optional. Generate rounds per student per day (default 30) and for the whole site (default 300) when the Claude API is used. |
+| `CLAUDE_CODE_BIN`, `AGENT_CLAUDE_CODE` | Server | Optional. Path to the `claude` command (default `claude`), and `off` to stop using Claude Code locally. |
 | `RERANK` | Server | Optional. `off` turns off the reranker; ATS then scores evidence from the Voyage embeddings. |
 | `GEMINI_FALLBACK_MODELS` | Server | Optional. Comma-separated models to try when the main one is overloaded. Default `gemini-3.7-flash,gemini-3.5-flash`. |
 
@@ -784,7 +799,8 @@ API routes (the Vite dev server forwards `/api` to the auth server):
 | `GET /api/cron/jobs` | The daily job update, called by Vercel Cron (needs `Authorization: Bearer $CRON_SECRET`) |
 | `GET /api/apply/queue?gradYear=&gradMonth=&startYear=&startMonth=&visa=` | AI Agent: today's Entry-level and rotational roles that fit the graduation and start dates (and, with `visa=1`, don't exclude sponsorship), ranked by fit |
 | `POST /api/agent/parse` | AI Agent: one résumé PDF → experiences, bullets, skills and education for the experience bank (read in memory, not stored) |
-| `GET /api/agent/access` | Whether this student can use the AI Agent (`{ allowed, plan, demo }`; free for everyone during the demo) |
+| `GET /api/agent/access` | Whether this student can use the AI Agent (`{ allowed, plan, demo, engine }`; free for everyone during the demo; `engine` is `claude-code`, `api` or `null`) |
+| `POST /api/agent/generate` | ✨ Generate: one curation round by Claude Code (local) or the Claude API (live site, signed in, daily caps) |
 | `GET` / `PUT /api/agent/bank` | The signed-in student's experience bank |
 | `GET /api/connect/school` | The signed-in student's school name, from their `.edu` email domain |
 | `GET /api/neetcode` | The NeetCode 150 list (number, title, difficulty, category) and the 18 concepts |

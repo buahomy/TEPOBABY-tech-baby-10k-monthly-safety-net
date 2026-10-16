@@ -13,6 +13,8 @@ import {
   nextPrompt,
   parseReply,
   resumeText,
+  roleFromSaved,
+  runGenerate,
   saveAgent,
   scoreReply,
   today,
@@ -24,9 +26,10 @@ import { ResumeHeader, buildResumePdf, downloadPdf, loadHeader, saveHeader } fro
 import { SavedJobsApi } from "../utils/savedJobs";
 import "./aiAgent.css";
 
-// AI Agent (Profile → My jobs). Experience bank (upload resumes or add manually) → roles that fit →
-// per role: copy a prompt into Claude Code, paste its reply → checked, rebuilt as a one-page PDF,
-// rescored → ready to apply. Logic in src/utils/aiAgent.ts.
+// AI Agent (Profile → My jobs). Experience bank (upload resumes or add manually) → roles that fit (checked
+// daily, or a saved job picked by hand) → per role: "Generate" runs curate → one-page PDF → rescore back to
+// back with Claude (or copy/paste with Claude Code where Generate isn't set up) → ready to apply.
+// Logic in src/utils/aiAgent.ts.
 
 type Props = { signedIn: boolean; profile: Profile; saved: SavedJobsApi };
 type Tab = "ready" | "info" | "working" | "todo" | "applied";
@@ -85,7 +88,8 @@ export default function AIAgent({ signedIn, profile, saved }: Props) {
   const [tab, setTab] = useState<Tab>("working");
   const [open, setOpen] = useState<string | null>(null);
   const [fields, setFields] = useState<FieldId[]>(loadFields);
-  const [access, setAccess] = useState<{ allowed: boolean; demo: boolean } | null>(null);
+  const [access, setAccess] = useState<{ allowed: boolean; demo: boolean; engine?: "claude-code" | "api" | null } | null>(null);
+  const [pick, setPick] = useState("");
   const stopRef = useRef(false);
 
   const commit = useCallback((fn: (a: AgentState) => AgentState) => {
@@ -125,6 +129,9 @@ export default function AIAgent({ signedIn, profile, saved }: Props) {
 
   const hasBank = !!bank && bank.entries.length > 0;
   const todo = (queue ?? []).filter((r) => !agent.roles[r.id] && inFields(r.title, fields));
+  // Today's roles plus saved jobs picked by hand.
+  const roles = [...(queue ?? []), ...Object.values(agent.picked ?? {}).filter((p) => !queue?.some((q) => q.id === p.id))];
+  const pickable = saved.jobs.filter((j) => !agent.roles[j.id]);
 
   /** Checks the next roles against the whole experience bank. */
   const runCheck = useCallback(async () => {
@@ -152,17 +159,61 @@ export default function AIAgent({ signedIn, profile, saved }: Props) {
 
   // Automatic daily check: once a day, when Profile opens with an experience bank.
   useEffect(() => {
-    if (queue && hasBank && agent.lastAutoRun !== today() && !busy && access?.allowed) runCheck();
+    if (queue && hasBank && agent.auto !== false && agent.lastAutoRun !== today() && !busy && access?.allowed) runCheck();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queue, hasBank, access]);
 
   const list = (statuses: RoleState["status"][]) =>
-    (queue ?? []).filter((r) => agent.roles[r.id] && statuses.includes(agent.roles[r.id].status)).sort((a, b) => agent.roles[b.id].score - agent.roles[a.id].score);
+    roles.filter((r) => agent.roles[r.id] && statuses.includes(agent.roles[r.id].status)).sort((a, b) => agent.roles[b.id].score - agent.roles[a.id].score);
   const ready = list(["ready"]);
   const info = list(["needs_info"]);
   const working = list(["working", "topped", "error"]);
   const applied = list(["applied"]);
   const setRole = (id: string, patch: Partial<RoleState>) => put(id, { ...agent.roles[id], ...patch });
+
+  /** Generate: curate → rebuild PDF → rescore, back to back, for one role. */
+  const generate = async (role: QueueRole) => {
+    stopRef.current = false;
+    setError("");
+    try {
+      const done = await runGenerate(
+        signedIn,
+        role,
+        agentRef.current.roles[role.id],
+        bankRef.current,
+        agentRef.current.target,
+        (st, msg) => {
+          put(role.id, st);
+          setBusy(msg);
+        },
+        () => stopRef.current,
+      );
+      put(role.id, done);
+    } catch (e) {
+      setError((e as Error).message);
+    }
+    setBusy("");
+  };
+
+  /** Adds a saved job to the agent and checks it right away. */
+  const addSaved = async (id: string) => {
+    const job = saved.jobs.find((j) => j.id === id);
+    if (!job || busy) return;
+    const role = roleFromSaved(job);
+    commit((a) => ({ ...a, picked: { ...(a.picked ?? {}), [role.id]: role } }));
+    setBusy(`Checking ${role.company}`);
+    setError("");
+    try {
+      put(role.id, await checkRole(signedIn, role, bankRef.current, agentRef.current.target));
+    } catch (e) {
+      const err = e as Error & { needDescription?: boolean };
+      put(role.id, errorState(err.needDescription ? "Couldn't read this posting." : err.message));
+    }
+    setBusy("");
+    setPick("");
+    setTab("working");
+    setOpen(role.id);
+  };
 
   return (
     <section className="block ag" aria-labelledby="h-agent">
@@ -219,6 +270,15 @@ export default function AIAgent({ signedIn, profile, saved }: Props) {
                 ))}
               </select>
             </label>
+            <button
+              type="button"
+              className={`ag-auto${agent.auto !== false ? " is-on" : ""}`}
+              aria-pressed={agent.auto !== false}
+              title="Check new roles automatically once a day"
+              onClick={() => commit((a) => ({ ...a, auto: a.auto === false }))}
+            >
+              Auto daily {agent.auto !== false ? "on" : "off"}
+            </button>
             {needsSponsorship && <span title="Hides roles that say they don't sponsor">🛂 {labelFor("workAuthStatus", profile.answers.workAuthStatus) || "Sponsorship"}</span>}
           </div>
 
@@ -248,6 +308,21 @@ export default function AIAgent({ signedIn, profile, saved }: Props) {
           <button type="button" className="ag-primary ag-run" disabled={!queue || !hasBank || !!busy || !todo.length} onClick={runCheck}>
             {!hasBank ? "Add your resume to start" : todo.length ? `Check ${Math.min(CHECK_BATCH, todo.length)} new roles` : "All roles checked"}
           </button>
+          {pickable.length > 0 && (
+            <div className="ag-pick">
+              <select value={pick} onChange={(e) => setPick(e.target.value)} aria-label="Pick a saved job" disabled={!!busy || !hasBank}>
+                <option value="">Or pick a saved job…</option>
+                {pickable.map((j) => (
+                  <option key={j.id} value={j.id}>
+                    {j.company}: {j.title}
+                  </option>
+                ))}
+              </select>
+              <button type="button" className="ag-secondary" disabled={!pick || !!busy || !hasBank} onClick={() => addSaved(pick)}>
+                Add
+              </button>
+            </div>
+          )}
           {busy && (
             <p className="ag-busy">
               <span className="ag-spinner" aria-hidden="true" /> {busy}
@@ -310,6 +385,8 @@ export default function AIAgent({ signedIn, profile, saved }: Props) {
                         grad={grad}
                         start={start}
                         busy={!!busy}
+                        engine={access?.engine ?? null}
+                        onGenerate={() => generate(r)}
                         onReply={async (text) => {
                           setError("");
                           setBusy(`Rebuilding the PDF and rescoring ${r.company}`);
@@ -569,6 +646,8 @@ type DetailProps = {
   grad: { month: number; year: number };
   start: { month: number; year: number };
   busy: boolean;
+  engine: "claude-code" | "api" | null;
+  onGenerate: () => void;
   onReply: (text: string) => void;
   onAnswers: (questions: Question[], answers: Record<string, { yes?: boolean; text?: string }>) => void;
   onApplied: () => void;
@@ -576,7 +655,8 @@ type DetailProps = {
   onSkip: () => void;
 };
 
-function RoleDetail({ role, st, bank, target, profile, grad, start, busy, onReply, onAnswers, onApplied, onReadyAnyway, onSkip }: DetailProps) {
+function RoleDetail({ role, st, bank, target, profile, grad, start, busy, engine, onGenerate, onReply, onAnswers, onApplied, onReadyAnyway, onSkip }: DetailProps) {
+  const [manual, setManual] = useState(!engine);
   const [reply, setReply] = useState("");
   const [copied, setCopied] = useState(false);
   const [preview, setPreview] = useState(false);
@@ -602,7 +682,18 @@ function RoleDetail({ role, st, bank, target, profile, grad, start, busy, onRepl
         </p>
       )}
 
-      {st.status === "working" && (
+      {st.status === "working" && engine && (
+        <div className="ag-row-actions">
+          <button type="button" className="ag-primary ag-generate" disabled={busy} onClick={onGenerate}>
+            ✨ Generate
+          </button>
+          <button type="button" className="ag-ghost" onClick={() => setManual(!manual)}>
+            {manual ? "Hide manual" : "Manual"}
+          </button>
+        </div>
+      )}
+
+      {st.status === "working" && manual && (
         <div className="ag-box">
           <button
             type="button"

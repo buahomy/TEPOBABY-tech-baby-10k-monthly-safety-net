@@ -3,7 +3,8 @@
 //   POST /api/agent/parse     one resume PDF → sections and entries for the experience bank (not stored)
 //   GET  /api/agent/bank      the signed-in student's experience bank
 //   PUT  /api/agent/bank      save it
-//   GET  /api/agent/access    whether this student can use the AI Agent
+//   GET  /api/agent/access    whether this student can use the AI Agent, and which Generate engine runs
+//   POST /api/agent/generate  one curation round: Claude Code (local) or the Claude API (live site)
 //
 // Subscription: the AI Agent is a subscription feature. During the demo it's free for everyone.
 // Set AGENT_SUBSCRIPTION_REQUIRED=on to require it; then only signed-in accounts listed in
@@ -15,6 +16,7 @@
 import express from "express";
 import { MAX_PDF_BYTES, pdfToLines, sanitize } from "../ginny/resume.js";
 import * as store from "../store.js";
+import { engine, generateRound } from "./engine.js";
 
 const hits = new Map();
 function limit(key, max, windowMs) {
@@ -132,7 +134,7 @@ export function agentRoutes(app, { readSession, requireXhr, requireUser }) {
 
   app.get("/api/agent/access", (req, res) => {
     res.set("Cache-Control", "private, no-store");
-    res.json(accessFor(readSession(req)));
+    res.json({ ...accessFor(readSession(req)), engine: engine() });
   });
 
   app.post("/api/agent/parse", requireXhr, requireAccess, express.raw({ type: "application/pdf", limit: MAX_PDF_BYTES }), async (req, res) => {
@@ -162,5 +164,35 @@ export function agentRoutes(app, { readSession, requireXhr, requireUser }) {
     if (!bank) return res.status(400).json({ error: "Expected an experience bank." });
     await store.set("bank", req.session.sub, bank);
     res.json({ ok: true, updatedAt: bank.updatedAt });
+  });
+
+  app.post("/api/agent/generate", requireXhr, requireAccess, express.json({ limit: "512kb" }), async (req, res) => {
+    if (!limit(`gen:${who(req)}`, 60, HOUR)) return res.status(429).json({ error: "Lots of Generate rounds this hour. Try again in a bit." });
+    const b = req.body || {};
+    const bank = cleanBank(b.bank);
+    if (!bank?.entries.length) return res.status(400).json({ error: "Add your experience first." });
+    const list = (v, n, m) => (Array.isArray(v) ? v : []).slice(0, n).map((x) => str(x, m)).filter(Boolean);
+    try {
+      res.json(
+        await generateRound(
+          {
+            jobTitle: str(b.jobTitle, 300),
+            company: str(b.company, 200),
+            requirements: list(b.requirements, 14, 400),
+            missingSkills: list(b.missingSkills, 15, 60),
+            gaps: list(b.gaps, 6, 400),
+            bank,
+            target: Number(b.target) || 85,
+            lastScore: Number.isFinite(b.lastScore) ? b.lastScore : null,
+            round: Number(b.round) || 1,
+          },
+          { sub: readSession(req)?.sub },
+        ),
+      );
+    } catch (err) {
+      if (err.status && err.status < 600) return res.status(err.status).json({ error: err.message });
+      console.error("[agent] generate failed:", err.message);
+      res.status(502).json({ error: "Generate couldn't finish this round. Try again." });
+    }
   });
 }
