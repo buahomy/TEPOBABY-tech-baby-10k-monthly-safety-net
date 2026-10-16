@@ -2,30 +2,33 @@
 // (ms-marco MiniLM), run on our server's CPU with ONNX Runtime — no external API calls.
 // FlashRank itself is a Python library; this is the Node equivalent.
 //
-// Off on Vercel (or with RERANK=off): ONNX Runtime alone is ~200 MB, over a serverless function's
-// size limit. ATS then scores evidence from the Voyage embeddings instead (see ats.js).
+// Runs on Vercel too: the function ships only ONNX Runtime's Linux x64 binary (~42 MB of its ~200 MB,
+// see vercel.json), and the ~23 MB model downloads from Hugging Face into /tmp on a cold start.
+// With RERANK=off, or if the model can't load, ATS scores evidence from the Voyage embeddings instead
+// (see ats.js).
 
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-export const rerankEnabled = !process.env.VERCEL && process.env.RERANK !== "off";
+export const rerankEnabled = process.env.RERANK !== "off";
 export const RERANK_MODEL = rerankEnabled ? "Xenova/ms-marco-MiniLM-L-6-v2" : null;
 
 let loading = null;
 function load() {
   loading ??= import("@huggingface/transformers")
     .then(({ AutoModelForSequenceClassification, AutoTokenizer, env }) => {
-      env.cacheDir = process.env.RERANK_MODEL_DIR || path.join(here, "..", "data", "models");
+      // /tmp is the only writable folder on Vercel
+      env.cacheDir = process.env.RERANK_MODEL_DIR || (process.env.VERCEL ? "/tmp/models" : path.join(here, "..", "data", "models"));
       return Promise.all([
         AutoTokenizer.from_pretrained(RERANK_MODEL),
         AutoModelForSequenceClassification.from_pretrained(RERANK_MODEL, { dtype: "q8" }),
       ]);
     })
     .catch((err) => {
-    loading = null;
-    throw err;
-  });
+      loading = null;
+      throw err;
+    });
   return loading;
 }
 

@@ -54,6 +54,8 @@ const TESTIMONIAL = /^([A-Z][a-z]+\s+[A-Z][a-z]+('s)?\s+(experience|story|journe
 const lineList = (jd) =>
   jd
     .split(/\n/)
+    // a pasted description can arrive as one paragraph: read its sentences as lines
+    .flatMap((l) => (l.length > 400 ? l.split(/(?<=[.!?])\s+(?=[A-Z])/) : [l]))
     .map((l) => l.replace(/^[•\-–*]\s*/, "").trim())
     .filter(Boolean);
 
@@ -146,6 +148,7 @@ export async function analyze({ sections, jobTitle, company, description }) {
 
   // ---- Stage 2: rerank candidates against each requirement (local cross-encoder) ----
   let rerankMs = 0;
+  let rerankError = null;
   const evidence = [];
   for (let r = 0; r < reqs.length; r++) {
     let pool = candidates;
@@ -159,13 +162,22 @@ export async function analyze({ sections, jobTitle, company, description }) {
     } else {
       pool = pool.slice(0, 20);
     }
-    if (rerankEnabled) {
-      const { scores, ms } = await rerank(reqs[r], pool.map((i) => texts[i]));
-      rerankMs += ms;
-      const best = scores.reduce((b, s, k) => (s > b.s ? { s, k } : b), { s: -Infinity, k: -1 });
-      evidence.push({ requirement: reqs[r], bullet: best.k >= 0 ? texts[pool[best.k]] : null, score: evidenceFromLogit(best.s) });
-    } else if (reqEmbeds && chunkEmbeds) {
-      // No local reranker (e.g. on Vercel): the closest resume line by embedding similarity.
+    let reranked = false;
+    if (rerankEnabled && !rerankError) {
+      try {
+        const { scores, ms } = await rerank(reqs[r], pool.map((i) => texts[i]));
+        rerankMs += ms;
+        const best = scores.reduce((b, s, k) => (s > b.s ? { s, k } : b), { s: -Infinity, k: -1 });
+        evidence.push({ requirement: reqs[r], bullet: best.k >= 0 ? texts[pool[best.k]] : null, score: evidenceFromLogit(best.s) });
+        reranked = true;
+      } catch (err) {
+        // e.g. the model couldn't download: score the rest from embeddings rather than fail the analysis
+        rerankError = err.message;
+        console.warn("[ginny] reranker failed:", err.message);
+      }
+    }
+    if (!reranked && reqEmbeds && chunkEmbeds) {
+      // No reranker (RERANK=off, or it failed): the closest resume line by embedding similarity.
       const i = pool[0];
       const sim = cosine(chunkEmbeds[i + 1], reqEmbeds[r + 1]);
       evidence.push({ requirement: reqs[r], bullet: texts[i], score: clamp01((sim - 0.3) / 0.4) });
@@ -215,9 +227,9 @@ export async function analyze({ sections, jobTitle, company, description }) {
       retrieval: usedVoyage && !voyageError ? `Voyage AI (${VOYAGE_MODEL})` : null,
       retrievalNote: voyageError ? "Voyage AI was unavailable, so semantic similarity was skipped." : usedVoyage ? null : "Add VOYAGE_API_KEY to turn on semantic similarity.",
       hardSkills: `BM25 over ${texts.length} resume lines`,
-      reranker: RERANK_MODEL ? `${RERANK_MODEL} (local)` : null,
+      reranker: RERANK_MODEL && !rerankError ? `${RERANK_MODEL} (local)` : null,
       rerankMs: Math.round(rerankMs),
-      rerankPairs: RERANK_MODEL ? evidence.length * Math.min(15, candidates.length || texts.length) : 0,
+      rerankPairs: RERANK_MODEL && !rerankError ? evidence.length * Math.min(15, candidates.length || texts.length) : 0,
       totalMs: Date.now() - started,
     },
   };

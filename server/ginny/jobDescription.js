@@ -1,9 +1,10 @@
 // Fetches the full job description in real time, straight from the job posting's own website, every
 // time an analysis runs, so the resume is compared against what the posting says right now (roles
 // get edited or closed). Order:
-//   Greenhouse / Lever / Ashby public APIs → Workday's public job API → Microsoft's public jobs API → schema.org JobPosting on
-//   the page → the page's main text. Returns null if nothing usable is found (the app then asks
-//   the student to paste the description).
+//   Greenhouse / Lever / Ashby / Workday / SmartRecruiters / Eightfold public job APIs (one small
+//   JSON request with the whole posting) → for any other site, one page fetch: Eightfold detected
+//   from the page → the best of schema.org JobPosting and the page's main text. Returns null if
+//   nothing usable is found (the app then asks the student to paste the description).
 
 import { USER_AGENT } from "../jobs/classify.js";
 
@@ -17,6 +18,9 @@ const keepLines = (html) =>
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&nbsp;/g, " ")
+    .replace(/&quot;/g, '"')
+    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCodePoint(parseInt(n, 16)))
     .replace(/&amp;/g, "&")
     .replace(/<(script|style)[\s\S]*?<\/\1>/gi, " ")
     .replace(/<li[^>]*>/gi, "\n• ")
@@ -69,31 +73,88 @@ async function workday(u) {
   return d?.jobPostingInfo?.jobDescription ? keepLines(d.jobPostingInfo.jobDescription) : null;
 }
 
-async function microsoft(u) {
-  // apply.careers.microsoft.com/careers/job/{id}: the page is JavaScript-only, but the same site
-  // serves each posting from its public jobs API.
-  const id = u.pathname.match(/\/job\/(\d+)/)?.[1];
+async function smartRecruiters(u) {
+  // jobs.smartrecruiters.com/{company}/{id}-{slug}
+  const [, company, id] = u.pathname.match(/^\/([^/]+)\/(\d+)/) || [];
   if (!id) return null;
-  const d = await get(`https://apply.careers.microsoft.com/api/apply/v2/jobs/${id}?domain=microsoft.com`);
-  return d?.job_description ? keepLines(d.job_description) : null;
+  const d = await get(`https://api.smartrecruiters.com/v1/companies/${company}/postings/${id}`);
+  const s = d?.jobAd?.sections || {};
+  return ["jobDescription", "qualifications", "additionalInformation"]
+    .map((k) => s[k]?.text && `${s[k].title}\n${keepLines(s[k].text)}`)
+    .filter(Boolean)
+    .join("\n");
 }
 
-async function genericPage(url) {
-  const html = await get(url, "text");
+async function eightfold(u, html = "") {
+  // Eightfold career sites (Microsoft, Netflix, …): {host}/careers/job/{id}. The page renders in the
+  // browser and its schema.org data is only a short summary; the site's job API has the full posting
+  // but needs the company's domain, which the page config names (domain=netflix.com).
+  const id = u.pathname.match(/\/job\/(\d+)/)?.[1] || u.searchParams.get("pid");
+  if (!id) return null;
+  const domains = new Set(
+    [
+      u.searchParams.get("domain"),
+      u.searchParams.get("microsite"),
+      ...[...html.matchAll(/domain=([a-z0-9-]+(?:\.[a-z0-9-]+)+)/gi)].map((m) => m[1].toLowerCase()),
+      u.hostname.split(".").slice(-2).join("."),
+    ].filter(Boolean),
+  );
+  for (const domain of domains) {
+    const d = await get(`https://${u.hostname}/api/apply/v2/jobs/${id}?domain=${encodeURIComponent(domain)}`).catch(() => null);
+    if (d?.job_description) return keepLines(d.job_description);
+  }
+  return null;
+}
+
+// Some sources (often schema.org summaries) are one long paragraph. Requirement extraction reads the
+// description line by line, so put each section heading and sentence on its own line.
+const SECTION =
+  /\b(Responsibilities|Required Qualifications|Preferred Qualifications|Minimum Qualifications|Basic Qualifications|Qualifications|Requirements|What you'll do|What you will do|Nice to have)\b:?/g;
+function restoreLines(text) {
+  if (text.split("\n").length >= text.length / 400) return text;
+  return text
+    .replace(SECTION, "\n$1\n")
+    .replace(/([.!?])\s+(?=[A-Z])/g, "$1\n")
+    .replace(/\n\s*\n+/g, "\n")
+    .trim();
+}
+
+// What the ATS analysis needs from a description: a qualifications / requirements section and
+// bullet points (requirement + skills extraction), then length.
+function structure(text) {
+  const lines = text.split("\n");
+  return {
+    bullets: lines.filter((l) => l.startsWith("•")).length,
+    reqHeading: lines.some((l) => l.length <= 70 && /qualification|requirement|responsibilit|what you('ll| will)/i.test(l)),
+  };
+}
+const quality = (text) => {
+  const s = structure(text);
+  return Math.min(text.length, 8000) / 8000 + (s.reqHeading ? 1 : 0) + Math.min(s.bullets, 10) / 10;
+};
+
+/** The best description a page holds: schema.org JobPosting first, unless the page's main text has more. */
+function bestFromPage(html) {
+  const candidates = [];
   // schema.org JobPosting (used by most career sites for Google Jobs)
   for (const m of html.matchAll(/<script[^>]+application\/ld\+json[^>]*>([\s\S]*?)<\/script>/gi)) {
     try {
       const data = JSON.parse(m[1]);
       const items = [data, ...(Array.isArray(data) ? data : []), ...(data["@graph"] || [])];
       const job = items.find((x) => x && (x["@type"] === "JobPosting" || x["@type"]?.includes?.("JobPosting")));
-      if (job?.description) return keepLines(job.description);
+      if (job?.description) candidates.push(restoreLines(keepLines(job.description)));
     } catch {
       // not JSON
     }
   }
   const main = html.match(/<main[\s\S]*?<\/main>/i)?.[0] || html.match(/<body[\s\S]*?<\/body>/i)?.[0] || "";
   const text = keepLines(main.replace(/<(nav|header|footer)[\s\S]*?<\/\1>/gi, " "));
-  return text.length > 400 ? text.slice(0, 20000) : null;
+  if (text.length > 400) candidates.push(text);
+
+  const usable = candidates.filter((t) => t.length > 200);
+  // A structured schema.org description is the posting itself; the main text can include page clutter.
+  const structured = usable.find((t) => structure(t).reqHeading || structure(t).bullets >= 3);
+  return structured || usable.sort((a, b) => quality(b) - quality(a))[0] || null;
 }
 
 /** Full job description text for a posting URL, fetched live from the posting's site, or null. */
@@ -111,23 +172,35 @@ async function fetchLive(url) {
     return null;
   }
   const host = u.hostname;
-  const tries = [];
-  if (/greenhouse\.io$/.test(host) || u.searchParams.get("gh_jid")) tries.push(() => greenhouse(u));
-  if (/lever\.co$/.test(host)) tries.push(() => lever(u));
-  if (/ashbyhq\.com$/.test(host)) tries.push(() => ashby(u));
-  if (/myworkdayjobs\.com$/.test(host)) tries.push(() => workday(u));
-  if (/(^|\.)careers\.microsoft\.com$/.test(host)) tries.push(() => microsoft(u));
-  tries.push(() => genericPage(url));
-
-  let text = null;
-  for (const t of tries) {
-    try {
-      text = await t();
-      if (text && text.length > 200) break;
-    } catch {
-      // try the next way
-    }
+  const apis = [];
+  if (/greenhouse\.io$/.test(host) || u.searchParams.get("gh_jid")) apis.push(() => greenhouse(u));
+  if (/lever\.co$/.test(host)) apis.push(() => lever(u));
+  if (/ashbyhq\.com$/.test(host)) apis.push(() => ashby(u));
+  if (/myworkdayjobs\.com$/.test(host)) apis.push(() => workday(u));
+  if (/smartrecruiters\.com$/.test(host)) apis.push(() => smartRecruiters(u));
+  if (/eightfold\.ai$/.test(host) || host === "apply.careers.microsoft.com") apis.push(() => eightfold(u));
+  for (const api of apis) {
+    const text = await attempt(api);
+    if (text) return finish(text);
   }
-  return text && text.length > 200 ? text.slice(0, 20000) : null;
+
+  // Any other site: one page fetch, then the best of what it holds.
+  const html = await get(url, "text").catch(() => "");
+  if (/eightfold/i.test(html)) {
+    const text = await attempt(() => eightfold(u, html));
+    if (text) return finish(text);
+  }
+  return finish(bestFromPage(html));
 }
+
+async function attempt(fn) {
+  try {
+    const text = await fn();
+    return text && text.length > 200 ? text : null;
+  } catch {
+    return null; // try the next way
+  }
+}
+
+const finish = (text) => (text && text.length > 200 ? restoreLines(text).slice(0, 20000) : null);
 

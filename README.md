@@ -185,7 +185,12 @@ Tap the big **＋** in the middle of the bottom bar. A sheet opens with two tabs
 
 ### ATS match analysis
 
-Upload your resume PDF once. Signed-in students' resumes are stored privately on their account; guests' stay on their device. After that, Ginny goes straight to the analysis. Every time you run an analysis, Ginny goes to the job posting's own website and fetches the full job description in real time, so you're matched against what the posting says right now. It reads Greenhouse, Lever, Ashby and Workday through their public APIs, and other career sites through their job data or page text. If it can't, it asks you to paste the description.
+Upload your resume PDF once. Signed-in students' resumes are stored privately on their account; guests' stay on their device. After that, Ginny goes straight to the analysis. Every time you run an analysis, Ginny goes to the job posting's own website and fetches the full job description in real time, so you're matched against what the posting says right now. It works in this order:
+
+1. **The hiring platform's own job API**, one small request with the whole posting: Greenhouse, Lever, Ashby, Workday, SmartRecruiters and Eightfold (Microsoft, Netflix and other big companies' career sites). Eightfold is recognized from the page too, when a company runs it on its own domain.
+2. **Any other career site:** Ginny loads the page once and picks whichever holds more of the posting, its schema.org job data or its visible text. A description with a qualifications section and bullet points beats a short summary.
+3. **One-paragraph descriptions** are split back into sections and sentences, so requirements can still be found in them.
+4. **Paste it yourself** if nothing works. Ginny asks for it.
 
 It then runs three stages:
 
@@ -193,7 +198,7 @@ It then runs three stages:
 | --- | --- | --- |
 | 1 · Retrieval | Semantic similarity between your resume and the job | [Voyage AI](https://docs.voyageai.com/docs/embeddings) `voyage-4` embeddings: resume lines with `input_type="document"`, the job description and each requirement with `input_type="query"` |
 | 1.1 · Hard skills | Exact technical string overlap (does "Kubernetes" or "C++" actually appear?) | BM25 over your resume lines, with a tech-skills dictionary and aliases (k8s → Kubernetes). Required qualifications count double |
-| 2 · Reranking | Scores the top 10–20 retrieved resume lines against each job requirement | A local cross-encoder (ms-marco MiniLM, the model family [FlashRank](https://github.com/PrithivirajDamodaran/FlashRank) uses) on our server's CPU. No external API calls |
+| 2 · Reranking | Scores the top 10–20 retrieved resume lines against each job requirement | A cross-encoder (ms-marco MiniLM, the model family [FlashRank](https://github.com/PrithivirajDamodaran/FlashRank) uses) on our server's CPU, locally and on Vercel. No external API calls |
 
 You get one of the four match tiers that Eightfold-style candidate-matching systems label you with:
 
@@ -310,12 +315,12 @@ Your résumé PDFs ──► text, PII removed ────┘      ├─ BM25 
 
 | Step | Tool or API | Notes |
 | --- | --- | --- |
-| 1. Get the job posting | The posting's own public API: Greenhouse, Lever, Ashby, Workday, and Microsoft (`apply.careers.microsoft.com/api/apply/v2/jobs/<id>`) | Microsoft's job page is JavaScript-only, so a plain fetch gets nothing; the server reads the posting from Microsoft's jobs API and turns its HTML into text. Other sites fall back to the posting's schema.org data or page text |
+| 1. Get the job posting | The posting's own public API: Greenhouse, Lever, Ashby, Workday, SmartRecruiters, and Eightfold sites like Microsoft (`apply.careers.microsoft.com/api/apply/v2/jobs/<id>`) | Microsoft's job page is JavaScript-only, so a plain fetch gets nothing; the server reads the posting from the jobs API and turns its HTML into text. Other sites fall back to the posting's schema.org data or page text |
 | 2. Read your résumé | Tepobaby's `pdfToLines()` and `sanitize()` (`server/ginny/resume.js`) | Removes your name, email, phone, address and links before anything is scored or sent to an AI. Every version you upload is merged into your experience bank |
 | 3. Score it | Tepobaby's `analyze()` (`server/ginny/ats.js`) | Three parts, below |
 | 3a. Skills (40%) | BM25 keyword matching | Local, no API |
 | 3b. Semantic fit (35%) | Voyage AI embeddings (`voyage-4`) | Compares your résumé and the job text as embeddings, mapped to 0–100 |
-| 3c. Evidence (25%) | MiniLM cross-encoder (`ms-marco-MiniLM-L-6-v2`) via Transformers.js | Finds your best line for each requirement. Runs locally in development; on the live site it's too big for Vercel's servers, so the closest line by Voyage similarity is used instead |
+| 3c. Evidence (25%) | MiniLM cross-encoder (`ms-marco-MiniLM-L-6-v2`) via Transformers.js | Finds your best line for each requirement. Runs on Tepobaby's server (on Vercel too); if it can't load, the closest line by Voyage similarity is used instead |
 | 4. Edit the résumé | Claude (Claude Opus 5.5, on your own Anthropic API key) | Rule: reword and reorder only, never add facts you didn't give it. Enforced in code too (see below) |
 | 5. Rebuild the PDF | jsPDF in your browser, with the free EB Garamond font | One page (smaller type, then the least relevant bullets left out if needed), with your header and clickable links. Your header stays on your device |
 | 6. Rescore | Back to step 2 with the new PDF | The rebuilt PDF is read exactly like an upload and scored again. Repeats until 85+, or until changes stop helping (two rounds in a row with no gain) |
@@ -525,7 +530,9 @@ How I built Tepobaby (with Claude Code): each decision, why I made it, and the p
 ### Ginny: ATS match analysis
 - **Fetch the job description in real time from the posting's own website on every analysis.**
   - *Why:* roles get edited or closed, so the resume should be compared against what the posting says right now.
-  - *Pain point:* saved jobs don't include a description. Each site is different, so I use the Greenhouse, Lever, Ashby and Workday APIs, schema.org JobPosting data or page text, and let students paste it when none work.
+  - *Pain point:* saved jobs don't include a description. Each site is different, so I use the Greenhouse, Lever, Ashby, Workday, SmartRecruiters and Eightfold APIs, schema.org JobPosting data or page text, and let students paste it when none work.
+  - *Pain point:* Microsoft's career site renders in the browser, and its schema.org data held only a 1,077-character summary on one line, with no headings. Ginny took the first text over 200 characters, found no requirements in it, skipped the evidence stage and re-weighted the rest, so a résumé scored 80 instead of 79. Now Eightfold sites go through their job API (4,154 characters, 11 bullets, 6 requirements), pages are judged by structure rather than taken first-come, and one-line text is split into sentences.
+  - *Still not covered:* iCIMS, Oracle and Taleo sites, plus LinkedIn and Indeed links, which block scraping. These fall back to the page scrape and, if that fails, to asking the student to paste the description. A headless browser could handle sites that only render in JavaScript, but it's heavy and slow on Vercel.
 - **Read requirements and skills only from qualifications and responsibilities sections.**
   - *Why:* that's what the job actually asks for.
   - *Pain point:* "Solomon Graf experience as a 2026 intern" and "Semgrep, the leader in code security…" were read as requirements, and "we support Ruby, PHP" counted as required skills.
@@ -541,6 +548,7 @@ How I built Tepobaby (with Claude Code): each decision, why I made it, and the p
     - FlashRank is a Python library and my server is Node.
     - It runs about 10–27 ms per resume line on my Intel Mac, not under 20 ms per batch.
     - Its raw scores needed calibration (relevant ≈ −4…+2, unrelated ≈ −10).
+    - ONNX Runtime is about 208 MB, over the 250 MB limit for a Vercel function together with everything else, so the deployed app used to skip reranking and score evidence from embeddings. Most of that is builds for macOS, Windows and Linux on ARM. The function now ships only the Linux x64 binary (about 42 MB; [.npmrc](.npmrc) also stops ONNX Runtime downloading GPU libraries on Linux, which Vercel can't use), and the 23 MB model downloads from Hugging Face into `/tmp` on a cold start. If the model can't load, the analysis falls back to embeddings instead of failing.
 - **Redact PII locally, keep only Experience / Projects / Skills / Education, and store the PDF separately.**
   - *Why:* sending raw resumes to a hosted API creates GDPR/CCPA risk.
   - *Pain point:* resumes are full of personal info. Signed-in PDFs stay in private storage, and guests' never leave their device except in memory for one request.
@@ -653,8 +661,6 @@ How I built Tepobaby (with Claude Code): each decision, why I made it, and the p
   - *Pain point:* in the first rendered test, the name's descenders touched the contact line, which needed more room. One-page fitting steps the font down (10.5, 10, 9.5 pt), then drops the last bullets of the last entries, and the PDF tells the student how many were left out.
 - **Stop when changes stop helping.**
   - *Why:* the loop ends at the target, after 2 rounds in a row with no gain, or at 4 rounds. Each round costs a Claude call on the student's key.
-- **Read Microsoft postings from Microsoft's jobs API.**
-  - *Pain point:* `apply.careers.microsoft.com/careers/job/<id>` is JavaScript-only, so the description fetch returned nothing and those roles showed "Couldn't read this posting's description". `jobDescription.js` now reads `/api/apply/v2/jobs/<id>` (4,154 characters for the Finance Rotation Program).
 - **Keep the score with the application.**
   - *Why:* "✓ I applied" saves the score record (score, starting score, history, target, rounds, date) with the saved job. `savedJobsStore.js` validates it, and Profile → Applied shows it under **Details** with a hover tooltip, so students can see which résumé went to which job.
 - **A subscription feature, free for the demo.**
@@ -672,8 +678,8 @@ How I built Tepobaby (with Claude Code): each decision, why I made it, and the p
   - *Pain point:* Vercel Cron runs on UTC, so 11:00 UTC is 7:00 AM Eastern only during daylight time (6:00 AM in winter). The free plan allows one run a day.
 - **Turn off live push on Vercel.**
   - *Why:* a serverless function can't hold a connection open for hours. The stream returns `204`, which tells the browser to stop reconnecting, and the app re-checks postings when you come back to it.
-- **Drop the local reranker on Vercel.**
-  - *Pain point:* ONNX Runtime alone is about 200 MB, near Vercel's 250 MB function limit. It's excluded from the deploy and loaded only when available, and ATS scores evidence from the Voyage embeddings instead.
+- **Drop the local reranker on Vercel (since fixed).**
+  - *Pain point:* ONNX Runtime alone is about 200 MB, near Vercel's 250 MB function limit. It's excluded from the deploy and loaded only when available, and ATS scores evidence from the Voyage embeddings instead. Later, shipping only ONNX Runtime's Linux binary and downloading the model at cold start brought the reranker back on Vercel (see Ginny: ATS match analysis).
 - **Never upload secrets or student data.**
   - *Why:* `.vercelignore` excludes `.env*` and `server/data/`, the production keys live in Vercel's encrypted environment variables, and production got its own `SESSION_SECRET`.
 - **Google sign-in needs the new address.**
@@ -702,7 +708,7 @@ The app is live at **https://tepobaby.vercel.app**, deployed on Vercel's free Ho
 - **Daily job update:** a **Vercel Cron** calls `GET /api/cron/jobs` at 11:00 UTC, protected by `CRON_SECRET`. That's 7:00 AM Eastern in daylight time and 6:00 AM in winter. Each function instance re-reads the postings snapshot from Redis at most every 5 minutes.
 - **What's different from local:**
   - **Live updates:** the postings stream returns `204` on Vercel; the app re-checks postings when you come back to it instead.
-  - **Local reranker:** off on Vercel. ATS scores evidence from the Voyage embeddings instead.
+  - **Reranker:** runs on Vercel too. [vercel.json](vercel.json) bundles only ONNX Runtime's Linux x64 binary, and the model downloads into `/tmp/models` the first time a new function instance starts (a few seconds, once per instance).
   - **Original PDF:** the deployed app never stores your résumé file, only its redacted summary.
 - **Never uploaded:** [.vercelignore](.vercelignore) keeps `.env*` and `server/data/` (students' data) out of every upload.
 
@@ -739,7 +745,7 @@ To deploy your own copy:
 | `KV_REST_API_URL`, `KV_REST_API_TOKEN` | Server (Vercel) | Set automatically by the Upstash Redis integration (or use `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`). Without them, data is saved to `server/data/`. |
 | `AGENT_SUBSCRIPTION_REQUIRED` | Server | Optional. `on` makes the AI Agent subscription-only. Unset (the default during the demo), it's free for everyone. |
 | `AGENT_SUBSCRIBER_EMAILS` | Server | Optional. Comma-separated signed-in emails with AI Agent access when a subscription is required (until billing is built). |
-| `RERANK` | Server | Optional. `off` turns off the local reranker (it's always off on Vercel). |
+| `RERANK` | Server | Optional. `off` turns off the reranker; ATS then scores evidence from the Voyage embeddings. |
 | `GEMINI_FALLBACK_MODELS` | Server | Optional. Comma-separated models to try when the main one is overloaded. Default `gemini-3.7-flash,gemini-3.5-flash`. |
 
 `.env.local` is git-ignored. Never commit real values.

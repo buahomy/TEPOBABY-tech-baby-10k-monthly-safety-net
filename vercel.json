@@ -10,8 +10,8 @@
   "functions": {
     "api/index.js": {
       "maxDuration": 300,
-      "includeFiles": "{server/**,shared/**,src/data/**}",
-      "excludeFiles": "{server/data/**,node_modules/onnxruntime-node/**,node_modules/onnxruntime-web/**,node_modules/@huggingface/**,node_modules/sharp/**}"
+      "includeFiles": "{server/**,shared/**,src/data/**,node_modules/onnxruntime-node/bin/napi-v3/linux/x64/**}",
+      "excludeFiles": "{server/data/**,node_modules/onnxruntime-web/**,node_modules/onnxruntime-node/bin/napi-v3/{darwin,win32,linux/arm64}/**,node_modules/@huggingface/transformers/dist/*.{wasm,map},node_modules/onnxruntime-node/bin/**/*{cuda,tensorrt}*}"
     }
   },
   "crons": [{ "path": "/api/cron/jobs", "schedule": "0 11 * * *" }]
