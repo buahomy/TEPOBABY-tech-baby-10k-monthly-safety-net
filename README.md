@@ -329,7 +329,8 @@ Your résumé PDFs ──► text, PII removed ────┘      ├─ BM25 
 1. **Add your experience.** There are two tabs side by side:
    - **📄 Upload resume:** one button. Upload one or more résumé PDFs. They're read into experiences, projects, bullet points, skills and education, with duplicates across versions merged and your name and contact details removed.
      - **Uploaded list:** every résumé you've uploaded is listed under the button, with its date and **View** to open the original PDF.
-     - **Where the PDFs live:** they're kept only on the device you uploaded from, in the browser's storage. On another device the list shows "other device".
+     - **Where the PDFs live:** they're kept only on the device you uploaded from, in the browser's storage.
+     - **No View link?** For a résumé uploaded before saved copies existed, or one uploaded on another device, tap **Attach to view** and pick the same PDF. It's attached for viewing without being read again, so nothing is duplicated.
      - **✕:** removes a file from the list. The experience it added stays in your bank.
    - **✏️ Add manually:** add an **Experience** (role, organization, dates, bullet points), a **Project** (name, **link**, dates, bullet points; the link becomes a hyperlink on your PDF), **Skills**, or **Name & links** for your PDF header (kept on your device). Tap **Edit** to fix or remove anything.
 2. **Pick your fields** (Software, Data & AI, Finance & business…), your start date and your target score (🎯, 85 by default).
@@ -657,7 +658,8 @@ How I built Tepobaby (with Claude Code): each decision, why I made it, and the p
   - *Pain point:* the first test scored a software résumé against NVIDIA circuit-board and chip-verification roles (0–24). Hence the field chips (Software and Data & AI by default) and the title rules for class years and start seasons (`server/apply/queue.js`).
 - **Keep the uploaded PDFs on the device, not the server.**
   - *Why:* students want to see which résumé versions they've already added, and open them again. The server reads each PDF once and never stores it, so the browser keeps the original in IndexedDB (`src/utils/resumeFiles.ts`) under the same ID as its entry in the bank's `sources`. **View** opens it in a new tab (opened before the file loads, so phones don't block it as a pop-up).
-  - *Trade-off:* signed-in students see the list on every device, but can only open the PDF on the device they uploaded it from. Storing originals on the server would have meant keeping students' full résumés, with name and contact details, in the cloud.
+  - *Pain point:* résumés uploaded before this feature had no saved copy, so their rows showed no **View** button. Those rows (and rows from another device) now show **Attach to view**, which stores the picked PDF under the same source ID without parsing it again. If the browser blocks storage (private browsing, some Home Screen apps), files are also kept in memory so View works for that visit.
+  - *Trade-off:* signed-in students see the list on every device, but can only open the PDF on the device they uploaded or attached it on. Storing originals on the server would have meant keeping students' full résumés, with name and contact details, in the cloud.
 - **A minimal screen.**
   - *Why:* the agent's section had grown long (an intro, a "How it works" panel, key settings and a footer). It's now a heading with a PRO chip, two side-by-side tabs (**Upload resume**, **Add manually**), compact settings chips, and one check button. Each role shows only its score history and the next step. The explanations live in this README.
 - **✨ Generate: one button for the whole loop, run by Claude Code.**

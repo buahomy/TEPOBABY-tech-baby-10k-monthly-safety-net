@@ -26,10 +26,20 @@ async function run<T>(mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBRe
   }
 }
 
-export const saveResumeFile = (id: string, file: Blob) => run("readwrite", (s) => s.put(file, id));
-export const getResumeFile = (id: string) => run<Blob>("readonly", (s) => s.get(id) as IDBRequest<Blob>);
-export const deleteResumeFile = (id: string) => run("readwrite", (s) => s.delete(id));
-export const storedIds = async () => ((await run("readonly", (s) => s.getAllKeys())) ?? []).map(String);
+// Fallback when the browser blocks IndexedDB (private browsing, some Home Screen apps): keep files in
+// memory, so View still works until the page is closed.
+const memory = new Map<string, Blob>();
+
+export async function saveResumeFile(id: string, file: Blob) {
+  memory.set(id, file);
+  await run("readwrite", (s) => s.put(file, id));
+}
+export const getResumeFile = async (id: string) => (await run<Blob>("readonly", (s) => s.get(id) as IDBRequest<Blob>)) ?? memory.get(id);
+export async function deleteResumeFile(id: string) {
+  memory.delete(id);
+  await run("readwrite", (s) => s.delete(id));
+}
+export const storedIds = async () => [...new Set([...((await run("readonly", (s) => s.getAllKeys())) ?? []).map(String), ...memory.keys()])];
 
 /** Opens a stored PDF in a new tab. The tab is opened first so phones don't block it as a pop-up. */
 export async function viewResumeFile(id: string): Promise<boolean> {
