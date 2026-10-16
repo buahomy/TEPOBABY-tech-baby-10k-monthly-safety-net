@@ -695,3 +695,16 @@
   color: var(--text-tertiary);
   font-size: 11px;
 }
+
+.m01 .ag-attach {
+  position: relative;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.m01 .ag-attach input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}

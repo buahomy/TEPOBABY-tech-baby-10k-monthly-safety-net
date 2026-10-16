@@ -493,7 +493,20 @@ function BankPanel({ bank, busy, onChange, onError, onBusy }: { bank: Bank | nul
                         View
                       </button>
                     ) : (
-                      <small title="Open it on the device you uploaded it from">other device</small>
+                      // No saved copy here (uploaded earlier, or on another device): attach the same PDF to view it.
+                      <label className="ag-linkbtn ag-attach" title="Pick this PDF again to view it here">
+                        Attach to view
+                        <input
+                          type="file"
+                          accept="application/pdf"
+                          onChange={async (e) => {
+                            const f = e.target.files?.[0];
+                            if (!f) return;
+                            await saveResumeFile(src.id, f);
+                            setOnDevice(await storedIds());
+                          }}
+                        />
+                      </label>
                     )}
                     <button
                       type="button"
