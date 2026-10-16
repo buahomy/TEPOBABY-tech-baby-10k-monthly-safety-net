@@ -519,7 +519,7 @@ How I built Tepobaby (with Claude Code): each decision, why I made it, and the p
     - FlashRank is a Python library and my server is Node.
     - It runs about 10–27 ms per resume line on my Intel Mac, not under 20 ms per batch.
     - Its raw scores needed calibration (relevant ≈ −4…+2, unrelated ≈ −10).
-    - ONNX Runtime is about 208 MB, over the 250 MB limit for a Vercel function together with everything else, so the deployed app used to skip reranking and score evidence from embeddings. Most of that is builds for macOS, Windows and Linux on ARM. The function now ships only the Linux x64 binary (about 42 MB), and the 23 MB model downloads from Hugging Face into `/tmp` on a cold start. If the model can't load, the analysis falls back to embeddings instead of failing.
+    - ONNX Runtime is about 208 MB, over the 250 MB limit for a Vercel function together with everything else, so the deployed app used to skip reranking and score evidence from embeddings. Most of that is builds for macOS, Windows and Linux on ARM. The function now ships only the Linux x64 binary (about 42 MB; [.npmrc](.npmrc) also stops ONNX Runtime downloading GPU libraries on Linux, which Vercel can't use), and the 23 MB model downloads from Hugging Face into `/tmp` on a cold start. If the model can't load, the analysis falls back to embeddings instead of failing.
 - **Redact PII locally, keep only Experience / Projects / Skills / Education, and store the PDF separately.**
   - *Why:* sending raw resumes to a hosted API creates GDPR/CCPA risk.
   - *Pain point:* resumes are full of personal info. Signed-in PDFs stay in private storage, and guests' never leave their device except in memory for one request.
