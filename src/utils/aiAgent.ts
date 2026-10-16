@@ -1,15 +1,15 @@
-// AI Agent (Profile → My jobs). Every day it finds roles that fit the student, checks each one, and for
-// each role runs this pipeline:
+// AI Agent (Profile → My jobs). Every day it finds roles that fit the student and checks each one
+// against their experience bank. Then, per role, one round at a time:
 //   1. Job text: fetched by the server from the posting's own API (Greenhouse, Lever, Ashby, Workday,
-//      Microsoft…).
-//   2. Curate: Claude (or Gemini) builds a one-page resume for this job from the experience bank,
-//      rewording and reordering only.
-//   3. Rebuild: the resume becomes a one-page PDF in EB Garamond (resumePdf.ts).
-//   4. Rescore: that PDF is read back exactly like an uploaded resume (text, personal details removed)
-//      and scored by the ATS match (BM25 skills + Voyage AI semantic fit + evidence).
-//   5. Repeat with the score's feedback until it reaches the target (85 by default) or changes stop
-//      helping; if only the student's real experience can help, they're asked specific questions.
-//   6. Ready to apply: the PDF, form answers and the posting link.
+//      Eightfold sites like Microsoft…).
+//   2. Curate with Claude Code: the app builds a prompt (rules + bank + job + last score); the student
+//      pastes it into Claude Code and pastes the JSON reply back. No API keys involved.
+//   3. Check: the reply is held to the bank (checkCuration).
+//   4. Rebuild: a one-page PDF in EB Garamond (resumePdf.ts).
+//   5. Rescore: that PDF is read back like any upload (personal details removed) and scored
+//      (BM25 skills + Voyage AI semantic fit + reranker evidence).
+//   6. Next: ready at the target (85 by default); otherwise a new prompt with the new score, until
+//      changes stop helping; if only real experience can help, the student is asked questions.
 //
 // Honesty rules, enforced here (not just in the prompt):
 //   - Every bullet must come from a bullet in the bank. A reworded bullet can't introduce numbers that
@@ -18,18 +18,26 @@
 //   - New facts only come from the student's own answers, which are added to the bank.
 //   - Nothing is submitted for the student.
 
-import { claudeCurate, RawCuration } from "./claude";
+import { claudeCodePrompt } from "../../shared/agentPrompt.js";
 import { Bank, BankEntry, bankSections, bulletIndex, mergeSkills, sectionsFrom, uid } from "./experienceBank";
 import { ResumeSections, runAtsDetailed } from "./ginny";
 import { Posting } from "./postings";
 import { buildResumePdf, loadHeader, toBase64 } from "./resumePdf";
+
+/** Claude Code's reply, as parsed from the JSON the student pastes back. */
+export type RawCuration = {
+  entries: { entryId: string; bullets: { bulletId: string; text: string }[] }[];
+  skills: string[];
+  note: string;
+  questions: { question: string; kind: "skill" | "detail"; skill: string; entryId: string }[];
+};
 
 export type QueueRole = Posting & { fit: "match" | "open" | "later"; sponsorshipNote: "sponsors" | "unknown" | null };
 
 export type Question = { id: string; question: string; kind: "skill" | "detail"; skill: string; entryId: string };
 
 export type Curated = {
-  entries: { entryId: string; kind: BankEntry["kind"]; title: string; org: string; dates: string; bullets: { bulletId: string; text: string; original: string }[] }[];
+  entries: { entryId: string; kind: BankEntry["kind"]; title: string; org: string; dates: string; link?: string; bullets: { bulletId: string; text: string; original: string }[] }[];
   skills: string[];
   note: string;
   sections: ResumeSections;
@@ -42,6 +50,7 @@ export type RoleState = {
   firstScore: number;
   history: number[]; // score after each curation round
   rounds: number;
+  stale?: number; // rounds in a row that didn't raise the score
   description?: string;
   requirements: string[];
   missingSkills: { skill: string; required: boolean }[];
@@ -114,32 +123,7 @@ export async function checkRole(signedIn: boolean, role: QueueRole, bank: Bank, 
 
 export const errorState = (message: string): RoleState => ({ ...blank(), status: "error", score: 0, firstScore: 0, error: message, at: new Date().toISOString() });
 
-// ---- Who curates ----
-
-/** Claude on the student's own key when they've added one; otherwise Gemini through Tepobaby. */
-export type Writer = { claudeKey: string | null };
-
-/** Gemini can't answer right now and there's no Anthropic key to switch to. */
-export class NeedClaudeKeyError extends Error {}
-
-async function geminiCurate(input: Parameters<typeof claudeCurate>[1]): Promise<RawCuration> {
-  const res = await fetch("/api/agent/curate", {
-    method: "POST",
-    headers: { "X-Requested-With": "XmlHttpRequest", "Content-Type": "application/json" },
-    body: JSON.stringify({ ...input, jobTitle: input.jobTitle, bank: input.bank }),
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    if ([429, 502, 503, 504].includes(res.status)) throw new NeedClaudeKeyError(`${data.error || "Gemini is unavailable right now."} Add your Anthropic API key so Claude can keep going.`);
-    throw new Error(data.error || "Couldn't curate this resume.");
-  }
-  const c = data.curated || {};
-  return { entries: c.entries || [], skills: c.skills || [], note: c.note || "", questions: c.questions || [] };
-}
-
-const curate = (writer: Writer, input: Parameters<typeof claudeCurate>[1]) => (writer.claudeKey ? claudeCurate(writer.claudeKey, input) : geminiCurate(input));
-
-// ---- Checking what the model returned against the bank ----
+// ---- Checking Claude Code's reply against the bank ----
 
 const digits = (t: string) => t.match(/\d+(\.\d+)?/g) ?? [];
 const norm = (t: string) => t.toLowerCase().replace(/[^a-z0-9+#.]+/g, " ").trim();
@@ -166,7 +150,7 @@ export function checkCuration(raw: RawCuration, bank: Bank): Curated | null {
       if (!text || text.length > 400 || /\[[^\]]*\]/.test(text) || digits(text).some((d) => !srcDigits.has(d))) text = original;
       bullets.push({ bulletId: cb.bulletId, text, original });
     }
-    if (bullets.length) entries.push({ entryId: entry.id, kind: entry.kind, title: entry.title, org: entry.org, dates: entry.dates, bullets });
+    if (bullets.length) entries.push({ entryId: entry.id, kind: entry.kind, title: entry.title, org: entry.org, dates: entry.dates, link: entry.link, bullets });
   }
   if (!entries.length) return null;
 
@@ -192,73 +176,79 @@ const toQuestions = (raw: RawCuration["questions"], bank: Bank): Question[] =>
       entryId: bank.entries.some((e) => e.id === q.entryId) ? q.entryId : "",
     }));
 
-// ---- The loop ----
+// ---- One round ----
+
+/** The prompt to paste into Claude Code for this role's next round. */
+export function nextPrompt(role: QueueRole, st: RoleState, bank: Bank, target: number): string {
+  return claudeCodePrompt({
+    jobTitle: role.title,
+    company: role.company,
+    requirements: st.requirements,
+    missingSkills: st.missingSkills.map((m) => m.skill),
+    gaps: st.gaps,
+    bank,
+    target,
+    lastScore: st.history.length ? st.score : null,
+    round: st.rounds + 1,
+  });
+}
+
+/** Reads Claude Code's pasted reply (tolerates code fences or text around the JSON). */
+export function parseReply(text: string): RawCuration {
+  const raw = text.replace(/```(json)?/gi, "").trim();
+  let data: Partial<RawCuration> | null = null;
+  try {
+    data = JSON.parse(raw);
+  } catch {
+    const m = raw.match(/\{[\s\S]*\}/);
+    if (m) {
+      try {
+        data = JSON.parse(m[0]);
+      } catch {
+        data = null;
+      }
+    }
+  }
+  if (!data || !Array.isArray(data.entries)) throw new Error("That doesn't look like Claude Code's JSON reply. Copy its whole answer and paste it again.");
+  return {
+    entries: data.entries,
+    skills: Array.isArray(data.skills) ? data.skills : [],
+    note: typeof data.note === "string" ? data.note : "",
+    questions: Array.isArray(data.questions) ? data.questions : [],
+  };
+}
 
 /**
- * Curates and re-scores until the target, the round limit, or a point where only the student's real
- * experience can help. `onRound` reports progress after each round.
+ * One round: holds the reply to the bank, rebuilds the one-page PDF, rescores that PDF, and decides
+ * what's next (ready, another round, questions for the student, or tops out).
  */
-export async function runLoop(
-  signedIn: boolean,
-  role: QueueRole,
-  start: RoleState,
-  bank: Bank,
-  target: number,
-  writer: Writer,
-  onRound: (st: RoleState, msg: string) => void,
-  stopped: () => boolean,
-): Promise<RoleState> {
-  let st: RoleState = { ...start, status: "working", questions: [] };
-  let best = st.curated ? st.score : -1;
-  let stale = 0; // rounds in a row that didn't raise the score
+export async function scoreReply(signedIn: boolean, role: QueueRole, st: RoleState, bank: Bank, target: number, raw: RawCuration): Promise<RoleState> {
+  const round = st.rounds + 1;
+  const curated = checkCuration(raw, bank);
+  const questions = toQuestions(raw.questions, bank);
+  if (!curated) throw new Error("None of the reply's bullets match your experience bank. Copy a fresh prompt and try again.");
 
-  while (st.rounds < MAX_ROUNDS && !stopped()) {
-    const round = st.rounds + 1;
-    onRound(st, `${writer.claudeKey ? "Claude" : "Gemini"} is curating ${role.company}, round ${round}`);
-    const raw = await curate(writer, {
-      jobTitle: role.title,
-      company: role.company,
-      requirements: st.requirements,
-      missingSkills: st.missingSkills.map((m) => m.skill),
-      gaps: st.gaps,
-      bank,
-      target,
-      lastScore: st.history.length ? st.score : null,
-      round,
-    });
-    const curated = checkCuration(raw, bank);
-    const questions = toQuestions(raw.questions, bank);
-    if (!curated) {
-      st = { ...st, rounds: round, questions };
-      continue;
-    }
-
-    // Rebuild the one-page PDF and score that PDF, read back like any uploaded resume.
-    onRound(st, `Rebuilding the PDF and rescoring ${role.company}, round ${round}`);
-    const pdf = await buildResumePdf(loadHeader(), curated, bank.education);
-    curated.dropped = pdf.dropped;
-    const { result } = await runAtsDetailed(signedIn, role, { pdfBase64: toBase64(pdf.bytes), description: st.description });
-    const improved = result.score > best;
-    stale = improved ? 0 : stale + 1;
-    st = {
-      ...st,
-      rounds: round,
-      history: [...st.history, result.score],
-      // Keep the best version: a round that scores lower is discarded.
-      ...(improved ? { score: result.score, curated, missingSkills: result.missingSkills.slice(0, 15), gaps: result.gaps.slice(0, 6) } : {}),
-      questions,
-      at: new Date().toISOString(),
-    };
-    if (improved) best = result.score;
-
-    if (st.score >= target) return { ...st, status: "ready", questions: [] };
-    // Stuck and the model needs facts the bank doesn't have: ask the student now.
-    if (!improved && questions.length) return { ...st, status: "needs_info" };
-    // Changes stopped helping: two rounds in a row without a higher score.
-    if (stale >= 2) break;
-  }
-  if (stopped()) return st;
-  return { ...st, status: st.score >= target ? "ready" : st.questions.length ? "needs_info" : "topped" };
+  const pdf = await buildResumePdf(loadHeader(), curated, bank.education);
+  curated.dropped = pdf.dropped;
+  const { result } = await runAtsDetailed(signedIn, role, { pdfBase64: toBase64(pdf.bytes), description: st.description });
+  const best = st.curated ? st.score : -1;
+  const improved = result.score > best;
+  const stale = improved ? 0 : (st.stale ?? 0) + 1;
+  const next: RoleState = {
+    ...st,
+    rounds: round,
+    stale,
+    history: [...st.history, result.score],
+    // Keep the best version: a round that scores lower is discarded.
+    ...(improved ? { score: result.score, curated, missingSkills: result.missingSkills.slice(0, 15), gaps: result.gaps.slice(0, 6) } : {}),
+    questions,
+    at: new Date().toISOString(),
+  };
+  if (next.score >= target) return { ...next, status: "ready", questions: [] };
+  if (!improved && questions.length) return { ...next, status: "needs_info" };
+  // Changes stopped helping: two rounds in a row without a higher score, or the round limit.
+  if (stale >= 2 || round >= MAX_ROUNDS) return { ...next, status: questions.length ? "needs_info" : "topped" };
+  return { ...next, status: "working" };
 }
 
 /** Adds the student's answers to the bank: skills they've used, and new bullets with real details. */

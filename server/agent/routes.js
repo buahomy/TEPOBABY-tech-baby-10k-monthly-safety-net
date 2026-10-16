@@ -3,7 +3,6 @@
 //   POST /api/agent/parse     one resume PDF → sections and entries for the experience bank (not stored)
 //   GET  /api/agent/bank      the signed-in student's experience bank
 //   PUT  /api/agent/bank      save it
-//   POST /api/agent/curate    one Gemini curation round (students without an Anthropic key)
 //   GET  /api/agent/access    whether this student can use the AI Agent
 //
 // Subscription: the AI Agent is a subscription feature. During the demo it's free for everyone.
@@ -14,8 +13,6 @@
 // removed); only the resulting text goes back to the browser.
 
 import express from "express";
-import { CURATE_SHAPE, CURATE_SYSTEM, curatePrompt } from "../../shared/agentPrompt.js";
-import { generate, geminiEnabled } from "../ginny/gemini.js";
 import { MAX_PDF_BYTES, pdfToLines, sanitize } from "../ginny/resume.js";
 import * as store from "../store.js";
 
@@ -102,6 +99,7 @@ function cleanBank(b) {
     title: str(e?.title, 200),
     org: str(e?.org, 200),
     dates: str(e?.dates, 80),
+    link: /^https?:\/\/[^\s]+$/i.test(str(e?.link, 300)) ? str(e.link, 300) : "",
     bullets: (Array.isArray(e?.bullets) ? e.bullets : []).slice(0, 30).map((x) => ({ id: str(x?.id, 40), text: str(x?.text, 600), source: str(x?.source, 120) })),
   }));
   return {
@@ -164,49 +162,5 @@ export function agentRoutes(app, { readSession, requireXhr, requireUser }) {
     if (!bank) return res.status(400).json({ error: "Expected an experience bank." });
     await store.set("bank", req.session.sub, bank);
     res.json({ ok: true, updatedAt: bank.updatedAt });
-  });
-
-  app.post("/api/agent/curate", requireXhr, requireAccess, express.json({ limit: "512kb" }), async (req, res) => {
-    if (!geminiEnabled()) return res.status(503).json({ error: "Gemini isn't set up on the server." });
-    if (!limit(`curate:${who(req)}`, 40, HOUR)) return res.status(429).json({ error: "You've asked for a lot of curation rounds. Try again in a bit." });
-    const b = req.body || {};
-    const bank = cleanBank(b.bank);
-    if (!bank?.entries.length) return res.status(400).json({ error: "Add your experience first." });
-    const list = (v, n, m) => (Array.isArray(v) ? v : []).slice(0, n).map((x) => str(x, m)).filter(Boolean);
-    const prompt = curatePrompt({
-      jobTitle: str(b.jobTitle, 300),
-      company: str(b.company, 200),
-      requirements: list(b.requirements, 14, 400),
-      missingSkills: list(b.missingSkills, 15, 60),
-      gaps: list(b.gaps, 6, 400),
-      bank,
-      target: Number(b.target) || 85,
-      lastScore: Number.isFinite(b.lastScore) ? b.lastScore : null,
-      round: Number(b.round) || 1,
-    });
-    try {
-      const { text } = await generate({
-        system: `${CURATE_SYSTEM}\nReply with JSON only, exactly this shape: ${CURATE_SHAPE}`,
-        messages: [{ role: "user", text: prompt }],
-        json: true,
-        temperature: 0.3,
-        maxTokens: 4000,
-      });
-      const raw = text.replace(/^```(json)?\s*|\s*```$/g, "").trim();
-      let data;
-      try {
-        data = JSON.parse(raw);
-      } catch {
-        const m = raw.match(/\{[\s\S]*\}/);
-        data = m ? JSON.parse(m[0]) : null;
-      }
-      if (!data || !Array.isArray(data.entries)) throw new Error("unexpected format");
-      res.json({ curated: data });
-    } catch (err) {
-      if (err.status === 429) return res.status(429).json({ error: "Gemini's free quota is used up for now." });
-      if (err.busy) return res.status(503).json({ error: "Gemini is busy right now." });
-      console.error("[agent] curate failed:", err?.message);
-      res.status(502).json({ error: "Gemini couldn't curate this resume. Try again." });
-    }
   });
 }
