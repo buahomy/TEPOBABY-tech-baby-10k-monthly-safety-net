@@ -342,7 +342,8 @@ Your résumé PDFs ──► text, PII removed ────┘      ├─ BM25 
    - **✅ Ready** at 85+;
    - **✍️ Your info** when only your real experience can raise the score (e.g. 39 → 42 → 42). Answer its specific questions; they're added to your bank, and you can Generate again;
    - **tops out** when changes stop helping.
-   - **Manual** instead shows the prompt-and-paste steps for Claude Code. That's what the live website shows, since Generate needs Claude Code on the computer running Tepobaby (`npm run dev`).
+   - **Manual** instead shows the prompt-and-paste steps for Claude Code, for when Generate isn't available.
+   - **Generate on the live website (the author's account only):** run `npm run relay` on the Mac. While it runs, **Generate** at tepobaby.vercel.app, signed in as the author, uses the Mac's Claude Code. Everyone else, and the author whenever the relay is stopped, gets the manual steps.
 5. **Apply.** On a ready role, use **⬇ PDF**, **Preview** (each reworded bullet shows your original words) and the copy-ready form answers. Then tap **Apply ↗**, submit on the company's site yourself, and tap **✓ Applied**.
 
 #### After you apply
@@ -667,6 +668,20 @@ How I built Tepobaby (with Claude Code): each decision, why I made it, and the p
   - *Where it works:* only where the server runs next to a signed-in Claude Code, i.e. `npm run dev` on your own computer. Vercel has no Claude Code, so on the live website Generate is off and **Manual** shows the copy-and-paste steps. A Claude API option (on Tepobaby's key) was built and then removed: it would have meant paying per job, and this is personal use for now.
   - *How:* `runGenerate()` calls `POST /api/agent/generate` and runs `scoreReply()` (honesty checks → PDF → rescore) round after round until ready, needs info, or stale. The browser still checks every reply against the bank, whichever engine wrote it.
   - *Pain point:* the first browser test seemed to do nothing after tapping Generate. The app was fine: the test's progress monitor had an escaping bug and quit after 4 seconds. Rerun, one tap ran two rounds back to back (39 → 42 → 42) and stopped with four questions about real gaps (GraphQL, Kubernetes, simulation tools, where Docker was used).
+- **Generate on the live site through a relay to the author's Mac, locked to one account.**
+  - *Why:* Vercel can't run Claude Code (it isn't installed there, the Claude login lives on the Mac, and serverless functions are short-lived). The author wanted one-tap Generate from the live site without an API key, so it borrows the Mac's Claude Code:
+    ```
+    phone → tepobaby.vercel.app ─► Cloudflare quick tunnel ─► relay on the Mac (127.0.0.1:8788) ─► claude -p
+    ```
+  - *How:*
+    - **The Mac side:** `npm run relay` (`scripts/relay.mjs`) starts `server/relay.js`, a separate tiny server with one route (`POST /generate`). It opens a Cloudflare quick tunnel with `cloudflared` (no Cloudflare account), and reports the tunnel's address to `POST /api/agent/relay-register` every 4 minutes.
+    - **The live site:** it forwards **Generate** rounds to the relay only for signed-in emails in `AGENT_RELAY_EMAILS` (just the author's), and only if the Mac checked in within the last 10 minutes. `/api/agent/access` then reports `engine: "relay"`.
+  - *Security:*
+    - **Narrow exposure:** the tunnel reaches only the relay, never Tepobaby's full local server or its data.
+    - **Shared secret:** every request needs `AGENT_RELAY_SECRET` (in both `.env.local` and Vercel, compared in constant time).
+    - **No tools:** Claude Code runs with no tools, so nothing in a prompt can run commands on the Mac.
+    - **Address check:** registration accepts only `*.trycloudflare.com` addresses.
+  - *Trade-off:* Generate on the live site works only while the Mac is on and `npm run relay` is running. Quick-tunnel addresses change every restart, which is why the relay re-registers itself instead of the address living in an environment variable.
 - **Auto daily, or only on request, plus any saved job.**
   - *Why:* not everyone wants roles checked automatically, and the best roles are often ones the student already saved. **Auto daily** can be turned off, and **Or pick a saved job…** adds any ♥ job to the agent and checks it at once (kept in the agent's state as a picked role).
 - **Curate with Claude Code (copy and paste) instead of an AI API** (now the fallback behind Generate).
@@ -767,6 +782,8 @@ To deploy your own copy:
 | `KV_REST_API_URL`, `KV_REST_API_TOKEN` | Server (Vercel) | Set automatically by the Upstash Redis integration (or use `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`). Without them, data is saved to `server/data/`. |
 | `AGENT_SUBSCRIPTION_REQUIRED` | Server | Optional. `on` makes the AI Agent subscription-only. Unset (the default during the demo), it's free for everyone. |
 | `AGENT_SUBSCRIBER_EMAILS` | Server | Optional. Comma-separated signed-in emails with AI Agent access when a subscription is required (until billing is built). |
+| `AGENT_RELAY_SECRET` | Server + your Mac | Shared secret (48+ random characters) between the live site and `npm run relay`. The same value in Vercel and `.env.local`. |
+| `AGENT_RELAY_EMAILS` | Server | Comma-separated signed-in emails whose **Generate** on the live site uses the relay (the author's). |
 | `CLAUDE_CODE_BIN`, `AGENT_CLAUDE_CODE` | Server | Optional. Path to the `claude` command for the AI Agent's Generate (default `claude`), and `off` to turn Generate off. |
 | `RERANK` | Server | Optional. `off` turns off the reranker; ATS then scores evidence from the Voyage embeddings. |
 | `GEMINI_FALLBACK_MODELS` | Server | Optional. Comma-separated models to try when the main one is overloaded. Default `gemini-3.7-flash,gemini-3.5-flash`. |
@@ -804,7 +821,8 @@ API routes (the Vite dev server forwards `/api` to the auth server):
 | `GET /api/apply/queue?gradYear=&gradMonth=&startYear=&startMonth=&visa=` | AI Agent: today's Entry-level and rotational roles that fit the graduation and start dates (and, with `visa=1`, don't exclude sponsorship), ranked by fit |
 | `POST /api/agent/parse` | AI Agent: one résumé PDF → experiences, bullets, skills and education for the experience bank (read in memory, not stored) |
 | `GET /api/agent/access` | Whether this student can use the AI Agent (`{ allowed, plan, demo, engine }`; free for everyone during the demo; `engine` is `claude-code` when Generate can run, else `null`) |
-| `POST /api/agent/generate` | ✨ Generate: one curation round with Claude Code, when it's installed where the server runs |
+| `POST /api/agent/relay-register` | The Mac's relay reports its tunnel address (needs `AGENT_RELAY_SECRET`) |
+| `POST /api/agent/generate` | ✨ Generate: one curation round with Claude Code, on this computer, or (live site, the author's account) on the Mac through the relay |
 | `GET` / `PUT /api/agent/bank` | The signed-in student's experience bank |
 | `GET /api/connect/school` | The signed-in student's school name, from their `.edu` email domain |
 | `GET /api/neetcode` | The NeetCode 150 list (number, title, difficulty, category) and the 18 concepts |
