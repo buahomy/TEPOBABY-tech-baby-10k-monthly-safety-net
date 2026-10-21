@@ -9,7 +9,7 @@
 
 const MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
 // Tried in order when the main model is overloaded (503) — free-tier demand spikes are common.
-const FALLBACKS = (process.env.GEMINI_FALLBACK_MODELS || "gemini-3.7-flash,gemini-3.5-flash")
+const FALLBACKS = (process.env.GEMINI_FALLBACK_MODELS || "gemini-3.6-flash,gemini-3.7-flash,gemini-3.5-flash")
   .split(",")
   .map((m) => m.trim())
   .filter((m) => m && m !== MODEL);
@@ -20,12 +20,12 @@ export const GEMINI_MODEL = MODEL;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function interactOnce(model, body) {
+async function interactOnce(model, body, timeoutMs = 45000) {
   const res = await fetch(API, {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY },
     body: JSON.stringify({ model, store: false, ...body }),
-    signal: AbortSignal.timeout(45000),
+    signal: AbortSignal.timeout(timeoutMs),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
@@ -36,18 +36,32 @@ async function interactOnce(model, body) {
   return data;
 }
 
-/** Retries overloaded models (503/500) with short backoff, then tries the fallback models. */
+// The model that last answered, tried first for the next 10 minutes. On the free tier a model can
+// hang for a minute or more under load while an older one answers in seconds.
+let working = null;
+const WORKING_MS = 10 * 60 * 1000;
+
+/**
+ * Retries overloaded models (503/500) with short backoff, then tries the fallback models. A model
+ * that doesn't answer within 20 s is skipped (the last one gets 45 s).
+ */
 async function interact(body) {
   let last;
-  for (const model of [MODEL, ...FALLBACKS]) {
+  const sticky = working && Date.now() - working.at < WORKING_MS ? working.model : null;
+  const order = [...new Set([sticky, MODEL, ...FALLBACKS].filter(Boolean))];
+  for (const [n, model] of order.entries()) {
+    const timeout = n === order.length - 1 ? 45000 : 20000;
     for (let attempt = 0; attempt < (model === MODEL ? 3 : 1); attempt++) {
       try {
-        return await interactOnce(model, body);
+        const data = await interactOnce(model, body, timeout);
+        working = { model, at: Date.now() };
+        return data;
       } catch (err) {
         last = err;
         // Overloaded or too slow: try again / move to the next model.
         const slow = err.name === "TimeoutError" || err.name === "AbortError";
         if (err.status !== 503 && err.status !== 500 && !slow) throw err;
+        if (working?.model === model) working = null;
         if (slow) break;
         if (attempt < 2 && model === MODEL) await sleep(1500 * (attempt + 1));
       }
@@ -80,7 +94,9 @@ export async function generate({ system, messages, search = false, json = false,
   const body = {
     system_instruction: system,
     input: messages.map((m) => turn(m.role, m.text)),
-    generation_config: { temperature, max_output_tokens: maxTokens, ...(json ? { response_mime_type: "application/json" } : {}) },
+    // The Interactions API has no JSON mode (it rejects response_mime_type), so `json` callers ask for
+    // JSON in the prompt and parse the text.
+    generation_config: { temperature, max_output_tokens: maxTokens },
   };
   let data;
   let grounded = false;
@@ -93,15 +109,7 @@ export async function generate({ system, messages, search = false, json = false,
       if (![400, 403, 429].includes(err.status)) throw err;
     }
   }
-  if (!data) {
-    try {
-      data = await interact(body);
-    } catch (err) {
-      // Some models reject response_mime_type here; retry as plain text.
-      if (json && err.status === 400) data = await interact({ ...body, generation_config: { temperature, max_output_tokens: maxTokens } });
-      else throw err;
-    }
-  }
+  if (!data) data = await interact(body);
   const out = readOutput(data);
   if (!out.text) throw new Error("Gemini returned an empty answer. Try rephrasing.");
   return { ...out, grounded: grounded && out.sources.length > 0 };
