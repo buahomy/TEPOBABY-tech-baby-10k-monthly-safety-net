@@ -1,4 +1,4 @@
-import { Suspense, lazy, useState } from "react";
+import { useState } from "react";
 import CommunityLaunchpad from "../../components/CommunityLaunchpad";
 import CompanyLogo from "../../components/CompanyLogo";
 import HeartButton from "../../components/HeartButton";
@@ -8,12 +8,8 @@ import { timeAgo } from "../../utils/postings";
 import { Profile, SECTIONS, STEPS, labelFor } from "../../utils/profile";
 import { JobStatus, STAGES, SavedJob, SavedJobsApi, Stage } from "../../utils/savedJobs";
 
-// Profile tab: account, saved / applied jobs (each saved job with the AI Agent's ✨ Generate), the
-// AI Agent's Applicant's resources, every onboarding answer grouped by section, and edit / sign-out.
-
-// Loaded on first visit to Profile, so the AI Agent (and its PDF code) isn't in the app's first download.
-const ApplicantResources = lazy(() => import("../AIAgent"));
-const JobAgent = lazy(() => import("../AIAgent").then((m) => ({ default: m.JobAgent })));
+// Profile tab: account, saved / applied jobs, every onboarding answer grouped by section, and
+// edit / sign-out actions.
 
 type Props = {
   user: User | null; // null = guest
@@ -104,19 +100,10 @@ function MyJobs({ saved, onBrowse, signedIn }: { saved: SavedJobsApi; onBrowse: 
                 {j.status === "applied" ? (
                   <StageToggle job={j} onStage={(st) => saved.setStage(j.id, st)} onUnapply={() => saved.setStatus(j.id, "saved")} />
                 ) : (
-                  <Suspense
-                    fallback={
-                      <div className="saved-actions">
-                        <button type="button" className="status-btn" onClick={() => saved.setStatus(j.id, "applied")}>
-                          Mark applied
-                        </button>
-                      </div>
-                    }
-                  >
-                    <JobAgent job={j} signedIn={signedIn} onApplied={(ats) => saved.setStatus(j.id, "applied", ats)} />
-                  </Suspense>
+                  <button type="button" className="status-btn" onClick={() => saved.setStatus(j.id, "applied")}>
+                    Mark applied
+                  </button>
                 )}
-                {j.status === "applied" && <ApplicationDetails job={j} />}
               </div>
               <HeartButton saved label={`${j.title} at ${j.company}`} onToggle={() => saved.remove(j.id)} />
             </li>
@@ -125,47 +112,6 @@ function MyJobs({ saved, onBrowse, signedIn }: { saved: SavedJobsApi; onBrowse: 
       )}
       {saved.error && <p className="ob-error">{saved.error}</p>}
     </section>
-  );
-}
-
-/**
- * Applied job → "Details": the résumé's ATS score for this application (kept by the AI Agent). Hover
- * (or focus) the score to see how it got there.
- */
-function ApplicationDetails({ job }: { job: SavedJob }) {
-  const [open, setOpen] = useState(false);
-  const a = job.ats;
-  const steps = a ? [a.firstScore, ...a.history.filter((x, i) => i > 0 || x !== a.firstScore)] : [];
-  const tip = a
-    ? [
-        `Résumé ATS score for this application: ${a.score}/100${a.target ? ` (target ${a.target}+)` : ""}`,
-        steps.length > 1 ? `Score by round: ${steps.join(" → ")}` : "",
-        `Curated by the ${a.via}${a.rounds ? ` in ${a.rounds} round${a.rounds > 1 ? "s" : ""}` : ""}`,
-        a.scoredAt ? `Scored ${new Date(a.scoredAt).toLocaleDateString()}` : "",
-      ]
-        .filter(Boolean)
-        .join("\n")
-    : "";
-  return (
-    <div className="app-details">
-      <button type="button" className="app-details-toggle" aria-expanded={open} onClick={() => setOpen(!open)}>
-        {open ? "Hide details ▴" : "Details ▾"}
-      </button>
-      {open && (
-        <div className="app-details-body">
-          {a ? (
-            <>
-              <span className={`ats-chip${a.target && a.score >= a.target ? " is-ok" : ""}`} tabIndex={0} data-tip={tip} aria-label={tip}>
-                Résumé ATS {a.score}
-              </span>
-              <span className="app-details-note">{steps.length > 1 ? `up from ${a.firstScore}` : "Hover for details"}</span>
-            </>
-          ) : (
-            <span className="app-details-note">No résumé score: this application wasn't prepared with the AI Agent.</span>
-          )}
-        </div>
-      )}
-    </div>
   );
 }
 
@@ -231,9 +177,6 @@ export default function ProfileTab({ user, profile, saved, onBrowse, onEdit, onS
       </header>
 
       <MyJobs saved={saved} onBrowse={onBrowse} signedIn={!!user} />
-      <Suspense fallback={<section className="block"><p className="empty">Loading your resources…</p></section>}>
-        <ApplicantResources signedIn={!!user} />
-      </Suspense>
 
       {SECTIONS.map((section) => (
         <section className="block" key={section.id} aria-label={section.title}>

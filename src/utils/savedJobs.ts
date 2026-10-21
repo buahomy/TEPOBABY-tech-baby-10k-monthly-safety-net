@@ -34,11 +34,8 @@ export type SavedJob = {
   appliedAt: string | null;
   stage?: Stage | null;
   stageUpdatedAt?: string | null;
-  /** The résumé's ATS score for this application, when the AI Agent prepared it. */
-  ats?: AtsRecord | null;
 };
 
-export type AtsRecord = { score: number; firstScore: number; history: number[]; target: number | null; rounds: number; scoredAt: string | null; via: string };
 
 const GUEST_KEY = "tepobaby.savedJobs";
 const XHR = { "Content-Type": "application/json", "X-Requested-With": "XmlHttpRequest" };
@@ -173,14 +170,13 @@ export function useSavedJobs(signedIn: boolean) {
     isSaved,
     /** Heart button: save if not saved, unsave if saved. */
     toggle: (p: Posting) => (isSaved(p.id) ? remove(p.id, jobs) : upsert(fromPosting(p), jobs)),
-    /** Applying: `ats` keeps the AI Agent's résumé score with the application. */
-    setStatus: (id: string, status: JobStatus, ats?: AtsRecord) => {
+    setStatus: (id: string, status: JobStatus) => {
       const job = jobs.find((j) => j.id === id);
       if (!job) return;
       const now = new Date().toISOString();
       upsert(
         status === "applied"
-          ? { ...job, status, appliedAt: job.appliedAt ?? now, stage: job.stage ?? "applied", stageUpdatedAt: job.stageUpdatedAt ?? now, ats: ats ?? job.ats ?? null }
+          ? { ...job, status, appliedAt: job.appliedAt ?? now, stage: job.stage ?? "applied", stageUpdatedAt: job.stageUpdatedAt ?? now }
           : { ...job, status, appliedAt: null, stage: null, stageUpdatedAt: null },
         jobs,
       );

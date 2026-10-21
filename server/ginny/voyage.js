@@ -9,7 +9,7 @@ export const VOYAGE_MODEL = process.env.VOYAGE_MODEL || "voyage-4";
 export const voyageEnabled = () => !!process.env.VOYAGE_API_KEY;
 
 // Embeddings already fetched, by input type + text. The same job description and résumé lines are
-// embedded again on every rescore (Ginny re-runs, each AI Agent round), so this saves most calls.
+// embedded again on every rescore (each time Ginny re-runs a job), so this saves most calls.
 // In memory: per server process locally, per warm function instance on Vercel.
 const cache = new Map();
 const CACHE_MAX = 4000;
