@@ -24,6 +24,7 @@ import { Bank, BankEntry, bankSections, bulletIndex, mergeSkills, sectionsFrom, 
 import { ResumeSections, runAtsDetailed } from "./ginny";
 import { Posting } from "./postings";
 import { buildResumePdf, loadHeader, toBase64 } from "./resumePdf";
+import { canSaveLocally, pushKey } from "./accountSync";
 
 /** Claude Code's reply, as parsed from the JSON the student pastes back. */
 export type RawCuration = {
@@ -86,7 +87,9 @@ export function loadAgent(): AgentState {
 
 export function saveAgent(s: AgentState) {
   try {
+    if (!canSaveLocally()) return;
     localStorage.setItem(KEY, JSON.stringify(s));
+    pushKey(KEY);
   } catch {
     try {
       // Storage full: drop job descriptions (they can be fetched again) and retry.

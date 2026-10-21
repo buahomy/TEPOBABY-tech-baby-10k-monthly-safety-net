@@ -23,6 +23,7 @@ import { customExpected, getProblem, problemList, warmCache } from "./neetcode/i
 import { schoolForDomain } from "./connect/schools.js";
 import { applyQueue } from "./apply/queue.js";
 import { agentRoutes } from "./agent/routes.js";
+import { userDataRoutes } from "./userData.js";
 
 const {
   GOOGLE_CLIENT_ID,
@@ -145,7 +146,11 @@ app.use("/api/saved/import", express.json({ limit: "512kb" })); // up to 500 sav
 const globalJson = express.json({ limit: "8kb" });
 app.use("/api/neetcode/expected", express.json({ limit: "64kb" })); // custom test inputs
 // Skip the global parser for Ginny (raw PDF uploads) and for bodies a route-specific parser already read.
-app.use((req, res, next) => (req.path.startsWith("/api/ginny/") || req._body ? next() : globalJson(req, res, next)));
+// Ginny (raw PDF uploads), account data (/api/me: agent progress and code drafts can be large) and the
+// AI Agent bring their own body parsers with bigger limits; everything else uses the small global one.
+app.use((req, res, next) =>
+  /^\/api\/(ginny|me|agent)\//.test(req.path) || req._body ? next() : globalJson(req, res, next),
+);
 app.use("/api", (_req, res, next) => {
   res.set("Cache-Control", "no-store");
   next();
@@ -271,6 +276,7 @@ ginnyRoutes(app, {
   requireXhr,
   requireUser,
 });
+userDataRoutes(app, { requireXhr, requireUser });
 agentRoutes(app, {
   readSession: (req) => readSession(parseCookies(req.headers.cookie)[SESSION_COOKIE]),
   requireXhr,
@@ -389,8 +395,22 @@ app.get("/api/postings", async (req, res) => {
   const limit = Math.min(Math.max(Number.parseInt(req.query.limit, 10) || 30, 1), 500);
   const offset = Math.max(Number.parseInt(req.query.offset, 10) || 0, 0);
   res.set("Cache-Control", "public, max-age=60");
-  // visa=1: hide roles that say they don't sponsor · visa=2: only roles that say they sponsor
-  res.json(queryPostings({ level, maxHours, visaFriendly: req.query.visa === "1" || req.query.visa === "2", sponsorsOnly: req.query.visa === "2", limit, offset }));
+  // visa=1: hide roles whose job description says they don't sponsor or need U.S. citizenship / a clearance
+  const countries = String(req.query.countries || "US")
+    .split(",")
+    .map((c) => c.trim().toUpperCase())
+    .filter((c) => ["US", "UK", "CA"].includes(c));
+  res.json(
+    queryPostings({
+      level,
+      maxHours,
+      visaFriendly: req.query.visa === "1",
+      countries: countries.length ? countries : ["US"],
+      research: req.query.research === "1",
+      limit,
+      offset,
+    }),
+  );
 });
 
 // Launchpad logos: companies in "Company tiers" (src/data/tiers.json) and the programs &

@@ -16,13 +16,6 @@
       "domain": "wellfound.com"
     },
     {
-      "name": "Hacker News: Who is hiring?",
-      "detail": "Monthly thread of startups hiring now",
-      "kind": "Startup",
-      "url": "https://news.ycombinator.com/submitted?id=whoishiring",
-      "domain": "news.ycombinator.com"
-    },
-    {
       "name": "Lenny's Jobs",
       "detail": "Product, growth, AI and startup roles curated by Lenny's Newsletter",
       "kind": "Startup",

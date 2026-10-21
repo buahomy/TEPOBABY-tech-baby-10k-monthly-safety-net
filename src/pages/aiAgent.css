@@ -708,3 +708,80 @@
   opacity: 0;
   cursor: pointer;
 }
+
+/* Edit: the experience library, section by section */
+.m01 .ag-library {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.m01 .ag-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.m01 .ag-section h4,
+.m01 .ag-section summary {
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.m01 .ag-card-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid var(--stroke);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.m01 .ag-card-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.m01 .ag-card-fields input,
+.m01 .ag-card-edit textarea,
+.m01 .ag-edit-line {
+  width: 100%;
+  min-width: 0;
+  padding: 7px 9px;
+  border: 1px solid var(--stroke-strong);
+  border-radius: 8px;
+  color: var(--text);
+  background: rgba(0, 0, 0, 0.2);
+  font: inherit;
+  font-size: 12.5px;
+  resize: vertical;
+}
+
+.m01 .ag-card-fields input:first-child {
+  font-weight: 700;
+}
+
+.m01 .ag-card-foot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.m01 .ag-card-foot .ag-skillform {
+  flex: 1;
+}
+
+.m01 .ag-remove {
+  color: #fca5a5;
+  font-size: 11.5px;
+}
+
+.m01 .ag-add {
+  align-self: flex-start;
+}

@@ -150,6 +150,41 @@ export function sponsorshipFromText(raw = "") {
   return null;
 }
 
+// ---- Research & universities ----
+
+const RESEARCH_ORG =
+  /\b(university|college|institute of technology|school of medicine|medical school|national lab\w*|laborator(y|ies)|lawrence livermore|lawrence berkeley|argonne|oak ridge|sandia|los alamos|brookhaven|fermilab|pacific northwest national|nrel|jet propulsion|jpl|nasa|\bnih\b|national institutes? of health|lincoln laboratory|howard hughes|broad institute|salk institute|smithsonian)\b/i;
+const RESEARCH_TITLE =
+  /\b(research (intern\w*|assistant|aide|fellow\w*|technician|trainee|program|scholar\w*)|undergraduate research|summer research|reu\b|pre-?doctoral|post-?bacc\w*|research experience)\b/i;
+
+/** Research roles and roles at universities, national labs and research institutes. */
+export const isResearch = (p) => !!p.research || RESEARCH_TITLE.test(p.title || "") || RESEARCH_ORG.test(p.company || "");
+
+// ---- Country (the feed's US / UK / CA filter) ----
+
+const CA_WORDS = /\b(canada|ontario|quebec|québec|british columbia|alberta|manitoba|saskatchewan|nova scotia|new brunswick|newfoundland|toronto|montr[eé]al|vancouver|ottawa|calgary|edmonton|waterloo|mississauga|markham|kitchener|winnipeg|halifax)\b/i;
+const CA_CODES = /,\s*(?:ON|QC|BC|AB|MB|SK|NS|NB|NL|PE)\b|\bCAN\b/;
+const UK_WORDS = /\b(united kingdom|england|scotland|wales|northern ireland|london(?!,\s*(?:ON|ontario|ky|oh)\b)|manchester(?!,\s*(?:nh|ct|ma)\b)|edinburgh|glasgow|bristol(?!,\s*(?:ct|tn|va|ri|pa)\b)|leeds|liverpool|belfast|cardiff|sheffield|nottingham|newcastle upon tyne|cambridge,\s*(?:uk|england|united kingdom)|oxford,\s*(?:uk|england)|reading,\s*(?:uk|england|berkshire))\b|\b(uk|gbr|u\.k\.)\b/i;
+
+function countryOfPlace(place) {
+  if (/\b(united states|usa|u\.s\.a?\.?)\b/i.test(place)) return "US";
+  if (CA_WORDS.test(place) || CA_CODES.test(place)) return "CA";
+  if (UK_WORDS.test(place)) return "UK";
+  if (FOREIGN.test(place)) return "other";
+  if (/\bremote\b/i.test(place) || isUSLocation(place)) return /^\d+ locations?$/i.test(place.trim()) ? null : "US";
+  return null;
+}
+
+/** Countries a posting is in ("US" / "CA" / "UK" / "other"), from its location; [] if unknown. */
+export function countriesOf(location = "") {
+  const out = new Set();
+  for (const place of String(location).split(/\s*(?:·|;|\||\n)\s*/)) {
+    const c = place && place !== "—" ? countryOfPlace(place) : null;
+    if (c) out.add(c);
+  }
+  return [...out];
+}
+
 /** Simplify-style sponsorship text or emoji flags → yes / no / citizens / null (unknown). */
 export function sponsorship(value = "", title = "") {
   const v = String(value).toLowerCase();
@@ -190,6 +225,7 @@ export function normalizeUrl(url) {
 export const DAY = 24 * 60 * 60 * 1000;
 export const MAX_AGE_MS = 7 * DAY;
 export const PROGRAM_MAX_AGE_MS = 60 * DAY;
+export const RESEARCH_MAX_AGE_MS = 30 * DAY; // universities keep research roles open for weeks
 
 export const USER_AGENT = "TepobabyJobsBot/1.0 (+student job aggregator; contact via repo)";
 

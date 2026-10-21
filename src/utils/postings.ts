@@ -15,6 +15,8 @@ export type Posting = {
   sponsorship: "yes" | "no" | "citizens" | null;
   domain: string | null; // company website, used for its logo
   program?: boolean; // rotational / development program
+  countries?: ("US" | "CA" | "UK" | "other")[];
+  research?: boolean; // research role or at a university / lab
 };
 
 export type PostingsResponse = {
@@ -30,7 +32,8 @@ export async function fetchPostings(opts: {
   level: Level;
   window: WindowId;
   hideNoSponsorship: boolean;
-  sponsorsOnly?: boolean;
+  countries?: string[];
+  research?: boolean;
   offset?: number;
   limit?: number;
   signal?: AbortSignal;
@@ -41,8 +44,9 @@ export async function fetchPostings(opts: {
     limit: String(opts.limit ?? 25),
     offset: String(opts.offset ?? 0),
   });
-  if (opts.sponsorsOnly) params.set("visa", "2");
-  else if (opts.hideNoSponsorship) params.set("visa", "1");
+  if (opts.countries?.length) params.set("countries", opts.countries.join(","));
+  if (opts.research) params.set("research", "1");
+  if (opts.hideNoSponsorship) params.set("visa", "1");
   const res = await fetch(`/api/postings?${params}`, { signal: opts.signal });
   if (!res.ok) throw new Error("Couldn't load postings.");
   return res.json();

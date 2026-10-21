@@ -42,6 +42,8 @@ export function applyQueue({ gradYear, gradMonth, startYear, startMonth, needsSp
   const out = [];
   for (const p of allPostings()) {
     if (!(p.level === "entry" || p.program) || p.level === "internship" || p.level === "underclassmen") continue;
+    // U.S. roles only (sponsorship rules here are about U.S. visas); unknown places count as U.S.
+    if (p.countries?.length && !p.countries.includes("US")) continue;
     if (needsSponsorship) {
       if (p.sponsorship === "no" || p.sponsorship === "citizens") continue;
       if (CLEARANCE.test(p.title)) continue;

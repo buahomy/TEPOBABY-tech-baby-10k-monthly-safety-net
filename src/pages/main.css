@@ -943,3 +943,42 @@
   padding: 0 16px;
   color: var(--text-secondary);
 }
+
+/* Feed filters: country (US / UK / CA) and research */
+.m01 .feed-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.m01 .feed-filters button {
+  padding: 5px 11px;
+  border: 1px solid var(--stroke-strong);
+  border-radius: 999px;
+  color: var(--text-tertiary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.m01 .feed-filters button.is-on {
+  border-color: transparent;
+  color: #0b0d17;
+  background: var(--text);
+}
+
+.m01 .feed-filters .feed-research {
+  margin-left: auto;
+}
+
+.m01 .chip-research {
+  padding: 1px 6px;
+  border-radius: 999px;
+  color: #c4b5fd;
+  background: rgba(167, 139, 250, 0.14);
+  font-size: 9.5px;
+  font-weight: 700;
+}
+
+.m01 .chip-country {
+  font-size: 11px;
+}

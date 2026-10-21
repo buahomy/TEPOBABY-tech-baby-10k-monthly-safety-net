@@ -2,6 +2,7 @@
 // concept guesses, solved problems, and code drafts.
 
 import { useCallback, useEffect, useState } from "react";
+import { canSaveLocally, pushKey } from "../utils/accountSync";
 
 const KEY = "tepobaby.neetcode.v1";
 const DRAFTS = "tepobaby.neetcode.drafts.v1";
@@ -25,7 +26,9 @@ function read(): Progress {
 
 function write(p: Progress) {
   try {
+    if (!canSaveLocally()) return;
     localStorage.setItem(KEY, JSON.stringify(p));
+    pushKey(KEY);
   } catch {
     // storage full or blocked: progress just won't persist
   }
@@ -104,7 +107,9 @@ export function saveDraft(slug: string, lang: string, code: string | null) {
     const all = JSON.parse(localStorage.getItem(DRAFTS) || "{}");
     if (code === null) delete all[`${slug}:${lang}`];
     else all[`${slug}:${lang}`] = code;
+    if (!canSaveLocally()) return;
     localStorage.setItem(DRAFTS, JSON.stringify(all));
+    pushKey(DRAFTS);
   } catch {
     // ignore
   }
@@ -121,7 +126,9 @@ export function useLang() {
   const setLang = useCallback((l: "python3" | "javascript") => {
     setLangState(l);
     try {
+      if (!canSaveLocally()) return;
       localStorage.setItem("tepobaby.neetcode.lang", l);
+      pushKey("tepobaby.neetcode.lang");
     } catch {
       // ignore
     }

@@ -5,6 +5,7 @@
 
 import type { BankEntry } from "../../shared/agentPrompt.js";
 import type { ResumeSections } from "./ginny";
+import { canSaveLocally } from "./accountSync";
 
 export type { BankEntry };
 export type Bank = {
@@ -41,6 +42,7 @@ export async function loadBank(signedIn: boolean): Promise<Bank> {
 
 export async function saveBank(signedIn: boolean, bank: Bank): Promise<void> {
   try {
+    if (!canSaveLocally()) return;
     localStorage.setItem(KEY, JSON.stringify(bank));
   } catch {
     // storage full: still saved to the account below when signed in

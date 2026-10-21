@@ -2,6 +2,7 @@
 
 import { Answers, MONTHS, Profile } from "./profile";
 import { SavedJob } from "./savedJobs";
+import { canSaveLocally, pushKey } from "./accountSync";
 
 const XHR = { "X-Requested-With": "XmlHttpRequest" };
 
@@ -74,8 +75,10 @@ export function loadSelectedJobId(): string | null {
 }
 export function saveSelectedJobId(id: string | null) {
   try {
+    if (!canSaveLocally()) return;
     if (id) localStorage.setItem(SELECTED_KEY, id);
     else localStorage.removeItem(SELECTED_KEY);
+    pushKey(SELECTED_KEY);
   } catch {
     // ignore
   }

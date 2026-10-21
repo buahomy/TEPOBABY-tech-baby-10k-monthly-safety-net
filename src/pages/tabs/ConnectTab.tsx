@@ -5,6 +5,7 @@ import { copyText, linkedinPage, peopleUrl, searchUrl } from "../../utils/linked
 import { Profile } from "../../utils/profile";
 import { SavedJobsApi } from "../../utils/savedJobs";
 import "../connect.css";
+import { canSaveLocally, pushKey } from "../../utils/accountSync";
 
 // Connect: pick a job (or type a company), then
 //   1. Find alumni from your school there: LinkedIn People tab filtered by your school, an
@@ -33,7 +34,9 @@ function readPrefs(): Prefs {
 
 function writePrefs(p: Prefs) {
   try {
+    if (!canSaveLocally()) return;
     localStorage.setItem(PREFS, JSON.stringify(p));
+    pushKey(PREFS);
   } catch {
     // ignore
   }

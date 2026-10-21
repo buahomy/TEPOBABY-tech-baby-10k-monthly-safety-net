@@ -9,11 +9,14 @@
 // Their search is loose (keyword matches anywhere in the job), so every result is filtered by title:
 // it must be early-career (classify), and either a program, a tech role, or, at tech companies
 // (`allRoles`), any early-career role, since finance or sales jobs at Microsoft are tech-industry jobs.
-// Jobs outside the U.S. are dropped (Tepobaby is for U.S. students).
+// Only U.S., Canada and UK roles are kept (the feed's country filter).
 //
 // Microsoft answers bursts with 429 Too Many Requests, so its searches run one at a time, spaced out.
 
-import { DAY, classify, cleanText, foreignTitle, isProgram, isRelevant, isUSLocation, mapLimit, maxAgeFor } from "../classify.js";
+import { DAY, classify, cleanText, countriesOf, isProgram, isRelevant, mapLimit, maxAgeFor } from "../classify.js";
+
+// Titles written for a non-English market ("Sales Path - German Speaking Market").
+const OTHER_MARKET = /\b(german|french|spanish|hebrew|danish|norwegian|swedish|dutch|italian|japanese|korean|mandarin|portuguese|polish|arabic|turkish|nordic|dach|bnl)\b[^-]*\b(speaking|market|path)\b/i;
 
 const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0 Safari/537.36";
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -47,7 +50,9 @@ function posting({ id, source, company, domain, title, location, url, postedAt, 
   title = cleanText(title);
   const level = classify(title);
   if (!level) return null;
-  if (!isUSLocation(cleanText(location)) || foreignTitle(title)) return null;
+  // U.S., Canada and UK roles (the feed's country filter); unknown places are kept.
+  const where = countriesOf(cleanText(location));
+  if ((where.length && !where.some((c) => c === "US" || c === "CA" || c === "UK")) || OTHER_MARKET.test(title)) return null;
   if (!allRoles && !isRelevant(title)) return null;
   if (!postedAt || Date.now() - postedAt > maxAgeFor(title)) return null;
   return {
@@ -72,29 +77,33 @@ const MS_QUERIES = ["rotation", "intern", "university", "new grad"];
 
 async function microsoft() {
   const found = new Map();
-  for (const q of MS_QUERIES) {
-    for (let start = 0; start < 20; start += 10) {
-      await sleep(3000);
-      const params = new URLSearchParams({ domain: "microsoft.com", query: q, location: "United States", start: String(start) });
-      const d = await getJson(`https://apply.careers.microsoft.com/api/pcsx/search?${params}`);
-      const list = d?.data?.positions || [];
-      for (const j of list) {
-        const p = posting({
-          id: `ms:${j.displayJobId || j.id}`,
-          source: "Microsoft Careers",
-          company: "Microsoft",
-          domain: "microsoft.com",
-          title: j.name,
-          location: (j.locations || []).join(" · "),
-          url: `https://apply.careers.microsoft.com/careers/job/${j.id}`,
-          postedAt: j.postedTs ? j.postedTs * 1000 : null,
-          postedApprox: false,
-          allRoles: true,
-        });
-        if (p) found.set(p.id, p);
-      }
-      if (list.length < 10) break;
+  const searches = [
+    ...MS_QUERIES.flatMap((q) => [0, 10].map((start) => [q, "United States", start])),
+    ...["rotation", "intern"].flatMap((q) => [[q, "Canada", 0], [q, "United Kingdom", 0]]),
+  ];
+  const short = new Set(); // queries whose first page came back short: no second page needed
+  for (const [q, location, start] of searches) {
+    if (start > 0 && short.has(`${q}|${location}`)) continue;
+    await sleep(3000);
+    const params = new URLSearchParams({ domain: "microsoft.com", query: q, location, start: String(start) });
+    const d = await getJson(`https://apply.careers.microsoft.com/api/pcsx/search?${params}`);
+    const list = d?.data?.positions || [];
+    for (const j of list) {
+      const p = posting({
+        id: `ms:${j.displayJobId || j.id}`,
+        source: "Microsoft Careers",
+        company: "Microsoft",
+        domain: "microsoft.com",
+        title: j.name,
+        location: (j.locations || []).join(" · "),
+        url: `https://apply.careers.microsoft.com/careers/job/${j.id}`,
+        postedAt: j.postedTs ? j.postedTs * 1000 : null,
+        postedApprox: false,
+        allRoles: true,
+      });
+      if (p) found.set(p.id, p);
     }
+    if (list.length < 10) short.add(`${q}|${location}`);
   }
   return [...found.values()];
 }
@@ -105,8 +114,12 @@ const AMAZON_QUERIES = ["rotational program", "leadership development program", 
 
 async function amazon() {
   const found = new Map();
-  await mapLimit(AMAZON_QUERIES, 2, async (q) => {
-    const params = new URLSearchParams({ base_query: q, country: "USA", result_limit: "100", sort: "recent", offset: "0" });
+  const searches = [
+    ...AMAZON_QUERIES.map((q) => [q, "USA"]),
+    ...["rotational program", "intern", "new grad"].flatMap((q) => [[q, "CAN"], [q, "GBR"]]),
+  ];
+  await mapLimit(searches, 2, async ([q, country]) => {
+    const params = new URLSearchParams({ base_query: q, country, result_limit: "100", sort: "recent", offset: "0" });
     const d = await getJson(`https://www.amazon.jobs/en/search.json?${params}`);
     for (const j of d.jobs || []) {
       const p = posting({
