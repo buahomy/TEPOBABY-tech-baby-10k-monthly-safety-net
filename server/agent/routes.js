@@ -217,7 +217,7 @@ export function agentRoutes(app, { readSession, requireXhr, requireUser }) {
     if (!limit(`gen:${who(req)}`, 60, HOUR)) return res.status(429).json({ error: "Lots of Generate rounds this hour. Try again in a bit." });
     const b = req.body || {};
     const bank = cleanBank(b.bank);
-    if (!bank?.entries.length) return res.status(400).json({ error: "Add your experience first." });
+    if (!bank?.entries.length) return res.status(400).json({ error: "Add your experience to Applicant's resources first." });
     const list = (v, n, m) => (Array.isArray(v) ? v : []).slice(0, n).map((x) => str(x, m)).filter(Boolean);
     try {
       const input = {
@@ -234,7 +234,7 @@ export function agentRoutes(app, { readSession, requireXhr, requireUser }) {
       if (engine()) return res.json(await generateRound(input));
       const relay = await relayFor(readSession(req));
       if (relay) return res.json(await relayGenerate(relay, input));
-      return res.status(503).json({ error: "Generate isn't available right now. Use the manual steps." });
+      return res.status(503).json({ error: "Generate isn't available right now: Claude Code isn't connected (run `npm run relay` on the Mac)." });
     } catch (err) {
       if (err.status && err.status < 600) return res.status(err.status).json({ error: err.message });
       console.error("[agent] generate failed:", err.message);

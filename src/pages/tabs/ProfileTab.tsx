@@ -8,11 +8,12 @@ import { timeAgo } from "../../utils/postings";
 import { Profile, SECTIONS, STEPS, labelFor } from "../../utils/profile";
 import { JobStatus, STAGES, SavedJob, SavedJobsApi, Stage } from "../../utils/savedJobs";
 
-// Profile tab: account, saved / applied jobs, the AI Agent, every onboarding answer grouped by
-// section, and edit / sign-out actions.
+// Profile tab: account, saved / applied jobs (each saved job with the AI Agent's ✨ Generate), the
+// AI Agent's Applicant's resources, every onboarding answer grouped by section, and edit / sign-out.
 
-// Loaded on first visit to Profile, so it's not part of the app's first download.
-const AIAgent = lazy(() => import("../AIAgent"));
+// Loaded on first visit to Profile, so the AI Agent (and its PDF code) isn't in the app's first download.
+const ApplicantResources = lazy(() => import("../AIAgent"));
+const JobAgent = lazy(() => import("../AIAgent").then((m) => ({ default: m.JobAgent })));
 
 type Props = {
   user: User | null; // null = guest
@@ -103,9 +104,17 @@ function MyJobs({ saved, onBrowse, signedIn }: { saved: SavedJobsApi; onBrowse: 
                 {j.status === "applied" ? (
                   <StageToggle job={j} onStage={(st) => saved.setStage(j.id, st)} onUnapply={() => saved.setStatus(j.id, "saved")} />
                 ) : (
-                  <button type="button" className="status-btn" onClick={() => saved.setStatus(j.id, "applied")}>
-                    Mark applied
-                  </button>
+                  <Suspense
+                    fallback={
+                      <div className="saved-actions">
+                        <button type="button" className="status-btn" onClick={() => saved.setStatus(j.id, "applied")}>
+                          Mark applied
+                        </button>
+                      </div>
+                    }
+                  >
+                    <JobAgent job={j} signedIn={signedIn} onApplied={(ats) => saved.setStatus(j.id, "applied", ats)} />
+                  </Suspense>
                 )}
                 {j.status === "applied" && <ApplicationDetails job={j} />}
               </div>
@@ -222,8 +231,8 @@ export default function ProfileTab({ user, profile, saved, onBrowse, onEdit, onS
       </header>
 
       <MyJobs saved={saved} onBrowse={onBrowse} signedIn={!!user} />
-      <Suspense fallback={<section className="block"><p className="empty">Loading the AI Agent…</p></section>}>
-        <AIAgent signedIn={!!user} profile={profile} saved={saved} />
+      <Suspense fallback={<section className="block"><p className="empty">Loading your resources…</p></section>}>
+        <ApplicantResources signedIn={!!user} />
       </Suspense>
 
       {SECTIONS.map((section) => (

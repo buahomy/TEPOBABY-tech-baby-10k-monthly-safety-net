@@ -21,7 +21,6 @@ import { ginnyRoutes } from "./ginny/routes.js";
 import { canUseSharedKey, companyOptions, createClientSecret, sessionConfig } from "./interview/realtime.js";
 import { customExpected, getProblem, problemList, warmCache } from "./neetcode/index.js";
 import { schoolForDomain } from "./connect/schools.js";
-import { applyQueue } from "./apply/queue.js";
 import { agentRoutes } from "./agent/routes.js";
 import { userDataRoutes } from "./userData.js";
 
@@ -321,25 +320,6 @@ app.post("/api/interview/config", requireXhr, express.json({ limit: "4kb" }), as
     }
     res.status(502).json({ error: "Couldn't start a voice session. Please try again." });
   }
-});
-
-// ---- Apply agent: today's roles that fit the student's graduation, start date and visa ----
-
-app.get("/api/apply/queue", async (req, res) => {
-  await syncFromStore();
-  const int = (v, lo, hi, d) => {
-    const n = Number.parseInt(v, 10);
-    return Number.isInteger(n) && n >= lo && n <= hi ? n : d;
-  };
-  const now = new Date();
-  const gradYear = int(req.query.gradYear, 2020, 2040, now.getFullYear());
-  const gradMonth = int(req.query.gradMonth, 1, 12, 5);
-  const startYear = int(req.query.startYear, 2020, 2040, gradYear);
-  const startMonth = int(req.query.startMonth, 1, 12, gradMonth + 1 > 12 ? 1 : gradMonth + 1);
-  res.set("Cache-Control", "public, max-age=60");
-  res.json({
-    roles: applyQueue({ gradYear, gradMonth, startYear, startMonth, needsSponsorship: req.query.visa === "1" }),
-  });
 });
 
 // ---- Connect: the signed-in student's school, from their .edu email domain ----

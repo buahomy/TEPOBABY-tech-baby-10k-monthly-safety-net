@@ -1,12 +1,12 @@
-// AI Agent: "Generate" runs each curation round with Claude Code.
+// AI Agent: "✨ Generate" (on a saved job) runs each curation round with Claude Code.
 //
 // When Tepobaby's server runs on a computer with Claude Code installed and signed in (e.g. `npm run dev`
 // on the author's Mac), it runs `claude -p` headless with no tools, on that computer's Claude plan.
-// No API key. Where Claude Code isn't available (like the live site on Vercel), Generate is off and the
-// app shows the copy/paste steps instead.
+// No API key. On the live site (Vercel), Generate reaches Claude Code on the author's Mac through the
+// relay (server/relay.js); with neither, Generate reports that it isn't available.
 //
 // The rules live in shared/agentPrompt.js, and the browser re-checks every reply against the student's
-// experience bank before using it.
+// Applicant's resources before using it.
 
 import { spawn, spawnSync } from "node:child_process";
 import { CURATE_SHAPE, CURATE_SYSTEM, curatePrompt } from "../../shared/agentPrompt.js";
@@ -78,6 +78,6 @@ function runClaudeCode(prompt) {
  * @param {Parameters<typeof curatePrompt>[0]} input
  */
 export async function generateRound(input) {
-  if (!engine()) throw Object.assign(new Error("Generate needs Claude Code on this computer. Use the copy and paste steps instead."), { status: 503 });
+  if (!engine()) throw Object.assign(new Error("Generate needs Claude Code on this computer."), { status: 503 });
   return { engine: "claude-code", curated: await runClaudeCode(curatePrompt(input)) };
 }

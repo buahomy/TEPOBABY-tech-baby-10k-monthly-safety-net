@@ -1,38 +1,5 @@
-/* AI Agent (Profile → My jobs). Built on the mess01.css tokens. */
+/* AI Agent (Profile): Applicant's resources, and ✨ Generate on saved jobs. Built on the mess01.css tokens. */
 
-.m01 .ag-facts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.m01 .ag-facts > span,
-.m01 .ag-facts > label {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 9px;
-  border: 1px solid var(--stroke);
-  border-radius: 999px;
-  color: var(--text-secondary);
-  background: rgba(255, 255, 255, 0.03);
-  font-size: 11.5px;
-  font-weight: 600;
-}
-
-.m01 .ag-facts select {
-  border: none;
-  color: var(--text);
-  background: transparent;
-  font: inherit;
-  font-weight: 700;
-}
-
-.m01 .ag-facts option {
-  color: #111;
-}
-
-.m01 .ag-actions,
 .m01 .ag-row-actions {
   display: flex;
   flex-wrap: wrap;
@@ -51,11 +18,6 @@
   font-size: 12.5px;
   font-weight: 700;
   text-decoration: none;
-}
-
-.m01 .ag-actions .ag-primary,
-.m01 .ag-actions .ag-secondary {
-  flex: 1;
 }
 
 .m01 .ag-primary {
@@ -109,106 +71,6 @@
   }
 }
 
-.m01 .ag-tabs {
-  grid-template-columns: 1fr 1fr;
-  gap: 3px;
-}
-
-.m01 .ag-tabs button {
-  font-size: 11.5px;
-}
-
-.m01 .ag-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  list-style: none;
-}
-
-.m01 .ag-row,
-.m01 .ag-card-head {
-  display: flex;
-  width: 100%;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 10px;
-  text-align: left;
-}
-
-.m01 .ag-row {
-  flex-wrap: wrap;
-  border: 1px solid var(--stroke);
-  border-radius: 12px;
-}
-
-.m01 .ag-card {
-  border: 1px solid var(--stroke);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.m01 .ag-card.is-open {
-  border-color: rgba(165, 180, 252, 0.35);
-}
-
-.m01 .ag-row-text {
-  display: flex;
-  min-width: 0;
-  flex: 1;
-  flex-direction: column;
-}
-
-.m01 .ag-row-text strong {
-  color: var(--text);
-  font-size: 13px;
-}
-
-.m01 .ag-row-text small {
-  overflow: hidden;
-  color: var(--text-tertiary);
-  font-size: 11.5px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.m01 .ag-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
-.m01 .ag-score {
-  display: flex;
-  min-width: 44px;
-  flex-direction: column;
-  align-items: center;
-  padding: 4px 8px;
-  border-radius: 10px;
-  color: #fcd34d;
-  background: rgba(251, 191, 36, 0.12);
-  font-size: 16px;
-  font-weight: 800;
-  line-height: 1.1;
-}
-
-.m01 .ag-score.is-ok {
-  color: var(--emerald);
-  background: var(--emerald-soft);
-}
-
-.m01 .ag-score small {
-  color: var(--text-tertiary);
-  font-size: 9px;
-  font-weight: 600;
-}
-
-.m01 .ag-detail {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 0 10px 12px;
-}
-
 .m01 .ag-box {
   display: flex;
   flex-direction: column;
@@ -229,51 +91,6 @@
   color: var(--text-secondary);
   font-size: 12px;
   line-height: 1.45;
-}
-
-.m01 .ag-fill {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.m01 .ag-fill small {
-  color: var(--text-tertiary);
-  font-size: 11px;
-}
-
-.m01 .ag-fill textarea {
-  padding: 8px;
-  border: 1px solid var(--stroke-strong);
-  border-radius: 8px;
-  color: var(--text);
-  background: rgba(0, 0, 0, 0.2);
-  font: inherit;
-  font-size: 12.5px;
-  resize: vertical;
-}
-
-.m01 .ag-skills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.m01 .ag-skills label {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 9px;
-  border: 1px solid var(--stroke-strong);
-  border-radius: 999px;
-  color: var(--text);
-  font-size: 12px;
-}
-
-.m01 .ag-skills em {
-  color: #fca5a5;
-  font-size: 10px;
-  font-style: normal;
 }
 
 .m01 .ag-changes {
@@ -305,54 +122,6 @@
   font-size: 10.5px;
 }
 
-.m01 .ag-answers {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.m01 .ag-answers dt {
-  color: var(--text-tertiary);
-  font-size: 11px;
-}
-
-.m01 .ag-answers dd {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  color: var(--text);
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.m01 .ag-answers dd button {
-  color: #a5b4fc;
-  font-size: 11.5px;
-  font-weight: 700;
-}
-
-.m01 .ag-fields {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.m01 .ag-fields button {
-  padding: 5px 10px;
-  border: 1px solid var(--stroke-strong);
-  border-radius: 999px;
-  color: var(--text-tertiary);
-  font-size: 11.5px;
-  font-weight: 700;
-}
-
-.m01 .ag-fields button.is-on {
-  border-color: transparent;
-  color: #0b0d17;
-  background: var(--text);
-}
-
 .m01 .ag-title {
   display: inline-flex;
   align-items: center;
@@ -367,26 +136,6 @@
 }
 
 /* Experience bank */
-.m01 .ag-bank {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 12px;
-  border: 1px solid rgba(34, 211, 238, 0.25);
-  border-radius: 14px;
-  background: rgba(34, 211, 238, 0.05);
-}
-
-.m01 .ag-bank-head h3 {
-  color: var(--text);
-  font-size: 13.5px;
-  font-weight: 700;
-}
-
-.m01 .ag-bank-head span {
-  color: var(--text-secondary);
-  font-size: 11.5px;
-}
 
 .m01 .ag-file {
   position: relative;
@@ -400,25 +149,12 @@
   cursor: pointer;
 }
 
-.m01 .ag-skillform,
-.m01 .ag-entryform {
+.m01 .ag-skillform {
   display: flex;
   gap: 6px;
 }
 
-.m01 .ag-entryform {
-  flex-direction: column;
-  padding: 10px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.m01 .ag-skillform input,
-.m01 .ag-entryform input,
-.m01 .ag-entryform select,
-.m01 .ag-entryform textarea,
-.m01 .ag-entries textarea,
-.m01 .ag-q textarea {
+.m01 .ag-skillform input {
   min-width: 0;
   flex: 1;
   padding: 8px 10px;
@@ -429,10 +165,6 @@
   font: inherit;
   font-size: 12.5px;
   resize: vertical;
-}
-
-.m01 .ag-entryform option {
-  color: #111;
 }
 
 .m01 .ag-skillchips {
@@ -458,80 +190,7 @@
   font-size: 10px;
 }
 
-.m01 .ag-entries {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  list-style: none;
-}
-
-.m01 .ag-entries > li {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 10px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.m01 .ag-entries ul {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  list-style: none;
-}
-
-.m01 .ag-entries ul li {
-  display: flex;
-}
-
-.m01 .ag-entries ul textarea {
-  width: 100%;
-}
-
-.m01 .ag-entry-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 6px;
-}
-
-.m01 .ag-entry-head strong {
-  color: var(--text);
-  font-size: 12.5px;
-}
-
-.m01 .ag-entry-head small {
-  color: var(--text-tertiary);
-  font-size: 11px;
-}
-
-.m01 .ag-entry-head button {
-  margin-left: auto;
-  color: #fca5a5;
-  font-size: 11.5px;
-  font-weight: 700;
-}
-
 /* Questions & curated resume */
-.m01 .ag-q {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.m01 .ag-q p {
-  color: var(--text);
-  font-weight: 600;
-}
-
-.m01 .ag-yes {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--text-secondary);
-  font-size: 12px;
-}
 
 .m01 .ag-cv-entry {
   display: flex;
@@ -542,14 +201,6 @@
 .m01 .ag-cv-entry strong {
   color: var(--text);
   font-size: 12.5px;
-}
-
-.m01 .ag-tabs {
-  grid-template-columns: 1fr 1fr 1fr;
-}
-
-.m01 .ag-tabs button {
-  font-size: 11px;
 }
 
 .m01 .ag-pro {
@@ -578,30 +229,6 @@
 }
 
 /* Compact layout */
-.m01 .ag-run {
-  width: 100%;
-}
-
-.m01 .ag-kinds {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.m01 .ag-kinds button {
-  padding: 5px 10px;
-  border: 1px solid var(--stroke-strong);
-  border-radius: 999px;
-  color: var(--text-tertiary);
-  font-size: 11.5px;
-  font-weight: 700;
-}
-
-.m01 .ag-kinds button.is-on {
-  border-color: transparent;
-  color: #04212b;
-  background: #67e8f9;
-}
 
 .m01 .ag-box textarea {
   padding: 8px 10px;
@@ -612,50 +239,6 @@
   font: inherit;
   font-size: 12px;
   resize: vertical;
-}
-
-.m01 .ag-bank .ag-file {
-  width: 100%;
-}
-
-.m01 .ag-auto {
-  padding: 5px 9px;
-  border: 1px solid var(--stroke);
-  border-radius: 999px;
-  color: var(--text-tertiary);
-  font-size: 11.5px;
-  font-weight: 700;
-}
-
-.m01 .ag-auto.is-on {
-  border-color: rgba(34, 211, 238, 0.5);
-  color: #67e8f9;
-}
-
-.m01 .ag-pick {
-  display: flex;
-  gap: 6px;
-}
-
-.m01 .ag-pick select {
-  min-width: 0;
-  flex: 1;
-  height: 38px;
-  padding: 0 10px;
-  border: 1px solid var(--stroke-strong);
-  border-radius: 11px;
-  color: var(--text);
-  background: rgba(255, 255, 255, 0.04);
-  font: inherit;
-  font-size: 12.5px;
-}
-
-.m01 .ag-pick option {
-  color: #111;
-}
-
-.m01 .ag-generate {
-  flex: 1;
 }
 
 /* Uploaded resumes */
@@ -694,19 +277,6 @@
 .m01 .ag-file-x {
   color: var(--text-tertiary);
   font-size: 11px;
-}
-
-.m01 .ag-attach {
-  position: relative;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.m01 .ag-attach input {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  cursor: pointer;
 }
 
 /* Edit: the experience library, section by section */
@@ -784,4 +354,113 @@
 
 .m01 .ag-add {
   align-self: flex-start;
+}
+
+/* Applicant's resources: import from a PDF */
+.m01 .ag-import {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.m01 .ag-import-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.m01 .ag-import-row small {
+  color: var(--text-tertiary);
+  font-size: 11px;
+}
+
+/* Saved job: Mark applied · ✨ Generate · score, side by side */
+.m01 .saved-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-left: 50px;
+}
+
+.m01 .saved-actions .status-btn {
+  margin-left: 0;
+}
+
+.m01 .gen-btn {
+  border-color: rgba(129, 140, 248, 0.55);
+  color: #c7d2fe;
+  background: rgba(99, 102, 241, 0.16);
+}
+
+.m01 .gen-btn:disabled {
+  opacity: 0.5;
+}
+
+.m01 .gen-score {
+  padding: 5px 10px;
+  border-radius: 999px;
+  color: #fcd34d;
+  background: rgba(245, 158, 11, 0.14);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.m01 .gen-score.is-ok {
+  color: var(--emerald);
+  background: var(--emerald-soft);
+}
+
+.m01 .gen-panel {
+  margin-left: 50px;
+}
+
+.m01 .gen-ok {
+  color: var(--emerald);
+}
+
+.m01 .gen-low {
+  color: #fcd34d;
+}
+
+.m01 .gen-ready {
+  color: var(--emerald);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.m01 .gen-suggest p {
+  margin: 0 0 6px;
+  color: var(--text-secondary);
+  font-size: 12.5px;
+}
+
+.m01 .gen-suggest ul {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.m01 .ag-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+@media (max-width: 420px) {
+  .m01 .saved-actions,
+  .m01 .gen-panel {
+    margin-left: 0;
+  }
+}
+
+/* A saved job with an open report: keep the ♥ beside the job, not halfway down the report */
+.m01 .posting-row:has(.gen-panel) .heart-btn {
+  top: 30px;
 }

@@ -10,8 +10,7 @@
 // Personal API keys (OpenAI) are deliberately not synced: they stay on the device.
 
 export const SYNCED_KEYS = [
-  "tepobaby.aiAgent.v1",
-  "tepobaby.aiAgent.fields",
+  "tepobaby.aiAgent.v2",
   "tepobaby.resumeHeader",
   "tepobaby.feed.view",
   "tepobaby.connect.v1",

@@ -6,7 +6,7 @@
 // One page: if the content runs long, the font steps down (10.5 → 10 → 9.5 pt), then the least
 // relevant bullets (the last ones of the last entries) are dropped until it fits.
 
-import type { Curated } from "./aiAgent";
+import type { Curated } from "./agentResults";
 import { canSaveLocally, pushKey } from "./accountSync";
 
 export type ResumeHeader = { name: string; email: string; phone: string; location: string; links: string };
