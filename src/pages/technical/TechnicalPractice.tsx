@@ -3,6 +3,7 @@ import { Concept, ProblemSummary, getProblemList } from "../../neetcode/api";
 import CardGame from "./CardGame";
 import Roadmap from "./Roadmap";
 import "./technical.css";
+import { canSaveLocally, pushKey } from "../../utils/accountSync";
 
 // Technical practice, built entirely on the NeetCode 150: a Card Game and a concept Roadmap,
 // side by side.
@@ -29,7 +30,9 @@ export default function TechnicalPractice() {
   const pick = (s: Sub) => {
     setSub(s);
     try {
+      if (!canSaveLocally()) return;
       localStorage.setItem("tepobaby.technical.sub", s);
+      pushKey("tepobaby.technical.sub");
     } catch {
       // ignore
     }

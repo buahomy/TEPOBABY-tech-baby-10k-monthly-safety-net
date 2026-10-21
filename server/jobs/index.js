@@ -18,11 +18,12 @@ import { EventEmitter } from "node:events";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { MAX_AGE_MS, PROGRAM_MAX_AGE_MS, isProgram } from "./classify.js";
+import { MAX_AGE_MS, PROGRAM_MAX_AGE_MS, RESEARCH_MAX_AGE_MS, countriesOf, isProgram, isResearch } from "./classify.js";
 import { addDomains } from "./logos.js";
 import * as store from "../store.js";
 import { fetchCompanyBoards } from "./sources/ats.js";
 import { fetchCareerSites } from "./sources/careers.js";
+import { fetchUniversities } from "./sources/universities.js";
 import { applyKnownSponsorship, enrichSponsorship } from "./sponsorship.js";
 import { fetchGithubLists } from "./sources/github.js";
 import { fetchGoogleJobs } from "./sources/googleJobs.js";
@@ -39,6 +40,7 @@ const SOURCES = [
   { id: "github", run: fetchGithubLists },
   { id: "ats", run: fetchCompanyBoards },
   { id: "careers", run: fetchCareerSites },
+  { id: "universities", run: fetchUniversities },
   { id: "hn", run: fetchHackerNews },
   { id: "google", run: fetchGoogleJobs },
 ];
@@ -102,8 +104,12 @@ function rebuild() {
   const byKey = new Map();
   for (const s of SOURCES) {
     for (const p of state.sources[s.id]?.postings || []) {
-      p.program = isProgram(p.title); // recomputed, so rule fixes apply to stored postings too
-      if (now - new Date(p.postedAt).getTime() > (p.program ? PROGRAM_MAX_AGE_MS : MAX_AGE_MS)) continue;
+      // Recomputed on every rebuild, so rule fixes apply to stored postings too.
+      p.program = isProgram(p.title);
+      p.countries = countriesOf(p.location);
+      p.research = isResearch(p);
+      const maxAge = p.program ? PROGRAM_MAX_AGE_MS : p.research ? RESEARCH_MAX_AGE_MS : MAX_AGE_MS;
+      if (now - new Date(p.postedAt).getTime() > maxAge) continue;
       const key = p.url.toLowerCase();
       const fuzzy = `${p.company}|${p.title}|${p.location}`.toLowerCase();
       if (byKey.has(key) || byKey.has(fuzzy)) continue;
@@ -246,19 +252,22 @@ export async function startJobFeed() {
 
 /**
  * Postings for one level and time window, plus counts for every tab. "rotational" lists programs.
- * visaFriendly: hide roles that say they don't sponsor (or need U.S. citizenship / a clearance).
- * sponsorsOnly: only roles whose description says they sponsor.
+ * visaFriendly: hide roles whose job description says they don't sponsor (or need U.S. citizenship /
+ * a clearance). Roles that don't say either way are kept.
  */
-export function queryPostings({ level, maxHours = 72, visaFriendly = false, sponsorsOnly = false, limit = 30, offset = 0 }) {
+export function queryPostings({ level, maxHours = 72, visaFriendly = false, countries = ["US"], research = false, limit = 30, offset = 0 }) {
   const now = Date.now();
   const inWindow = (p, hours) => now - new Date(p.postedAt).getTime() <= hours * 3600e3;
-  const visaOk = (p) =>
-    sponsorsOnly ? p.sponsorship === "yes" : !visaFriendly || (p.sponsorship !== "no" && p.sponsorship !== "citizens");
+  const visaOk = (p) => !visaFriendly || (p.sponsorship !== "no" && p.sponsorship !== "citizens");
+  // Country filter (US / UK / CA): postings whose place we can't tell (e.g. "3 Locations") count as US.
+  const placeOk = (p) => (p.countries?.length ? p.countries.some((c) => countries.includes(c)) : countries.includes("US"));
+  const researchOk = (p) => !research || p.research;
+  const ok = (p) => visaOk(p) && placeOk(p) && researchOk(p);
   const inLevel = (p, lv) => (lv === "rotational" ? p.program : p.level === lv);
 
   const counts = {};
   for (const lv of ["underclassmen", "internship", "entry", "rotational"]) {
-    const pool = merged.filter((p) => inLevel(p, lv) && visaOk(p));
+    const pool = merged.filter((p) => inLevel(p, lv) && ok(p));
     counts[lv] = {
       fresh: pool.filter((p) => inWindow(p, 72)).length,
       week: pool.filter((p) => inWindow(p, 168)).length,
@@ -266,7 +275,7 @@ export function queryPostings({ level, maxHours = 72, visaFriendly = false, spon
     };
   }
 
-  const matching = merged.filter((p) => inLevel(p, level) && visaOk(p) && inWindow(p, maxHours));
+  const matching = merged.filter((p) => inLevel(p, level) && ok(p) && inWindow(p, maxHours));
   return {
     updatedAt,
     nextUpdateAt: nextRunAt().toISOString(),

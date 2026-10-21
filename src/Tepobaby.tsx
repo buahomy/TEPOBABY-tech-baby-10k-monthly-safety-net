@@ -4,6 +4,7 @@ import Mess01 from "./pages/Mess01";
 import Questions from "./pages/Questions";
 import { User, getCurrentUser, signOut } from "./utils/auth";
 import { clearGuestSavedJobs, moveGuestSavedJobsToAccount } from "./utils/savedJobs";
+import { allowDeviceSaves, clearDeviceCopies, flushPending, hydrateAccount } from "./utils/accountSync";
 import {
   Profile,
   clearGuestProfile,
@@ -41,6 +42,8 @@ export default function Tepobaby() {
       const [profile] = await Promise.all([
         moveGuestAnswersToAccount(),
         moveGuestSavedJobsToAccount().catch(() => {}), // device copy stays if this fails
+        // Everything else the app saves (AI Agent, feed view, practice progress…) lives in the account.
+        hydrateAccount(user).catch(() => {}),
       ]);
       setStage(route({ kind: "user", user }, profile));
     } catch {
@@ -48,7 +51,10 @@ export default function Tepobaby() {
     }
   };
 
-  const enterAsGuest = () => setStage(route({ kind: "guest" }, startGuestProfile()));
+  const enterAsGuest = () => {
+    allowDeviceSaves(); // guests keep everything on this device
+    setStage(route({ kind: "guest" }, startGuestProfile()));
+  };
 
   useEffect(() => {
     getCurrentUser().then((user) => {
@@ -88,7 +94,12 @@ export default function Tepobaby() {
           onSignIn={() => setStage({ name: "welcome" })}
           onSignOut={() =>
             who.kind === "user"
-              ? signOut().then(() => setStage({ name: "welcome" }))
+              ? flushPending()
+                  .then(signOut)
+                  .then(() => {
+                    clearDeviceCopies(); // the account keeps it; this device doesn't
+                    setStage({ name: "welcome" });
+                  })
               : (clearGuestProfile(), clearGuestSavedJobs(), setStage({ name: "welcome" }))
           }
         />

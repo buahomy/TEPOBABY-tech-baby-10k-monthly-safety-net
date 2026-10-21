@@ -7,6 +7,7 @@
 // relevant bullets (the last ones of the last entries) are dropped until it fits.
 
 import type { Curated } from "./aiAgent";
+import { canSaveLocally, pushKey } from "./accountSync";
 
 export type ResumeHeader = { name: string; email: string; phone: string; location: string; links: string };
 
@@ -22,7 +23,9 @@ export function loadHeader(): ResumeHeader {
 
 export function saveHeader(h: ResumeHeader) {
   try {
+    if (!canSaveLocally()) return;
     localStorage.setItem(HEADER_KEY, JSON.stringify(h));
+    pushKey(HEADER_KEY);
   } catch {
     // ignore
   }

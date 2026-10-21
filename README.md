@@ -27,11 +27,29 @@ Safety Assurance: You sign in on Google's own page, so I never see or store your
 ### Just browsing?
 Tap **I'll just browse around** to use Tepobaby without signing in. You'll answer the same questions, and your answers are saved on your device only. If you sign in with your .edu email later, your answers come with you, so you can pick up where you left off.
 
+
+### Your data follows your Google account
+When you're signed in, everything you set up in Tepobaby is saved to your account, not just to the phone or computer you're using. Sign in anywhere and it's all there:
+- **Your profile:** onboarding answers and saved / applied jobs (with each application's résumé score).
+- **The AI Agent:** your experience bank and the original résumé PDFs you uploaded (**View** works on any device), the agent's progress (checked roles, scores, curated résumés, picked saved jobs), your fields, target and auto-check setting, and your PDF header.
+- **Ginny:** your résumé summary and selected job.
+- **Settings and progress:** the Home feed view (tab, time window, visa filters, how far you expanded **Show more**), Connect's name, school and LinkedIn fixes, and Technical practice (card shuffle, solved cards, code drafts, language).
+
+**Signing out** removes these from the device, so the next person doesn't see them; your account keeps them. If someone else signs in on the same device, they start clean.
+
+**Guests:** with no account, everything stays on the device until you sign in, and then it moves to your account.
+
+**What stays on the device on purpose:** a personal OpenAI API key for voice practice, so a secret key never sits on Tepobaby's server.
+
 ## Home
 After the questions, you land on **Home**. The bar at the bottom has **Home**, **Interview**, a big **＋** (Ginny), **Connect** and **Profile**. Home has three sections: live job postings, company tiers, and contractor & startup roles.
 
 ### Job postings
-Live postings for students: switch between **Underclassmen Programs**, **Internship**, **Entry-level** and **Rotational Programs**, and between **Last 48–72h** and **This week**. Tepobaby opens on the level that fits your answers, and if you need visa sponsorship you can hide roles that say they don't sponsor.
+Live postings for students: switch between **Underclassmen Programs**, **Internship**, **Entry-level** and **Rotational Programs**, and between **Last 48–72h** and **This week**. Tepobaby opens on the level that fits your answers, and if you need visa sponsorship you can hide roles whose job description says they don't sponsor.
+
+**Filters at the top of the feed**
+- **🇺🇸 US · 🇬🇧 UK · 🇨🇦 CA:** pick one or more countries (U.S. by default; at least one stays on). A posting listing cities in several countries shows under each, and remote roles count as U.S. UK and Canada postings carry a small flag.
+- **🎓 Research:** only research roles: university labs, research assistant and pre-doctoral roles, fellowships, REUs and national labs (PNNL, JHU APL…). Research roles stay listed for 30 days, and the **All open** window appears.
 
 **Rotational Programs** lists rotational and early-career development programs in any field: finance, sales, product, operations and engineering. Examples include Microsoft's Finance Rotation Program (FRP), Amazon's Finance Rotational Program (AFRP), Intel's Sales and Marketing Rotation Program, NVIDIA's new-college-grad rotation, Micron's Catalyst Rotation Program, and Bank of America's development programs.
 - **How long they stay listed:** programs stay open for weeks, so this tab adds an **All open** window that lists every program posted in the last 60 days, and opens on it. Other postings are kept for 7 days.
@@ -46,11 +64,12 @@ Postings update **once a day, every morning at 7:00 AM Eastern Time (ET)**, so 3
 | [speedyapply 2027 SWE College Jobs](https://github.com/speedyapply/2027-SWE-College-Jobs) | More SWE internships and new grad roles (age in days only) |
 | [Pitt CSC](https://github.com/pittcsc/Summer2027-Internships), [vanshb03](https://github.com/vanshb03/Summer2027-Internships) | Extra community-curated internships |
 | Company job boards: [Greenhouse](https://developers.greenhouse.io/job-board.html), [Lever](https://github.com/lever/postings-api), [Ashby](https://developers.ashbyhq.com/docs/public-job-posting-api) | Early-career roles straight from about 80 companies (Stripe, Figma, OpenAI, Ramp, Palantir…). Add more in [server/jobs/companies.json](server/jobs/companies.json) |
-| Company career sites: [Microsoft](https://apply.careers.microsoft.com), [Amazon](https://www.amazon.jobs), and Workday sites for NVIDIA, Salesforce, Adobe, Intel, HP, Workday, PayPal, Autodesk, Micron, Red Hat, T-Mobile, Capital One, Mastercard, Bank of America, Fidelity, Target, Boeing, Disney and Chevron | Rotational programs and new grad roles straight from big companies' own sites, the same day they're posted, including non-engineering programs like Microsoft's Finance Rotation Program. Only U.S. roles are kept. Add Workday companies in [server/jobs/sources/careers.js](server/jobs/sources/careers.js) |
+| Company career sites: [Microsoft](https://apply.careers.microsoft.com), [Amazon](https://www.amazon.jobs), and Workday sites for NVIDIA, Salesforce, Adobe, Intel, HP, Workday, PayPal, Autodesk, Micron, Red Hat, T-Mobile, Capital One, Mastercard, Bank of America, Fidelity, Target, Boeing, Disney and Chevron | Rotational programs and new grad roles straight from big companies' own sites, the same day they're posted, including non-engineering programs like Microsoft's Finance Rotation Program. U.S., UK and Canada roles are kept (Amazon and Microsoft are also searched in Canada and the UK). Add Workday companies in [server/jobs/sources/careers.js](server/jobs/sources/careers.js) |
+| University career sites (Workday): Cornell, Brown and Penn (Ivy League), UChicago, UW, WashU and Georgetown | Research assistant, lab, intern, fellowship, post-bacc and student research roles. Staff and senior roles are filtered out. Harvard, Yale, Princeton, Columbia and Dartmouth have no public job feed, so their research roles come through the Google Jobs research searches. Add schools in [server/jobs/sources/universities.js](server/jobs/sources/universities.js) |
 | [Hacker News "Who is hiring?"](https://github.com/HackerNews/API) | Startup posts that mention internships, new grad or junior roles |
 | [Google Jobs via SerpApi](https://serpapi.com/google-jobs-api) | Roles indexed from LinkedIn, Indeed, Glassdoor and company sites. Runs when `SERPAPI_KEY` is set (see below) |
 
-**Google Jobs (SerpApi)**: each morning Tepobaby runs 5 searches ("software engineer intern", "software engineer new grad", "entry level software engineer", "data science intern", "rotational program new grad"), about 150–155 searches a month. That fits [SerpApi's free plan](https://serpapi.com/pricing) of 250 searches a month. Each result links to the best place to apply: the company's own site first, then its hiring platform (like Greenhouse or Workday), then LinkedIn, Indeed or Glassdoor. To turn it on, create a free account at [serpapi.com](https://serpapi.com), copy your API key into `.env.local` as `SERPAPI_KEY=...`, and restart the server. Keep the key out of git and out of any `VITE_` variable.
+**Google Jobs (SerpApi)**: each morning Tepobaby runs 7 searches ("software engineer intern", "software engineer new grad", "entry level software engineer", "data science intern", "rotational program new grad", "undergraduate research assistant", "research intern university"), about 210–217 searches a month. That fits [SerpApi's free plan](https://serpapi.com/pricing) of 250 searches a month. Each result links to the best place to apply: the company's own site first, then its hiring platform (like Greenhouse or Workday), then LinkedIn, Indeed, Glassdoor or another major board. Results only available on reposting sites (BeBee, JobLeads, Jobrapido, Adzuna, Learn4Good, Trabajo…) are dropped, so an NVIDIA role links to NVIDIA's site or isn't shown. To turn it on, create a free account at [serpapi.com](https://serpapi.com), copy your API key into `.env.local` as `SERPAPI_KEY=...`, and restart the server. Keep the key out of git and out of any `VITE_` variable.
 
 The Simplify.jobs site doesn't need its own scraper, because the SimplifyJobs GitHub lists above already carry its data.
 
@@ -59,7 +78,7 @@ LinkedIn, Indeed, Glassdoor, Wellfound, Y Combinator's Work at a Startup, Ripple
 **On your Home page**
 - Each level tab shows how many postings it has, and **Last 48–72h** / **This week** filter by real posting times.
 - Newest first, with a **Live** badge and when the last morning update ran. New postings appear on their own.
-- **Show more** loads the next batch, and the list stays expanded when you leave Home and come back, reload the page, or new postings arrive. **Show less** shrinks it back to one page. Your last tab, time window and visa filters are remembered on your device too.
+- **Show more** loads the next batch, and the list stays expanded when you leave Home and come back, reload the page, or new postings arrive. **Show less** shrinks it back to one page. Your last tab, time window, countries, Research and visa filter are saved to your account.
 - Each posting shows the company's logo: the site's icon via [Google's favicon service](https://www.google.com/s2/favicons) (with [DuckDuckGo's](https://icons.duckduckgo.com) as a backup), fetched and cached by our server, so your browser never contacts them. The company's website comes from the job list, the apply link, or a name lookup that has to match the company exactly. If there's no confident match, you see the company's first letter instead of a wrong logo.
 - Each posting's level comes from the list it was found in and its title (like "intern" or "new grad"). Senior roles are left out.
 
@@ -70,7 +89,7 @@ LinkedIn, Indeed, Glassdoor, Wellfound, Y Combinator's Work at a Startup, Ripple
     - **U.S. citizens / clearance:** e.g. "U.S. citizenship is required", "must be a U.S. citizen", "requires the ability to obtain a Secret clearance", ITAR / export-control "U.S. person" rules.
     - **Sponsors visa:** e.g. "visa sponsorship is available".
     - **Unknown:** the description doesn't say, which is still most postings.
-  - **Filters:** if you need sponsorship, **Hide roles that don't sponsor or need U.S. citizenship** removes the first two kinds (in a test, 113 of 568 internships and 54 of 300 entry-level roles this week). **Only roles that say they sponsor** shows only the third kind; few postings say so, so the list is short.
+  - **Filter:** if you need sponsorship, **Hide roles that don't sponsor or need U.S. citizenship** removes the first two kinds (in a test, 113 of 568 internships and 54 of 300 entry-level roles this week). A role is hidden only when its fetched description says so explicitly; roles that don't say either way stay. There's no "only roles that sponsor" filter: so few postings say they sponsor that it hid almost everything.
   - **What it ignores:** equal-opportunity boilerplate ("without regard to … citizenship"), application questions ("Will you now or in the future require sponsorship?"), "does not require a clearance", "clearance required: none", and "U.S. citizen, permanent resident or F-1 student on CPT" are not counted as restrictions.
 - **Underclassmen Programs is often empty.** Programs for freshmen and sophomores (like Microsoft Explore) are rare and mostly open August–October. When none are new, Tepobaby suggests the Internship tab, since many internships accept every class year.
 - **Each link opens the original application** on the company's site or job board.
@@ -105,7 +124,6 @@ Each board shows its own logo, fetched from its site and cached by Tepobaby's se
 | --- | --- | --- |
 | [Work at a Startup (Y Combinator)](https://www.workatastartup.com/) | Startup | Apply once to hundreds of YC startups |
 | [Wellfound](https://wellfound.com/jobs) | Startup | Startup jobs with salary and equity upfront |
-| [Hacker News: Who is hiring?](https://news.ycombinator.com/submitted?id=whoishiring) | Startup | Monthly thread of startups hiring now |
 | [Lenny's Jobs](https://www.lennysjobs.com/) | Startup | Product, growth, AI and startup roles curated by Lenny's Newsletter |
 | [Contra](https://contra.com/) | Contract | Freelance and contract projects, no fees for talent |
 | [Upwork](https://www.upwork.com/) | Contract | Short-term dev, data and design contracts |
@@ -304,7 +322,7 @@ Pick one of your saved (♥) jobs, or type any company, to get two sections.
 **About company pages.** A company's LinkedIn page name is set by the company and doesn't always match its name. For example, Jane Street's is `jane-street-global-trading`. So:
 - **Known pages:** Tepobaby knows the page names for the companies it tracks (the tier list and the job boards).
 - **Other companies:** it makes a best guess from the name, shows the page name with an **Edit** button, and links to a plain LinkedIn people search as a fallback.
-- **Edits are saved:** fixes and your name/school edits are remembered on your device.
+- **Edits are saved:** fixes and your name/school edits are saved to your account (on the device for guests).
 
 Tepobaby only builds links; it never signs in to LinkedIn or sees your LinkedIn account.
 
@@ -342,17 +360,17 @@ Your résumé PDFs ──► text, PII removed ────┘      ├─ BM25 
 | 3b. Semantic fit (35%) | Voyage AI embeddings (`voyage-4`) | Compares your résumé and the job text as embeddings, mapped to 0–100 |
 | 3c. Evidence (25%) | MiniLM cross-encoder (`ms-marco-MiniLM-L-6-v2`) via Transformers.js | Finds your best line for each requirement. Runs on Tepobaby's server (on Vercel too); if it can't load, the closest line by Voyage similarity is used instead |
 | 4. Edit the résumé | **Claude Code**, through **✨ Generate** (headless, on your Claude plan, no API key) | Works when Tepobaby runs on your computer with Claude Code installed and signed in (`npm run dev`). The prompt holds the rules, your experience bank, the job and the last score. Rule: reword and reorder only, never add facts you didn't give it, and the app enforces it in code (see below). Where Claude Code isn't available, like the live website, **Manual** gives you the prompt to paste into Claude Code yourself |
-| 5. Rebuild the PDF | jsPDF in your browser, with the free EB Garamond font | One page (smaller type, then the least relevant bullets left out if needed), with your header and clickable links. Your header stays on your device |
+| 5. Rebuild the PDF | jsPDF in your browser, with the free EB Garamond font | One page (smaller type, then the least relevant bullets left out if needed), with your header and clickable links. Your header is saved to your account |
 | 6. Rescore | Back to step 2 with the new PDF | The rebuilt PDF is read exactly like an upload and scored again. **Generate** repeats steps 4–6 back to back (each round's prompt includes the new score) until 85+, or until changes stop helping (two rounds in a row with no gain, or 4 rounds) |
 
 #### Using it
 1. **Add your experience.** There are two tabs side by side:
-   - **📄 Upload resume:** one button. Upload one or more résumé PDFs. They're read into experiences, projects, bullet points, skills and education, with duplicates across versions merged and your name and contact details removed.
+   - **📄 File:** one button. Upload one or more résumé PDFs. They're read into experiences, projects, bullet points, skills and education, with duplicates across versions merged and your name and contact details removed.
      - **Uploaded list:** every résumé you've uploaded is listed under the button, with its date and **View** to open the original PDF.
-     - **Where the PDFs live:** they're kept only on the device you uploaded from, in the browser's storage.
-     - **No View link?** For a résumé uploaded before saved copies existed, or one uploaded on another device, tap **Attach to view** and pick the same PDF. It's attached for viewing without being read again, so nothing is duplicated.
+     - **Where the PDFs live:** signed in, in your account, so **View** works on any device you sign in on; as a guest, on this device only.
+     - **No View link?** For a résumé uploaded before saved copies existed, tap **Attach to view** and pick the same PDF. It's attached for viewing without being read again, so nothing is duplicated.
      - **✕:** removes a file from the list. The experience it added stays in your bank.
-   - **✏️ Add manually:** add an **Experience** (role, organization, dates, bullet points), a **Project** (name, **link**, dates, bullet points; the link becomes a hyperlink on your PDF), **Skills**, or **Name & links** for your PDF header (kept on your device). Tap **Edit** to fix or remove anything.
+   - **✏️ Edit:** your whole library, section by section, the way the agent sees it: **Name & links** (your PDF header), **Education**, **Experience**, **Projects** and **Skills**. Everything read from your files is already filled in. Edit any title, organization, project link, dates or bullet point in place (it saves when you leave the field; clearing a bullet deletes it), add bullets, **+ Add experience** / **+ Add project**, add or remove skills, or **Remove** an entry. The agent picks only from this library.
 2. **Pick your fields** (Software, Data & AI, Finance & business…), your start date and your target score (🎯, 85 by default).
 3. **Choose the roles.**
    - **Automatically:** with **Auto daily on** (the default), it checks 10 new roles that fit you once a day when you open Profile. You can also tap **Check 10 new roles** anytime.
@@ -437,15 +455,21 @@ How I built Tepobaby (with Claude Code): each decision, why I made it, and the p
 - **A verified list of company job boards** (`server/jobs/companies.json`).
   - *Why:* the Greenhouse, Lever and Ashby APIs are public and structured, so no HTML scraping.
   - *Pain point:* there's no master list, and guessed board names often don't exist. I tested 93 and kept the 80 that respond.
+- **University research roles from schools' own Workday sites.**
+  - *Why:* students asked for research and Ivy League opportunities, which the tech-focused lists miss.
+  - *Pain point:* university sites list every staff job, and "student" matches "Student Health Medical Assistant". Titles must match research / lab / intern / fellowship / pre-doctoral / post-bacc patterns, and staff (coordinator, advisor, clinical…) and senior (manager, professor, postdoc…) titles are skipped. Only Cornell, Brown and Penn among the Ivies have a public feed; the rest come through two Google research searches.
+  - *Pain point:* only 3 of 48 university roles were under a week old, since research jobs stay open longer. Research roles now stay listed for 30 days.
+- **US / UK / CA filter.**
+  - *How:* `countriesOf(location)` (`server/jobs/classify.js`) returns every country a location names, so "Seattle · Vancouver, BC" shows under both. Unknown and remote count as U.S. "London, ON" and "Manchester, NH" aren't the UK. The AI Agent's queue stays U.S.-only, since its sponsorship rules are about U.S. visas.
 - **Keyword-filter Hacker News posts.**
   - *Why:* "Who is hiring?" has real startup roles.
   - *Pain point:* posts are free text. I keep ones that mention intern, new grad or junior roles, and read the "Company | Role | Location" first line most posts use.
-- **Google Jobs through SerpApi, 5 searches each morning.**
-  - *Why:* it's the legitimate way to reach roles indexed from LinkedIn, Indeed and Glassdoor, and 5 a day (about 155 a month) fits the free 250. The 5th search, "rotational program new grad", was added for the Rotational Programs tab.
+- **Google Jobs through SerpApi, 7 searches each morning.**
+  - *Why:* it's the legitimate way to reach roles indexed from LinkedIn, Indeed and Glassdoor, and 7 a day (about 217 a month) fits the free 250. "rotational program new grad" was added for the Rotational Programs tab, and two research searches for universities without a public feed.
   - *Pain point:* it's a different, search-based workflow, so I have to pick keywords that match what I'm looking for. Google also moved the posting age to a different field.
 - **Re-rank Google Jobs apply links:** official careers site → Greenhouse / Lever / Ashby / Workday → LinkedIn / Indeed / Glassdoor → reposting sites last.
   - *Why:* students should apply where the company actually reviews applications.
-  - *Pain point:* the "company site" link was often a reposting site like BeBee or ClearanceJobs.
+  - *Pain point:* the "company site" link was often a reposting site like BeBee, JobLeads or ClearanceJobs (an NVIDIA role linked to JobLeads instead of NVIDIA). Unknown and reposting sites are no longer used at all: if a result has no company site, ATS or major board link, it's dropped (28 in one run). Handshake isn't counted as a major board, since only each school's students can see its postings.
 - **Don't scrape sites that forbid it or need a login** (LinkedIn, Indeed, Glassdoor, Wellfound, YC Work at a Startup, RippleMatch, WayUp, Untapped, CodePath).
   - *Why:* scraping them breaks their terms; SerpApi covers much of the same listings legitimately.
   - *Pain point:* some of the best boards are closed to scraping.
@@ -686,12 +710,23 @@ How I built Tepobaby (with Claude Code): each decision, why I made it, and the p
 - **Filter by graduation date, start date, visa and field before scoring.**
   - *Why:* every ATS check fetches a job description and calls Voyage AI, so checking roles a student can't take wastes their hourly limit.
   - *Pain point:* the first test scored a software résumé against NVIDIA circuit-board and chip-verification roles (0–24). Hence the field chips (Software and Data & AI by default) and the title rules for class years and start seasons (`server/apply/queue.js`).
-- **Keep the uploaded PDFs on the device, not the server.**
+- **Tie everything to the Google account, not the device.**
+  - *Why:* a student who sets up the AI Agent on a laptop should see the same progress on their phone. Before, the account kept profiles, saved jobs and the experience bank, but everything else lived in one browser: agent progress, PDF header, feed view, Connect details, practice progress, uploaded PDFs.
+  - *How:*
+    - **The app:** it still reads and writes localStorage (fast, works offline), and `src/utils/accountSync.ts` mirrors each item to the account through `PUT /api/me/data/:key`, from an allow-list (`server/userData.js`, one Redis entry per student per item).
+    - **At sign-in:** `hydrateAccount()` loads the account's copy into the device (the account wins) and uploads anything only the device had.
+    - **Saving:** writes wait 0.8 s after typing stops, but go out at least every 3 s, and are sent when the page is hidden or closed.
+    - **PDFs:** stored in 384 KB chunks (`/api/me/files`), so no single Redis entry gets large.
+    - **Signing out:** clears the device copy and blocks late writes from screens that are still closing. A different account on the same device starts clean.
+  - *Pain point:* in the two-device test, AI Agent progress never reached the account. The server's global 8 KB body limit ran before the route's own 1 MB limit and rejected it (413). Account, agent and Ginny routes now bring their own parsers. The same limit would also have broken saving large experience banks and **Generate** with a big bank.
+  - *Tested:* one account on two fresh browsers. Device 2 had device 1's 10 checked roles, the 80 target, the chosen fields, the PDF header, the feed view (Internship / This week / 50 shown), the bank, and the uploaded PDF, which opened from the account. After sign-out, nothing was left on device 2.
+  - *Not synced:* a personal OpenAI key, which stays on the device.
+- **Keep the uploaded PDFs on the device, not the server** (replaced: they're now stored in the account too).
   - *Why:* students want to see which résumé versions they've already added, and open them again. The server reads each PDF once and never stores it, so the browser keeps the original in IndexedDB (`src/utils/resumeFiles.ts`) under the same ID as its entry in the bank's `sources`. **View** opens it in a new tab (opened before the file loads, so phones don't block it as a pop-up).
   - *Pain point:* résumés uploaded before this feature had no saved copy, so their rows showed no **View** button. Those rows (and rows from another device) now show **Attach to view**, which stores the picked PDF under the same source ID without parsing it again. If the browser blocks storage (private browsing, some Home Screen apps), files are also kept in memory so View works for that visit.
-  - *Trade-off:* signed-in students see the list on every device, but can only open the PDF on the device they uploaded or attached it on. Storing originals on the server would have meant keeping students' full résumés, with name and contact details, in the cloud.
+  - *Trade-off:* signed-in students' originals are now stored in their account (in 384 KB chunks, readable only by them), so **View** works on any device. That means full résumés live in the cloud, which was the price of "everything follows your Google account"; guests' files never leave the device.
 - **A minimal screen.**
-  - *Why:* the agent's section had grown long (an intro, a "How it works" panel, key settings and a footer). It's now a heading with a PRO chip, two side-by-side tabs (**Upload resume**, **Add manually**), compact settings chips, and one check button. Each role shows only its score history and the next step. The explanations live in this README.
+  - *Why:* the agent's section had grown long (an intro, a "How it works" panel, key settings and a footer). It's now a heading with a PRO chip, two side-by-side tabs (**File**, **Edit**), compact settings chips, and one check button. Each role shows only its score history and the next step. The explanations live in this README.
 - **✨ Generate: one button for the whole loop, run by Claude Code.**
   - *Why:* copying a prompt into Claude Code and pasting the reply back every round was tedious. With Generate, the server runs Claude Code itself (`server/agent/engine.js`): `claude -p --output-format json --tools "" --no-session-persistence`, with the curation rules as the system prompt. It uses the author's Claude plan, with no API key, which suits personal use. A round took about 11–17 seconds in testing.
   - *Where it works:* only where the server runs next to a signed-in Claude Code, i.e. `npm run dev` on your own computer. Vercel has no Claude Code, so on the live website Generate is off and **Manual** shows the copy-and-paste steps. A Claude API option (on Tepobaby's key) was built and then removed: it would have meant paying per job, and this is personal use for now.
@@ -795,7 +830,7 @@ To deploy your own copy:
 | `GOOGLE_CLIENT_SECRET` | Server | Your OAuth client secret. Never put this in a `VITE_` variable. |
 | `SESSION_SECRET` | Server | Random string of 32+ characters: `openssl rand -base64 48` |
 | `APP_ORIGIN` | Server | Public URL of the app, no trailing slash. `http://localhost:5173` locally. |
-| `SERPAPI_KEY` | Server | Optional. Your SerpApi key; adds Google Jobs results (5 searches each morning, about 155 a month). |
+| `SERPAPI_KEY` | Server | Optional. Your SerpApi key; adds Google Jobs results (7 searches each morning, about 217 a month). |
 | `JOBS_FEED` | Server | Optional. Set to `off` to stop checking job sources. |
 | `JOBS_DAILY_TIME` | Server | Optional. Daily update time in Eastern Time, `HH:MM` (default `07:00`). |
 | `VOYAGE_API_KEY` | Server | Voyage AI key for Ginny's semantic matching (free tier). Optional: without it, ATS analysis uses BM25 + the local reranker. |
@@ -852,6 +887,8 @@ API routes (the Vite dev server forwards `/api` to the auth server):
 | `GET /api/agent/access` | Whether this student can use the AI Agent (`{ allowed, plan, demo, engine }`; free for everyone during the demo; `engine` is `claude-code` when Generate can run, else `null`) |
 | `POST /api/agent/relay-register` | The Mac's relay reports its tunnel address (needs `AGENT_RELAY_SECRET`) |
 | `POST /api/agent/generate` | ✨ Generate: one curation round with Claude Code, on this computer, or (live site, the author's account) on the Mac through the relay |
+| `GET /api/me/data`, `PUT /api/me/data/:key` | Everything else the signed-in student sets up (AI Agent progress, PDF header, feed view, Connect, Technical practice, Ginny's selected job), tied to their account |
+| `GET /api/me/files`, `PUT` / `GET` / `DELETE /api/me/files/:id` | The signed-in student's original résumé PDFs |
 | `GET` / `PUT /api/agent/bank` | The signed-in student's experience bank |
 | `GET /api/connect/school` | The signed-in student's school name, from their `.edu` email domain |
 | `GET /api/neetcode` | The NeetCode 150 list (number, title, difficulty, category) and the 18 concepts |

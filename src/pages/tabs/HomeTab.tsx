@@ -6,6 +6,7 @@ import { LEVELS, Level, RESOURCES, WINDOWS, WindowId } from "../../data/homeFeed
 import { Posting, PostingsResponse, fetchPostings, subscribeToPostings, timeAgo } from "../../utils/postings";
 import { Profile } from "../../utils/profile";
 import { SavedJobsApi } from "../../utils/savedJobs";
+import { canSaveLocally, pushKey } from "../../utils/accountSync";
 
 // Home tab: 1) job postings  2) company tier list by interview difficulty  3) contractor & startup roles.
 
@@ -27,7 +28,20 @@ const PAGE = 25;
 // "Show more", kept on this device so leaving Home and coming back (or a quiet refresh when new
 // postings arrive) keeps it all as they left it. "Show less" resets a list to one page.
 const VIEW_KEY = "tepobaby.feed.view";
-type View = { level?: Level; windowId?: WindowId; hideNoSponsorship?: boolean; sponsorsOnly?: boolean; shown?: Record<string, number> };
+type View = {
+  level?: Level;
+  windowId?: WindowId;
+  hideNoSponsorship?: boolean;
+  countries?: Country[];
+  research?: boolean;
+  shown?: Record<string, number>;
+};
+type Country = "US" | "UK" | "CA";
+const COUNTRIES: { id: Country; label: string }[] = [
+  { id: "US", label: "🇺🇸 US" },
+  { id: "UK", label: "🇬🇧 UK" },
+  { id: "CA", label: "🇨🇦 CA" },
+];
 function readView(): View {
   try {
     return JSON.parse(localStorage.getItem(VIEW_KEY) || "{}");
@@ -37,7 +51,9 @@ function readView(): View {
 }
 function writeView(patch: View) {
   try {
+    if (!canSaveLocally()) return;
     localStorage.setItem(VIEW_KEY, JSON.stringify({ ...readView(), ...patch }));
+    pushKey(VIEW_KEY);
   } catch {
     // ignore
   }
@@ -47,19 +63,21 @@ const FALLBACK_REFRESH_MS = 10 * 60 * 1000;
 export default function HomeTab({ firstName, profile, saved }: Props) {
   const [level, setLevel] = useState<Level>(() => readView().level ?? defaultLevel(profile));
   const [windowId, setWindowId] = useState<WindowId>(() => readView().windowId ?? (defaultLevel(profile) === "rotational" ? "open" : "fresh"));
-  const windows = WINDOWS.filter((w) => w.id !== "open" || level === "rotational");
+  const [research, setResearch] = useState(() => readView().research ?? false);
+  // "All open" for programs and research roles, which stay open for weeks.
+  const windows = WINDOWS.filter((w) => w.id !== "open" || level === "rotational" || research);
   const needsSponsorship =
     profile.answers.needsSponsorship === "yes" || profile.answers.workAuthorized === "no";
   const [hideNoSponsorship, setHideNoSponsorship] = useState(() => readView().hideNoSponsorship ?? needsSponsorship);
-  const [sponsorsOnly, setSponsorsOnly] = useState(() => readView().sponsorsOnly ?? false);
+  const [countries, setCountries] = useState<Country[]>(() => (readView().countries?.length ? readView().countries! : ["US"]));
   // How many postings this list was expanded to ("Show more"), per tab + window + filter.
-  const listKey = `${level}|${windowId}|${sponsorsOnly ? 2 : hideNoSponsorship ? 1 : 0}`;
+  const listKey = `${level}|${windowId}|${hideNoSponsorship ? 1 : 0}|${countries.join("")}|${research ? "r" : ""}`;
   const shownFor = (key: string) => Math.max(PAGE, readView().shown?.[key] ?? PAGE);
   const setShown = (key: string, n: number) => writeView({ shown: { ...(readView().shown ?? {}), [key]: n } });
 
   useEffect(() => {
-    writeView({ level, windowId, hideNoSponsorship, sponsorsOnly });
-  }, [level, windowId, hideNoSponsorship, sponsorsOnly]);
+    writeView({ level, windowId, hideNoSponsorship, countries, research });
+  }, [level, windowId, hideNoSponsorship, countries, research]);
 
   const [feed, setFeed] = useState<PostingsResponse | null>(null);
   const [postings, setPostings] = useState<Posting[]>([]);
@@ -75,7 +93,7 @@ export default function HomeTab({ firstName, profile, saved }: Props) {
     const load = (quiet: boolean) => {
       if (!quiet) setLoading(true);
       // Reload as many as the student had expanded to, not just the first page.
-      fetchPostings({ level, window: windowId, hideNoSponsorship, sponsorsOnly, limit: shownFor(listKey), signal: ctrl.signal })
+      fetchPostings({ level, window: windowId, hideNoSponsorship, countries, research, limit: shownFor(listKey), signal: ctrl.signal })
         .then((data) => {
           setFeed(data);
           setPostings(data.postings);
@@ -96,12 +114,12 @@ export default function HomeTab({ firstName, profile, saved }: Props) {
       window.clearInterval(fallback);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [level, windowId, hideNoSponsorship, sponsorsOnly]);
+  }, [level, windowId, hideNoSponsorship, countries, research]);
 
   const loadMore = () => {
     setLoadingMore(true);
     const key = listKey;
-    fetchPostings({ level, window: windowId, hideNoSponsorship, sponsorsOnly, limit: PAGE, offset: postings.length })
+    fetchPostings({ level, window: windowId, hideNoSponsorship, countries, research, limit: PAGE, offset: postings.length })
       .then((data) =>
         setPostings((prev) => {
           const next = [...prev, ...data.postings];
@@ -139,6 +157,34 @@ export default function HomeTab({ firstName, profile, saved }: Props) {
             <span className="live-dot" aria-hidden="true" />
             Live
           </span>
+        </div>
+
+        <div className="feed-filters" role="group" aria-label="Where and what">
+          {COUNTRIES.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              aria-pressed={countries.includes(c.id)}
+              className={countries.includes(c.id) ? "is-on" : ""}
+              onClick={() => {
+                const next = countries.includes(c.id) ? countries.filter((x) => x !== c.id) : [...countries, c.id];
+                setCountries(next.length ? next : [c.id]); // at least one country
+              }}
+            >
+              {c.label}
+            </button>
+          ))}
+          <button
+            type="button"
+            aria-pressed={research}
+            className={`feed-research${research ? " is-on" : ""}`}
+            onClick={() => {
+              setResearch(!research);
+              if (research && windowId === "open" && level !== "rotational") setWindowId("week");
+            }}
+          >
+            🎓 Research
+          </button>
         </div>
 
         <div className="level-tabs" role="tablist" aria-label="Level">
@@ -184,13 +230,9 @@ export default function HomeTab({ firstName, profile, saved }: Props) {
               checked={hideNoSponsorship}
               onChange={(e) => setHideNoSponsorship(e.target.checked)}
             />
-            <span>Hide roles that don't sponsor or need U.S. citizenship</span>
-          </label>
-        )}
-        {needsSponsorship && (
-          <label className="toggle-row">
-            <input type="checkbox" checked={sponsorsOnly} onChange={(e) => setSponsorsOnly(e.target.checked)} />
-            <span>Only roles that say they sponsor</span>
+            <span title="Hides a role only when its job description says it doesn't sponsor visas or needs U.S. citizenship / a clearance">
+              Hide roles that don't sponsor or need U.S. citizenship
+            </span>
           </label>
         )}
 
@@ -222,6 +264,9 @@ export default function HomeTab({ firstName, profile, saved }: Props) {
                     <span className="posting-meta">
                       <span className="posting-loc">{p.location}</span> · {timeAgo(p.postedAt, p.postedApprox)}
                       {p.program && level !== "rotational" && <span className="chip-program">Rotational program</span>}
+                      {p.research && <span className="chip-research">🎓 Research</span>}
+                      {p.countries?.includes("UK") && <span className="chip-country">🇬🇧</span>}
+                      {p.countries?.includes("CA") && <span className="chip-country">🇨🇦</span>}
                       {p.sponsorship === "yes" && <span className="chip-ok">Sponsors visa</span>}
                       {p.sponsorship === "no" && <span className="chip-warn">No sponsorship</span>}
                       {p.sponsorship === "citizens" && <span className="chip-warn">U.S. citizens / clearance</span>}
@@ -255,8 +300,9 @@ export default function HomeTab({ firstName, profile, saved }: Props) {
         )}
         <p className="block-foot">
           Updated every morning at 7:00 AM ET{feed?.updatedAt ? ` · last update ${timeAgo(feed.updatedAt)}` : ""}. From
-          SimplifyJobs, speedyapply, company job boards (Greenhouse, Lever, Ashby), company career sites (Microsoft,
-          Amazon, Workday), Hacker News and Google Jobs. Links open the original application.
+          SimplifyJobs, speedyapply, company job boards (Greenhouse, Lever, Ashby), company and university career sites
+          (Microsoft, Amazon, Workday, Cornell, Brown, Penn…), Hacker News and Google Jobs. Links open the original
+          application.
         </p>
       </section>
 

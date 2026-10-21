@@ -21,11 +21,12 @@ import {
 } from "../utils/aiAgent";
 import { Bank, BankEntry, bulletCount, emptyBank, loadBank, mergeParsed, mergeSkills, parseResume, saveBank, uid } from "../utils/experienceBank";
 import { copyText } from "../utils/linkedin";
-import { deleteResumeFile, saveResumeFile, storedIds, viewResumeFile } from "../utils/resumeFiles";
+import { deleteResumeFile, saveResumeFile, storedIds, uploadLocalFiles, viewResumeFile } from "../utils/resumeFiles";
 import { MONTHS, Profile, labelFor } from "../utils/profile";
 import { ResumeHeader, buildResumePdf, downloadPdf, loadHeader, saveHeader } from "../utils/resumePdf";
 import { SavedJobsApi } from "../utils/savedJobs";
 import "./aiAgent.css";
+import { canSaveLocally, pushKey } from "../utils/accountSync";
 
 // AI Agent (Profile → My jobs). Experience bank (upload resumes or add manually) → roles that fit (checked
 // daily, or a saved job picked by hand) → per role: "Generate" runs curate → one-page PDF → rescore back to
@@ -295,7 +296,9 @@ export default function AIAgent({ signedIn, profile, saved }: Props) {
                   const next = fields.includes(f.id) ? fields.filter((x) => x !== f.id) : [...fields, f.id];
                   setFields(next);
                   try {
+                    if (!canSaveLocally()) return;
                     localStorage.setItem(FIELD_KEY, JSON.stringify(next));
+                    pushKey(FIELD_KEY);
                   } catch {
                     // ignore
                   }
@@ -429,17 +432,15 @@ export default function AIAgent({ signedIn, profile, saved }: Props) {
   );
 }
 
-// ---- Experience bank: upload | add manually ----
-
-type AddKind = "experience" | "project" | "skills" | "header";
+// ---- Experience bank: File (upload résumés) | Edit (the whole library, section by section) ----
 
 function BankPanel({ bank, busy, onChange, onError, onBusy }: { bank: Bank | null; busy: boolean; onChange: (b: Bank) => void; onError: (m: string) => void; onBusy: (m: string) => void }) {
-  const [mode, setMode] = useState<"upload" | "manual">("upload");
-  const [kind, setKind] = useState<AddKind>("experience");
-  const [editing, setEditing] = useState(false);
+  const [mode, setMode] = useState<"file" | "edit">("file");
   const [onDevice, setOnDevice] = useState<string[]>([]);
   useEffect(() => {
-    storedIds().then(setOnDevice);
+    // Signed in: PDFs only on this device (from before they were saved to the account) go up first.
+    uploadLocalFiles(bank?.sources.map((x) => x.id) ?? []).finally(() => storedIds().then(setOnDevice));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bank?.sources.length]);
   if (!bank) return null;
   const experiences = bank.entries.filter((e) => e.kind !== "project").length;
@@ -451,7 +452,6 @@ function BankPanel({ bank, busy, onChange, onError, onBusy }: { bank: Bank | nul
       onBusy(`Reading ${i + 1}/${files.length}: ${f.name}`);
       try {
         next = mergeParsed(next, await parseResume(f));
-        // Keep the original PDF on this device so it can be opened again.
         await saveResumeFile(next.sources[next.sources.length - 1].id, f);
       } catch (e) {
         onError((e as Error).message);
@@ -464,15 +464,15 @@ function BankPanel({ bank, busy, onChange, onError, onBusy }: { bank: Bank | nul
   return (
     <div className="ag-bank">
       <div className="segmented" role="tablist" aria-label="Your experience">
-        <button type="button" role="tab" aria-selected={mode === "upload"} className={mode === "upload" ? "is-active" : ""} onClick={() => setMode("upload")}>
-          📄 Upload resume
+        <button type="button" role="tab" aria-selected={mode === "file"} className={mode === "file" ? "is-active" : ""} onClick={() => setMode("file")}>
+          📄 File
         </button>
-        <button type="button" role="tab" aria-selected={mode === "manual"} className={mode === "manual" ? "is-active" : ""} onClick={() => setMode("manual")}>
-          ✏️ Add manually
+        <button type="button" role="tab" aria-selected={mode === "edit"} className={mode === "edit" ? "is-active" : ""} onClick={() => setMode("edit")}>
+          ✏️ Edit
         </button>
       </div>
 
-      {mode === "upload" ? (
+      {mode === "file" ? (
         <>
           <label className="ag-primary ag-file">
             Upload resume (PDF)
@@ -493,8 +493,8 @@ function BankPanel({ bank, busy, onChange, onError, onBusy }: { bank: Bank | nul
                         View
                       </button>
                     ) : (
-                      // No saved copy here (uploaded earlier, or on another device): attach the same PDF to view it.
-                      <label className="ag-linkbtn ag-attach" title="Pick this PDF again to view it here">
+                      // No saved copy (uploaded before PDFs were kept): attach the same PDF to view it.
+                      <label className="ag-linkbtn ag-attach" title="Pick this PDF again to keep it with your resumes">
                         Attach to view
                         <input
                           type="file"
@@ -512,7 +512,7 @@ function BankPanel({ bank, busy, onChange, onError, onBusy }: { bank: Bank | nul
                       type="button"
                       className="ag-file-x"
                       aria-label={`Remove ${src.fileName} from the list`}
-                      title="Remove from the list (its experience stays in your bank)"
+                      title="Remove from the list (its experience stays in your library)"
                       onClick={() => {
                         deleteResumeFile(src.id);
                         onChange({ ...bank, sources: bank.sources.filter((x) => x.id !== src.id) });
@@ -525,128 +525,156 @@ function BankPanel({ bank, busy, onChange, onError, onBusy }: { bank: Bank | nul
               })}
             </ul>
           )}
-        </>
-      ) : (
-        <>
-          <div className="ag-kinds" role="group" aria-label="What to add">
-            {(
-              [
-                ["experience", "Experience"],
-                ["project", "Project"],
-                ["skills", "Skills"],
-                ["header", "Name & links"],
-              ] as [AddKind, string][]
-            ).map(([k, label]) => (
-              <button key={k} type="button" aria-pressed={kind === k} className={kind === k ? "is-on" : ""} onClick={() => setKind(k)}>
-                {label}
+          {bank.entries.length > 0 && (
+            <p className="ag-small">
+              {experiences} experiences · {bank.entries.length - experiences} projects · {bulletCount(bank)} bullets · {bank.skills.length} skills{" "}
+              <button type="button" className="ag-linkbtn" onClick={() => setMode("edit")}>
+                Edit ›
               </button>
-            ))}
-          </div>
-          {kind === "skills" ? (
-            <SkillForm onAdd={(skills) => onChange({ ...bank, skills: mergeSkills(bank.skills, skills) })} />
-          ) : kind === "header" ? (
-            <HeaderForm />
-          ) : (
-            <EntryForm key={kind} kind={kind} onSave={(entry) => onChange({ ...bank, entries: [...bank.entries, entry] })} />
+            </p>
           )}
         </>
-      )}
-
-      {bank.entries.length > 0 && (
-        <p className="ag-small">
-          {experiences} experiences · {bank.entries.length - experiences} projects · {bulletCount(bank)} bullets · {bank.skills.length} skills{" "}
-          <button type="button" className="ag-linkbtn" onClick={() => setEditing(!editing)}>
-            {editing ? "Done" : "Edit"}
-          </button>
-        </p>
-      )}
-
-      {editing && (
-        <>
-          <div className="ag-skillchips">
-            {bank.skills.map((s) => (
-              <span key={s}>
-                {s}
-                <button type="button" aria-label={`Remove ${s}`} onClick={() => onChange({ ...bank, skills: bank.skills.filter((x) => x !== s) })}>
-                  ✕
-                </button>
-              </span>
-            ))}
-          </div>
-          <ul className="ag-entries">
-            {bank.entries.map((e) => (
-              <li key={e.id}>
-                <div className="ag-entry-head">
-                  <strong>{[e.title, e.org].filter(Boolean).join(", ")}</strong>
-                  {e.link && <small>{e.link}</small>}
-                  <button type="button" onClick={() => onChange({ ...bank, entries: bank.entries.filter((x) => x.id !== e.id) })}>
-                    Remove
-                  </button>
-                </div>
-                <ul>
-                  {e.bullets.map((b) => (
-                    <li key={b.id}>
-                      <textarea
-                        rows={2}
-                        defaultValue={b.text}
-                        aria-label="Bullet"
-                        onBlur={(ev) => {
-                          const text = ev.target.value.trim();
-                          if (text === b.text) return;
-                          onChange({
-                            ...bank,
-                            entries: bank.entries.map((x) =>
-                              x.id !== e.id ? x : { ...x, bullets: text ? x.bullets.map((y) => (y.id === b.id ? { ...y, text } : y)) : x.bullets.filter((y) => y.id !== b.id) },
-                            ),
-                          });
-                        }}
-                      />
-                    </li>
-                  ))}
-                </ul>
-              </li>
-            ))}
-          </ul>
-        </>
+      ) : (
+        <Library bank={bank} onChange={onChange} />
       )}
     </div>
   );
 }
 
-function EntryForm({ kind, onSave }: { kind: "experience" | "project"; onSave: (e: BankEntry) => void }) {
-  const [title, setTitle] = useState("");
-  const [org, setOrg] = useState("");
-  const [link, setLink] = useState("");
-  const [dates, setDates] = useState("");
-  const [bullets, setBullets] = useState("");
-  const [added, setAdded] = useState(false);
-  const url = link.trim() && (/^https?:\/\//i.test(link.trim()) ? link.trim() : `https://${link.trim()}`);
+/**
+ * Edit: everything read from the résumés (and anything typed), section by section, editable in place.
+ * This is the library the AI Agent picks from for each job.
+ */
+function Library({ bank, onChange }: { bank: Bank; onChange: (b: Bank) => void }) {
+  const setEntry = (id: string, patch: Partial<BankEntry>) => onChange({ ...bank, entries: bank.entries.map((e) => (e.id === id ? { ...e, ...patch } : e)) });
+  const addEntry = (kind: BankEntry["kind"]) =>
+    onChange({ ...bank, entries: [...bank.entries, { id: uid("e"), kind, title: "", org: "", dates: "", link: "", bullets: [] }] });
+  const experience = bank.entries.filter((e) => e.kind !== "project");
+  const projects = bank.entries.filter((e) => e.kind === "project");
+
+  return (
+    <div className="ag-library">
+      <details className="ag-section" open={!loadHeader().name}>
+        <summary>Name & links</summary>
+        <HeaderForm />
+      </details>
+
+      <section className="ag-section">
+        <h4>Education</h4>
+        {bank.education.map((line, i) => (
+          <input
+            key={`${i}-${line}`}
+            className="ag-edit-line"
+            defaultValue={line}
+            aria-label="Education"
+            onBlur={(e) => {
+              const v = e.target.value.trim();
+              if (v === line) return;
+              onChange({ ...bank, education: v ? bank.education.map((x, k) => (k === i ? v : x)) : bank.education.filter((_, k) => k !== i) });
+            }}
+          />
+        ))}
+        <AddLine placeholder="Add education: School, degree, graduation" onAdd={(v) => onChange({ ...bank, education: [...bank.education, v] })} />
+      </section>
+
+      <section className="ag-section">
+        <h4>Experience</h4>
+        {experience.map((e) => (
+          <EntryCard key={e.id} entry={e} onChange={(patch) => setEntry(e.id, patch)} onRemove={() => onChange({ ...bank, entries: bank.entries.filter((x) => x.id !== e.id) })} />
+        ))}
+        <button type="button" className="ag-secondary ag-add" onClick={() => addEntry("experience")}>
+          + Add experience
+        </button>
+      </section>
+
+      <section className="ag-section">
+        <h4>Projects</h4>
+        {projects.map((e) => (
+          <EntryCard key={e.id} entry={e} onChange={(patch) => setEntry(e.id, patch)} onRemove={() => onChange({ ...bank, entries: bank.entries.filter((x) => x.id !== e.id) })} />
+        ))}
+        <button type="button" className="ag-secondary ag-add" onClick={() => addEntry("project")}>
+          + Add project
+        </button>
+      </section>
+
+      <section className="ag-section">
+        <h4>Skills</h4>
+        <div className="ag-skillchips">
+          {bank.skills.map((s) => (
+            <span key={s}>
+              {s}
+              <button type="button" aria-label={`Remove ${s}`} onClick={() => onChange({ ...bank, skills: bank.skills.filter((x) => x !== s) })}>
+                ✕
+              </button>
+            </span>
+          ))}
+        </div>
+        <SkillForm onAdd={(skills) => onChange({ ...bank, skills: mergeSkills(bank.skills, skills) })} />
+      </section>
+    </div>
+  );
+}
+
+/** One experience or project: its heading fields and bullets, all editable. */
+function EntryCard({ entry: e, onChange, onRemove }: { entry: BankEntry; onChange: (patch: Partial<BankEntry>) => void; onRemove: () => void }) {
+  const field = (k: "title" | "org" | "dates" | "link", placeholder: string, extra: Record<string, string> = {}) => (
+    <input
+      key={k}
+      defaultValue={(e[k] as string) || ""}
+      placeholder={placeholder}
+      aria-label={placeholder}
+      {...extra}
+      onBlur={(ev) => {
+        let v = ev.target.value.trim();
+        if (k === "link" && v && !/^https?:\/\//i.test(v)) v = `https://${v}`;
+        if (v !== ((e[k] as string) || "")) onChange({ [k]: v });
+      }}
+    />
+  );
+  return (
+    <div className="ag-card-edit">
+      <div className="ag-card-fields">
+        {field("title", e.kind === "project" ? "Project name" : "Role")}
+        {e.kind === "project" ? field("link", "Link (github.com/you/project)", { inputMode: "url" }) : field("org", "Company / organization")}
+        {field("dates", "Dates")}
+      </div>
+      {e.bullets.map((b) => (
+        <textarea
+          key={b.id}
+          rows={2}
+          defaultValue={b.text}
+          aria-label="Bullet"
+          onBlur={(ev) => {
+            const text = ev.target.value.trim();
+            if (text === b.text) return;
+            onChange({ bullets: text ? e.bullets.map((y) => (y.id === b.id ? { ...y, text } : y)) : e.bullets.filter((y) => y.id !== b.id) });
+          }}
+        />
+      ))}
+      <div className="ag-card-foot">
+        <AddLine placeholder="Add a bullet point" onAdd={(text) => onChange({ bullets: [...e.bullets, { id: uid("b"), text, source: "typed" }] })} />
+        <button type="button" className="ag-ghost ag-remove" onClick={onRemove}>
+          Remove
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function AddLine({ placeholder, onAdd }: { placeholder: string; onAdd: (v: string) => void }) {
+  const [v, setV] = useState("");
   return (
     <form
-      className="ag-entryform"
+      className="ag-skillform"
       onSubmit={(e) => {
         e.preventDefault();
-        const lines = bullets.split("\n").map((l) => l.replace(/^[•\-*]\s*/, "").trim()).filter(Boolean);
-        if (!title.trim() || !lines.length) return;
-        onSave({ id: uid("e"), kind, title: title.trim(), org: org.trim(), dates: dates.trim(), link: url || "", bullets: lines.map((text) => ({ id: uid("b"), text, source: "typed" })) });
-        setTitle("");
-        setOrg("");
-        setLink("");
-        setDates("");
-        setBullets("");
-        setAdded(true);
+        if (v.trim()) onAdd(v.trim());
+        setV("");
       }}
     >
-      <input value={title} placeholder={kind === "project" ? "Project name" : "Role"} onChange={(e) => (setTitle(e.target.value), setAdded(false))} />
-      {kind === "project" ? (
-        <input value={link} placeholder="Link (github.com/you/project)" inputMode="url" onChange={(e) => setLink(e.target.value)} />
-      ) : (
-        <input value={org} placeholder="Company / organization" onChange={(e) => setOrg(e.target.value)} />
-      )}
-      <input value={dates} placeholder="Dates" onChange={(e) => setDates(e.target.value)} />
-      <textarea rows={3} value={bullets} placeholder="Bullet points, one per line" onChange={(e) => setBullets(e.target.value)} />
-      <button type="submit" className="ag-primary" disabled={!title.trim() || !bullets.trim()}>
-        {added ? "✓ Added. Add another" : "Add"}
+      <input value={v} placeholder={placeholder} onChange={(e) => setV(e.target.value)} aria-label={placeholder} />
+      <button type="submit" className="ag-secondary" disabled={!v.trim()}>
+        Add
       </button>
     </form>
   );
@@ -672,7 +700,7 @@ function SkillForm({ onAdd }: { onAdd: (s: string[]) => void }) {
   );
 }
 
-/** Name, contact details and links for the PDF header. Kept on this device; only in the PDF. */
+/** Name, contact details and links for the PDF header (saved to the account; only used in the PDF). */
 function HeaderForm() {
   const [h, setH] = useState<ResumeHeader>(loadHeader);
   const set = (k: keyof ResumeHeader, v: string) => {
@@ -681,7 +709,7 @@ function HeaderForm() {
     saveHeader(next);
   };
   return (
-    <div className="ag-entryform">
+    <div className="ag-card-fields">
       <input value={h.name} placeholder="Full name" onChange={(e) => set("name", e.target.value)} />
       <input value={h.email} placeholder="Email" inputMode="email" onChange={(e) => set("email", e.target.value)} />
       <input value={h.phone} placeholder="Phone" inputMode="tel" onChange={(e) => set("phone", e.target.value)} />
