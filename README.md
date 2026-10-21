@@ -31,7 +31,7 @@ Tap **I'll just browse around** to use Tepobaby without signing in. You'll answe
 ### Your data follows your Google account
 When you're signed in, everything you set up in Tepobaby is saved to your account, not just to the phone or computer you're using. Sign in anywhere and it's all there:
 - **Your profile:** onboarding answers and saved / applied jobs (with each application's résumé score).
-- **The AI Agent:** your experience bank and the original résumé PDFs you uploaded (**View** works on any device), the agent's progress (checked roles, scores, curated résumés, picked saved jobs), your fields, target and auto-check setting, and your PDF header.
+- **The AI Agent:** your Applicant's resources and the résumé PDFs you imported (**View** works on any device), each saved job's generated résumé, score and suggestions, and your PDF header.
 - **Ginny:** your résumé summary and selected job.
 - **Settings and progress:** the Home feed view (tab, time window, visa filters, how far you expanded **Show more**), Connect's name, school and LinkedIn fixes, and Technical practice (card shuffle, solved cards, code drafts, language).
 
@@ -327,71 +327,60 @@ Pick one of your saved (♥) jobs, or type any company, to get two sections.
 Tepobaby only builds links; it never signs in to LinkedIn or sees your LinkedIn account.
 
 ## Profile & organizations
-Your **Profile** has your saved and applied jobs, all your answers, programs and organizations picked for you, a button to review your answers, and sign out.
+Your **Profile** has your saved and applied jobs (each saved job with the AI Agent's **✨ Generate**), your **Applicant's resources**, all your answers, programs and organizations picked for you, a button to review your answers, and sign out.
 
-- **Save jobs with ♥**: tap the heart on any job posting to save it. Saved jobs appear under **My jobs** on your Profile, with **Saved** and **Applied** tabs; tap **Mark applied** to track where you've applied. Each saved job keeps its details, so it stays there after the posting leaves the 7-day feed. When signed in, saved jobs are stored on your account; as a guest, they stay on your device and move to your account when you sign in.
+- **Save jobs with ♥**: tap the heart on any job posting to save it. Saved jobs appear under **My jobs** on your Profile, with **Saved** and **Applied** tabs; tap **Mark applied** to track where you've applied, or **✨ Generate** for a résumé built for that job (below). Each saved job keeps its details, so it stays there after the posting leaves the 7-day feed. When signed in, saved jobs are stored on your account; as a guest, they stay on your device and move to your account when you sign in.
 - **Track your applications**: in **My jobs → Applied**, tap a job's stage to update it: **Applied → OA → Phone → On-site → Final → Team match → Offer**, or **Ghosted** / **Not proceeding**. A pipeline summary shows how many jobs are at each stage, and each job shows when its stage last changed. Applied jobs stay until you remove them: the daily job update never touches this list, and changing a stage never reshuffles it (it's ordered by when you applied).
 
 ### AI Agent (Pro, free during the demo)
 The AI Agent is a **Tepobaby Pro subscription feature**. During the demo, everyone can use it for free.
 
-Under **My jobs**, it does the daily work of a job search:
-- **Experience bank:** it keeps all your experience in one place.
-- **Daily roles:** it finds roles that fit you.
-- **Résumés:** for each role, one tap on **✨ Generate** writes a one-page résumé with Claude Code and keeps re-checking it against the ATS until it scores **85+**.
-- **Ready to apply:** it marks each finished role **ready to apply**.
+It crafts a résumé for one job at a time, from everything you've told it about yourself:
+1. **Applicant's resources:** everything about you, in one place on your Profile.
+2. **✨ Generate** on a saved (♥) job in **My jobs**: Claude Code builds a one-page résumé for that posting from your resources, picking the best match.
+3. **The report:** the résumé's ATS score and, below 85, specific suggestions for what to add to your resources.
+4. **Repeat:** add the real information it asks about to Applicant's resources and tap **✨ Generate again**.
+
+It never checks or applies to roles on its own: nothing runs until you tap Generate.
 
 #### How it works (the pipeline)
 ```
-Job posting API ──► job text ──────────────┐
-                                           ├─► Tepobaby ATS scoring ──► score
-Your résumé PDFs ──► text, PII removed ────┘      ├─ BM25 skill keyword match   (local, 40%)
-       ▲             (experience bank)            ├─ Voyage AI embeddings        (API,   35%)
-       │                                          └─ MiniLM reranker evidence    (25%)
-       └── Claude Code rewords & reorders → one-page PDF rebuilt (EB Garamond) → rescore   (✨ Generate loops this)
+Applicant's resources ─┐
+                       ├─► Claude Code picks & rewords (no new facts) ─► one-page PDF (EB Garamond) ─► ATS score
+Saved job's posting ───┘                                                                                  │
+        ▲                                                                       below 85: one more round ◄┤
+        └──────── you add what the suggestions ask for ◄── report: score + suggestions ◄──────────────────┘
 ```
 
 | Step | Tool or API | Notes |
 | --- | --- | --- |
-| 1. Get the job posting | The posting's own public API: Greenhouse, Lever, Ashby, Workday, SmartRecruiters, and Eightfold sites like Microsoft (`apply.careers.microsoft.com/api/apply/v2/jobs/<id>`) | Microsoft's job page is JavaScript-only, so a plain fetch gets nothing; the server reads the posting from the jobs API and turns its HTML into text. Other sites fall back to the posting's schema.org data or page text |
-| 2. Read your résumé | Tepobaby's `pdfToLines()` and `sanitize()` (`server/ginny/resume.js`) | Removes your name, email, phone, address and links before anything is scored or sent to an AI. Every version you upload is merged into your experience bank |
-| 3. Score it | Tepobaby's `analyze()` (`server/ginny/ats.js`) | Three parts, below |
-| 3a. Skills (40%) | BM25 keyword matching | Local, no API |
-| 3b. Semantic fit (35%) | Voyage AI embeddings (`voyage-4`) | Compares your résumé and the job text as embeddings, mapped to 0–100 |
-| 3c. Evidence (25%) | MiniLM cross-encoder (`ms-marco-MiniLM-L-6-v2`) via Transformers.js | Finds your best line for each requirement. Runs on Tepobaby's server (on Vercel too); if it can't load, the closest line by Voyage similarity is used instead |
-| 4. Edit the résumé | **Claude Code**, through **✨ Generate** (headless, on your Claude plan, no API key) | Works when Tepobaby runs on your computer with Claude Code installed and signed in (`npm run dev`). The prompt holds the rules, your experience bank, the job and the last score. Rule: reword and reorder only, never add facts you didn't give it, and the app enforces it in code (see below). Where Claude Code isn't available, like the live website, **Manual** gives you the prompt to paste into Claude Code yourself |
-| 5. Rebuild the PDF | jsPDF in your browser, with the free EB Garamond font | One page (smaller type, then the least relevant bullets left out if needed), with your header and clickable links. Your header is saved to your account |
-| 6. Rescore | Back to step 2 with the new PDF | The rebuilt PDF is read exactly like an upload and scored again. **Generate** repeats steps 4–6 back to back (each round's prompt includes the new score) until 85+, or until changes stop helping (two rounds in a row with no gain, or 4 rounds) |
+| 1. Get the job posting | The posting's own public API: Greenhouse, Lever, Ashby, Workday, SmartRecruiters, and Eightfold sites like Microsoft (`apply.careers.microsoft.com/api/apply/v2/jobs/<id>`) | Microsoft's job page is JavaScript-only, so a plain fetch gets nothing; the server reads the posting from the jobs API and turns its HTML into text. Other sites fall back to the posting's schema.org data or page text. All your resources are scored against it first, to find the requirements and missing skills |
+| 2. Write the résumé | **Claude Code**, headless, on the author's Claude plan (no API key) | The prompt holds the rules, your resources (with IDs), the job's requirements and what the ATS found missing. Rule: choose, order and reword only, never add facts you didn't give it. The app enforces this in code (see below) |
+| 3. Rebuild the PDF | jsPDF in your browser, with the free EB Garamond font | One page (smaller type, then the least relevant bullets left out if needed), with your name & links header and clickable project links |
+| 4. Score it | Tepobaby's ATS (`server/ginny/ats.js`): BM25 skills (40%), Voyage AI semantic fit (35%), MiniLM reranker evidence (25%) | The PDF is read back exactly like an upload (personal details removed) and scored. Below 85, one more round tries to fix what held it back, and the better version is kept |
+| 5. Report | Claude Code's suggestions plus the ATS's missing skills and weak requirements | Each suggestion names the entry or bullet it means, e.g. "If you've used TypeScript on the Campus Events App, add a bullet that names it" |
 
 #### Using it
-1. **Add your experience.** There are two tabs side by side:
-   - **📄 File:** one button. Upload one or more résumé PDFs. They're read into experiences, projects, bullet points, skills and education, with duplicates across versions merged and your name and contact details removed.
-     - **Uploaded list:** every résumé you've uploaded is listed under the button, with its date and **View** to open the original PDF.
-     - **Where the PDFs live:** signed in, in your account, so **View** works on any device you sign in on; as a guest, on this device only.
-     - **No View link?** For a résumé uploaded before saved copies existed, tap **Attach to view** and pick the same PDF. It's attached for viewing without being read again, so nothing is duplicated.
-     - **✕:** removes a file from the list. The experience it added stays in your bank.
-   - **✏️ Edit:** your whole library, section by section, the way the agent sees it: **Name & links** (your PDF header), **Education**, **Experience**, **Projects** and **Skills**. Everything read from your files is already filled in. Edit any title, organization, project link, dates or bullet point in place (it saves when you leave the field; clearing a bullet deletes it), add bullets, **+ Add experience** / **+ Add project**, add or remove skills, or **Remove** an entry. The agent picks only from this library.
-2. **Pick your fields** (Software, Data & AI, Finance & business…), your start date and your target score (🎯, 85 by default).
-3. **Choose the roles.**
-   - **Automatically:** with **Auto daily on** (the default), it checks 10 new roles that fit you once a day when you open Profile. You can also tap **Check 10 new roles** anytime.
-   - **Only when you ask:** turn **Auto daily off**. Nothing runs by itself; you check roles or pick jobs yourself.
-   - **A specific saved job:** **Or pick a saved job…** lists your saved (♥) jobs. Pick one and tap **Add**, and it's checked right away.
-4. **Tap ✨ Generate** on a role (**🔁 To curate** tab). It runs the whole loop back to back: Claude Code writes the résumé, the PDF is rebuilt, the ATS score is checked, and it repeats with the new score. The progress line shows each round ("Round 2: rebuilding the PDF and checking the ATS score"), and **Stop** ends it anytime. It finishes as:
-   - **✅ Ready** at 85+;
-   - **✍️ Your info** when only your real experience can raise the score (e.g. 39 → 42 → 42). Answer its specific questions; they're added to your bank, and you can Generate again;
-   - **tops out** when changes stop helping.
-   - **Manual** instead shows the prompt-and-paste steps for Claude Code, for when Generate isn't available.
-   - **Generate on the live website (the author's account only):** run `npm run relay` on the Mac. While it runs, **Generate** at tepobaby.vercel.app, signed in as the author, uses the Mac's Claude Code. Everyone else, and the author whenever the relay is stopped, gets the manual steps.
-5. **Apply.** On a ready role, use **⬇ PDF**, **Preview** (each reworded bullet shows your original words) and the copy-ready form answers. Then tap **Apply ↗**, submit on the company's site yourself, and tap **✓ Applied**.
+1. **Fill in Applicant's resources** (Profile, under My jobs). Sections: **Name & links** (your PDF header), **Education**, **Experience**, **Projects** (with links, which become hyperlinks on the PDF) and **Skills**. Edit anything in place (it saves when you leave the field; clearing a bullet deletes it), add bullets, **+ Add experience** / **+ Add project**, or **Remove** an entry. **📄 Import from a résumé PDF** fills it from résumés you already have (duplicates merged, name and contact details removed), and lists the files with **View**.
+2. **Save jobs** with ♥ on Home.
+3. **Tap ✨ Generate** next to **Mark applied** on a saved job. A progress line shows each step ("Claude Code is writing your résumé", "Building the PDF and checking the ATS score"); a full run takes about 40 seconds.
+4. **Read the report:** tap the **ATS score** chip. It shows the score against the 85 target, what all your resources scored before curating, and:
+   - **✅ Ready to apply** at 85+, or
+   - **To reach 85+**: suggestions for what to add to Applicant's resources (only if true for you).
+   - **⬇ PDF**, **Preview** (each reworded bullet shows your original words), **Copy text** and **Apply ↗**.
+5. **Improve and repeat:** add what's true to your resources, then **✨ Generate again**.
+6. **Apply** on the company's site yourself, then tap **Mark applied**. The résumé's score goes with the application.
+
+**Where Generate runs:** wherever Tepobaby's server runs next to a signed-in Claude Code (`npm run dev` on the author's Mac). On the live website, Generate works for the author's account while `npm run relay` runs on the Mac; otherwise it says Claude Code isn't connected.
 
 #### After you apply
-The job moves to **My jobs → Applied** with its hiring-stage tracker. Tap **Details ▾** to see the **résumé ATS score** for that application. Hover over (or tap) the score to see its history: the score by round (e.g. 41 → 63 → 87), the target, how many rounds it took, and when it was scored.
+The job moves to **My jobs → Applied** with its hiring-stage tracker. Tap **Details ▾** to see the **résumé ATS score** for that application. Hover over (or tap) the score to see where it came from: all your resources' score, each Generate round (e.g. 37 → 41 → 43), the target, and when it was scored.
 
 #### Honesty rules (enforced in code, not only in the prompt)
-- **Sources:** every bullet must come from a bullet in your bank.
+- **Sources:** every bullet must come from a bullet in your resources.
 - **Rewrites:** a rewrite that adds a number, uses a placeholder like [X%] or rambles is replaced by your original words.
-- **Skills:** only skills already in your bank or written in your bullets.
-- **New facts:** these come only from your own answers.
+- **Skills:** only skills already in your resources or written in your bullets.
+- **New facts:** only what you add to Applicant's resources yourself. The suggestions say what would help; they never write it in for you.
 - **Submitting:** nothing is submitted for you, and the score is Tepobaby's ATS estimate (each company's own system differs), not a guarantee.
 
 ### Programs & organizations for you
@@ -460,7 +449,7 @@ How I built Tepobaby (with Claude Code): each decision, why I made it, and the p
   - *Pain point:* university sites list every staff job, and "student" matches "Student Health Medical Assistant". Titles must match research / lab / intern / fellowship / pre-doctoral / post-bacc patterns, and staff (coordinator, advisor, clinical…) and senior (manager, professor, postdoc…) titles are skipped. Only Cornell, Brown and Penn among the Ivies have a public feed; the rest come through two Google research searches.
   - *Pain point:* only 3 of 48 university roles were under a week old, since research jobs stay open longer. Research roles now stay listed for 30 days.
 - **US / UK / CA filter.**
-  - *How:* `countriesOf(location)` (`server/jobs/classify.js`) returns every country a location names, so "Seattle · Vancouver, BC" shows under both. Unknown and remote count as U.S. "London, ON" and "Manchester, NH" aren't the UK. The AI Agent's queue stays U.S.-only, since its sponsorship rules are about U.S. visas.
+  - *How:* `countriesOf(location)` (`server/jobs/classify.js`) returns every country a location names, so "Seattle · Vancouver, BC" shows under both. Unknown and remote count as U.S. "London, ON" and "Manchester, NH" aren't the UK.
 - **Keyword-filter Hacker News posts.**
   - *Why:* "Who is hiring?" has real startup roles.
   - *Pain point:* posts are free text. I keep ones that mention intern, new grad or junior roles, and read the "Company | Role | Location" first line most posts use.
@@ -694,10 +683,17 @@ How I built Tepobaby (with Claude Code): each decision, why I made it, and the p
 - **Prepare everything, but let the student submit.**
   - *Why:* tools like AIApply and JobCopilot submit applications with bots. That means getting past CAPTCHAs, creating accounts on Workday and similar sites, and answering legal questions (work authorization, sponsorship, "is everything true?") on the student's behalf. A wrong answer about OPT can cost an offer, so the agent does everything up to the Submit button.
   - *Pain point:* the request was to "guarantee" getting past ATS. No tool can: each company runs its own system and humans review after it. The agent maximizes the honest score instead and says when a role is out of reach.
-- **An experience bank instead of one résumé.**
+- **Craft one résumé per job on request, instead of checking every role automatically.**
+  - *Why:* an earlier version checked 10 new roles a day against the student's whole bank, with field chips, a target picker, start-date filters, five status tabs and a copy-and-paste fallback. The student's feedback: the point is crafting the résumé from everything they've fed in, not scoring every role out there. Now there are two pieces, **Applicant's resources** and **✨ Generate** beside each saved job. The report ends with what to add, and the student repeats.
+  - *Removed:* the daily role queue (`GET /api/apply/queue`, `server/apply/queue.js`), Auto daily, the field and target chips, the question-and-answer step, and the Manual copy-and-paste steps. Old agent progress (`tepobaby.aiAgent.v1`) was reset; results now live in `tepobaby.aiAgent.v2`, one per saved job.
+- **Suggestions instead of questions.**
+  - *Why:* the old loop stopped to ask questions and wrote the answers into the bank itself. Now Claude Code returns up to 5 `suggestions` written to the student. The app adds the ATS's missing required skills and, if there's room, weak requirements, and the student adds what's true in Applicant's resources. That keeps the resources as the one place facts come from.
+  - *Pain point:* the first suggestions pointed at bullets by internal ID ("add a scale number to bbawoc1"). The prompt now says to name entries by title and quote a few words of a bullet. The ATS's "little evidence for …" lines also repeated Claude's points, so they're only added when Claude gave fewer than 4.
+  - *Tested:* a sample résumé (2 experiences, 2 projects, 5 bullets, no education) against Affirm's Software Engineer 1 posting: all resources 37, round 1 41, round 2 43, in 37 seconds. Suggestions covered TypeScript and Kotlin (required), a missing Education entry, a feedback / code-review bullet, and scale on the Flask API bullet. **Mark applied** saved the score history 37 → 41 → 43 with the application.
+- **Applicant's resources instead of one résumé.**
   - *Why:* students keep several résumé versions (one for SWE, one for data, one for finance), each holding experience the others leave out. Merging them, plus anything typed in, lets the agent choose the best material for each job instead of rewording one fixed résumé.
   - *How:* `POST /api/agent/parse` reads each PDF in memory with Ginny's parser and redaction, then groups lines into entries: headers with role, organization and dates, followed by bullets. It joins wrapped lines and splits "Project: description" lines into named projects. The browser merges versions (same role means one entry, same bullet means one bullet). Signed-in students' banks are saved with `PUT /api/agent/bank` in Upstash Redis.
-  - *Pain point:* PDF text has no structure. In the first test, a bullet that wrapped onto a second line ("…from 2 hours / to 15 minutes") was read as a new job heading. The parser now joins lines that continue the previous bullet, and everything stays editable under **Edit**.
+  - *Pain point:* PDF text has no structure. In the first test, a bullet that wrapped onto a second line ("…from 2 hours / to 15 minutes") was read as a new job heading. The parser now joins lines that continue the previous bullet, and everything stays editable in Applicant's resources.
 - **Curate, check, repeat, with a truthfulness gate in code.**
   - *Why:* the only way to keep pushing a score up without real experience is to stuff keywords or invent skills. Claude's instructions forbid it, and `checkCuration()` also enforces it after every round:
     - every bullet must point at a bullet ID in the bank;
@@ -705,11 +701,6 @@ How I built Tepobaby (with Claude Code): each decision, why I made it, and the p
     - placeholders and over-long rewrites fall back to the student's words;
     - skills must already be in the bank.
   - *Pain point:* a unit test fed it a curation that made up a bullet, added "serving 10,000 users", used [X%] and listed Kubernetes and AWS. All of them were removed or reverted.
-- **Ask instead of inventing.**
-  - *Why:* when a round doesn't improve the score and the model reports what's missing, the agent stops and asks the student specific questions. Answers become new bank bullets and skills, so the next round (and every other job) can use them.
-- **Filter by graduation date, start date, visa and field before scoring.**
-  - *Why:* every ATS check fetches a job description and calls Voyage AI, so checking roles a student can't take wastes their hourly limit.
-  - *Pain point:* the first test scored a software résumé against NVIDIA circuit-board and chip-verification roles (0–24). Hence the field chips (Software and Data & AI by default) and the title rules for class years and start seasons (`server/apply/queue.js`).
 - **Tie everything to the Google account, not the device.**
   - *Why:* a student who sets up the AI Agent on a laptop should see the same progress on their phone. Before, the account kept profiles, saved jobs and the experience bank, but everything else lived in one browser: agent progress, PDF header, feed view, Connect details, practice progress, uploaded PDFs.
   - *How:*
@@ -719,18 +710,16 @@ How I built Tepobaby (with Claude Code): each decision, why I made it, and the p
     - **PDFs:** stored in 384 KB chunks (`/api/me/files`), so no single Redis entry gets large.
     - **Signing out:** clears the device copy and blocks late writes from screens that are still closing. A different account on the same device starts clean.
   - *Pain point:* in the two-device test, AI Agent progress never reached the account. The server's global 8 KB body limit ran before the route's own 1 MB limit and rejected it (413). Account, agent and Ginny routes now bring their own parsers. The same limit would also have broken saving large experience banks and **Generate** with a big bank.
-  - *Tested:* one account on two fresh browsers. Device 2 had device 1's 10 checked roles, the 80 target, the chosen fields, the PDF header, the feed view (Internship / This week / 50 shown), the bank, and the uploaded PDF, which opened from the account. After sign-out, nothing was left on device 2.
+  - *Tested:* one account on two fresh browsers. Device 2 had device 1's agent progress, the PDF header, the feed view (Internship / This week / 50 shown), the bank, and the uploaded PDF, which opened from the account. After sign-out, nothing was left on device 2.
   - *Not synced:* a personal OpenAI key, which stays on the device.
 - **Keep the uploaded PDFs on the device, not the server** (replaced: they're now stored in the account too).
   - *Why:* students want to see which résumé versions they've already added, and open them again. The server reads each PDF once and never stores it, so the browser keeps the original in IndexedDB (`src/utils/resumeFiles.ts`) under the same ID as its entry in the bank's `sources`. **View** opens it in a new tab (opened before the file loads, so phones don't block it as a pop-up).
   - *Pain point:* résumés uploaded before this feature had no saved copy, so their rows showed no **View** button. Those rows (and rows from another device) now show **Attach to view**, which stores the picked PDF under the same source ID without parsing it again. If the browser blocks storage (private browsing, some Home Screen apps), files are also kept in memory so View works for that visit.
   - *Trade-off:* signed-in students' originals are now stored in their account (in 384 KB chunks, readable only by them), so **View** works on any device. That means full résumés live in the cloud, which was the price of "everything follows your Google account"; guests' files never leave the device.
-- **A minimal screen.**
-  - *Why:* the agent's section had grown long (an intro, a "How it works" panel, key settings and a footer). It's now a heading with a PRO chip, two side-by-side tabs (**File**, **Edit**), compact settings chips, and one check button. Each role shows only its score history and the next step. The explanations live in this README.
-- **✨ Generate: one button for the whole loop, run by Claude Code.**
+- **✨ Generate: one button, run by Claude Code.**
   - *Why:* copying a prompt into Claude Code and pasting the reply back every round was tedious. With Generate, the server runs Claude Code itself (`server/agent/engine.js`): `claude -p --output-format json --tools "" --no-session-persistence`, with the curation rules as the system prompt. It uses the author's Claude plan, with no API key, which suits personal use. A round took about 11–17 seconds in testing.
-  - *Where it works:* only where the server runs next to a signed-in Claude Code, i.e. `npm run dev` on your own computer. Vercel has no Claude Code, so on the live website Generate is off and **Manual** shows the copy-and-paste steps. A Claude API option (on Tepobaby's key) was built and then removed: it would have meant paying per job, and this is personal use for now.
-  - *How:* `runGenerate()` calls `POST /api/agent/generate` and runs `scoreReply()` (honesty checks → PDF → rescore) round after round until ready, needs info, or stale. The browser still checks every reply against the bank, whichever engine wrote it.
+  - *Where it works:* only where the server runs next to a signed-in Claude Code, i.e. `npm run dev` on your own computer. On the live site it goes through the relay below. A Claude API option (on Tepobaby's key) was built and then removed: it would have meant paying per job, and this is personal use for now.
+  - *How:* `generateResume()` (`src/utils/aiAgent.ts`) scores all resources against the posting, calls `POST /api/agent/generate`, runs `checkCuration()`, rebuilds the PDF and rescores, for at most 2 rounds, keeping the best. The browser checks every reply against the resources, whichever engine wrote it.
   - *Pain point:* the first browser test seemed to do nothing after tapping Generate. The app was fine: the test's progress monitor had an escaping bug and quit after 4 seconds. Rerun, one tap ran two rounds back to back (39 → 42 → 42) and stopped with four questions about real gaps (GraphQL, Kubernetes, simulation tools, where Docker was used).
 - **Generate on the live site through a relay to the author's Mac, locked to one account.**
   - *Why:* Vercel can't run Claude Code (it isn't installed there, the Claude login lives on the Mac, and serverless functions are short-lived). The author wanted one-tap Generate from the live site without an API key, so it borrows the Mac's Claude Code:
@@ -746,24 +735,14 @@ How I built Tepobaby (with Claude Code): each decision, why I made it, and the p
     - **No tools:** Claude Code runs with no tools, so nothing in a prompt can run commands on the Mac.
     - **Address check:** registration accepts only `*.trycloudflare.com` addresses.
   - *Trade-off:* Generate on the live site works only while the Mac is on and `npm run relay` is running. Quick-tunnel addresses change every restart, which is why the relay re-registers itself instead of the address living in an environment variable.
-- **Auto daily, or only on request, plus any saved job.**
-  - *Why:* not everyone wants roles checked automatically, and the best roles are often ones the student already saved. **Auto daily** can be turned off, and **Or pick a saved job…** adds any ♥ job to the agent and checks it at once (kept in the agent's state as a picked role).
-- **Curate with Claude Code (copy and paste) instead of an AI API** (now the fallback behind Generate).
-  - *Why:* earlier versions called Claude through the Anthropic API (on the student's own key) or Gemini's free API.
-    - Gemini's free tier kept failing ("high demand" on 3.8 and 3.7 Flash, a used-up quota on 3.5 Flash), and its rewrites added things that weren't in the bullets.
-    - The API path meant every student needed a paid key.
-    - Claude Code gives the best rewrites on the student's existing Claude plan, with no keys stored anywhere.
-  - *How:* Claude Code runs on the student's computer, and a website can't call it. So the agent builds the whole prompt (`claudeCodePrompt()` in `shared/agentPrompt.js`: rules, experience bank with IDs, the job's requirements, the last score and gaps, and the exact JSON shape to reply with). The student pastes it into Claude Code and pastes the reply back. `parseReply()` accepts the JSON even inside code fences, and `scoreReply()` checks it, rebuilds the PDF and rescores.
-  - *Trade-off:* each round is a manual copy and paste instead of fully automatic. The daily role check is still automatic.
-  - *Removed:* the Anthropic SDK, Zod, the in-browser Claude client and `POST /api/agent/curate` (Gemini). Ginny's own Gemini features (Ask Gemini, tailored rewrites) are unchanged.
 - **Rebuild a real PDF every round, and score that PDF.**
   - *Why:* what a company's ATS reads is the PDF, not the text the agent meant to write. Each round, the curated résumé is rendered to a one-page PDF in the browser (jsPDF, EB Garamond, `src/utils/resumePdf.ts`). It's sent to `/api/ginny/ats` with `usePdf`, and the server reads it back with the same `pdfToLines()` and `sanitize()` as any upload before scoring. Layout or parsing problems therefore show up in the score.
   - *Pain point:* the hand-built pipeline this follows used Python ReportLab, which can't run on Vercel's Node servers or in a phone browser. jsPDF in the browser produces the same one-page, linked PDF, and the header (name, email, phone, links) never leaves the device: it's added only to the PDF, and `sanitize()` strips it again before scoring.
   - *Pain point:* in the first rendered test, the name's descenders touched the contact line, which needed more room. One-page fitting steps the font down (10.5, 10, 9.5 pt), then drops the last bullets of the last entries, and the PDF tells the student how many were left out.
-- **Stop when changes stop helping.**
-  - *Why:* the loop ends at the target, after 2 rounds in a row with no gain, or at 4 rounds, so students don't keep pasting prompts that won't help.
+- **Two rounds per Generate, then report.**
+  - *Why:* rewording only goes so far: once the best material is picked, the score is limited by what's in the resources. In testing, round 2 added 0–2 points, so Generate stops after 2 rounds (or at 85) and points the student to the suggestions instead.
 - **Keep the score with the application.**
-  - *Why:* "✓ I applied" saves the score record (score, starting score, history, target, rounds, date) with the saved job. `savedJobsStore.js` validates it, and Profile → Applied shows it under **Details** with a hover tooltip, so students can see which résumé went to which job.
+  - *Why:* **Mark applied** on a generated job saves the score record (score, starting score, history, target, rounds, date) with the saved job. `savedJobsStore.js` validates it, and Profile → Applied shows it under **Details** with a hover tooltip, so students can see which résumé went to which job.
 - **A subscription feature, free for the demo.**
   - *Why:* the agent is the most expensive feature to run (job fetches, Voyage AI calls and reranking for every round), so it's planned as Tepobaby Pro. `GET /api/agent/access` decides access. While `AGENT_SUBSCRIPTION_REQUIRED` is unset, everyone has access, and the app shows "PRO · free for everyone during the demo". With it set to `on`, only accounts in `AGENT_SUBSCRIBER_EMAILS` can use it until billing is built, and everyone else sees a "Subscribe" card.
 
@@ -882,14 +861,13 @@ API routes (the Vite dev server forwards `/api` to the auth server):
 | `GET /api/interview/status` | Whether voice practice is set up, and the interviewer options |
 | `POST /api/interview/config` | The Realtime session setup for one behavioral interview (company persona, rules and STAR tools). No key involved: the browser exchanges it with OpenAI using the student's own key |
 | `GET /api/cron/jobs` | The daily job update, called by Vercel Cron (needs `Authorization: Bearer $CRON_SECRET`) |
-| `GET /api/apply/queue?gradYear=&gradMonth=&startYear=&startMonth=&visa=` | AI Agent: today's Entry-level and rotational roles that fit the graduation and start dates (and, with `visa=1`, don't exclude sponsorship), ranked by fit |
-| `POST /api/agent/parse` | AI Agent: one résumé PDF → experiences, bullets, skills and education for the experience bank (read in memory, not stored) |
+| `POST /api/agent/parse` | AI Agent: one résumé PDF → experiences, bullets, skills and education for Applicant's resources (read in memory, not stored) |
 | `GET /api/agent/access` | Whether this student can use the AI Agent (`{ allowed, plan, demo, engine }`; free for everyone during the demo; `engine` is `claude-code` when Generate can run, else `null`) |
 | `POST /api/agent/relay-register` | The Mac's relay reports its tunnel address (needs `AGENT_RELAY_SECRET`) |
 | `POST /api/agent/generate` | ✨ Generate: one curation round with Claude Code, on this computer, or (live site, the author's account) on the Mac through the relay |
 | `GET /api/me/data`, `PUT /api/me/data/:key` | Everything else the signed-in student sets up (AI Agent progress, PDF header, feed view, Connect, Technical practice, Ginny's selected job), tied to their account |
 | `GET /api/me/files`, `PUT` / `GET` / `DELETE /api/me/files/:id` | The signed-in student's original résumé PDFs |
-| `GET` / `PUT /api/agent/bank` | The signed-in student's experience bank |
+| `GET` / `PUT /api/agent/bank` | The signed-in student's Applicant's resources |
 | `GET /api/connect/school` | The signed-in student's school name, from their `.edu` email domain |
 | `GET /api/neetcode` | The NeetCode 150 list (number, title, difficulty, category) and the 18 concepts |
 | `GET /api/neetcode/problem/:slug` | One problem: statement (from LeetCode, cached), signature, starter code, accepted concepts, example tests and hidden tests with expected answers |

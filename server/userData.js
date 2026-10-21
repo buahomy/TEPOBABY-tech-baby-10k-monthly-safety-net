@@ -16,8 +16,7 @@ import express from "express";
 import * as store from "./store.js";
 
 export const KEYS = [
-  "tepobaby.aiAgent.v1",
-  "tepobaby.aiAgent.fields",
+  "tepobaby.aiAgent.v2",
   "tepobaby.resumeHeader",
   "tepobaby.feed.view",
   "tepobaby.connect.v1",

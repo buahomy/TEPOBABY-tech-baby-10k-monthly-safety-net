@@ -173,22 +173,17 @@ export function useSavedJobs(signedIn: boolean) {
     isSaved,
     /** Heart button: save if not saved, unsave if saved. */
     toggle: (p: Posting) => (isSaved(p.id) ? remove(p.id, jobs) : upsert(fromPosting(p), jobs)),
-    setStatus: (id: string, status: JobStatus) => {
+    /** Applying: `ats` keeps the AI Agent's résumé score with the application. */
+    setStatus: (id: string, status: JobStatus, ats?: AtsRecord) => {
       const job = jobs.find((j) => j.id === id);
       if (!job) return;
       const now = new Date().toISOString();
       upsert(
         status === "applied"
-          ? { ...job, status, appliedAt: job.appliedAt ?? now, stage: job.stage ?? "applied", stageUpdatedAt: job.stageUpdatedAt ?? now }
+          ? { ...job, status, appliedAt: job.appliedAt ?? now, stage: job.stage ?? "applied", stageUpdatedAt: job.stageUpdatedAt ?? now, ats: ats ?? job.ats ?? null }
           : { ...job, status, appliedAt: null, stage: null, stageUpdatedAt: null },
         jobs,
       );
-    },
-    /** AI Agent: record a posting as applied (saving it first if needed), with the résumé's ATS score. */
-    markApplied: (p: Posting, ats?: AtsRecord) => {
-      const now = new Date().toISOString();
-      const base = jobs.find((j) => j.id === p.id) ?? fromPosting(p);
-      upsert({ ...base, status: "applied", appliedAt: base.appliedAt ?? now, stage: base.stage ?? "applied", stageUpdatedAt: base.stageUpdatedAt ?? now, ats: ats ?? base.ats ?? null }, jobs);
     },
     /** Applied jobs: update the hiring stage (OA, phone, on-site, …). */
     setStage: (id: string, stage: Stage) => {

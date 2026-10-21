@@ -17,4 +17,3 @@ export function curatePrompt(p: {
   lastScore?: number | null;
   round: number;
 }): string;
-export function claudeCodePrompt(p: Parameters<typeof curatePrompt>[0]): string;
