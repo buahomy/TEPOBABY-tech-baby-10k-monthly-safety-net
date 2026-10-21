@@ -8,7 +8,7 @@
 // answer without it and say the answer has no live sources.
 
 const MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
-// Tried in order when the main model is overloaded (503) — free-tier demand spikes are common.
+// Started one after another when the main model is slow or overloaded (see interact()).
 const FALLBACKS = (process.env.GEMINI_FALLBACK_MODELS || "gemini-3.6-flash,gemini-3.7-flash,gemini-3.5-flash")
   .split(",")
   .map((m) => m.trim())
@@ -20,12 +20,12 @@ export const GEMINI_MODEL = MODEL;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function interactOnce(model, body, timeoutMs = 45000) {
+async function interactOnce(model, body, signal) {
   const res = await fetch(API, {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY },
     body: JSON.stringify({ model, store: false, ...body }),
-    signal: AbortSignal.timeout(timeoutMs),
+    signal,
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
@@ -36,39 +36,74 @@ async function interactOnce(model, body, timeoutMs = 45000) {
   return data;
 }
 
-// The model that last answered, tried first for the next 10 minutes. On the free tier a model can
-// hang for a minute or more under load while an older one answers in seconds.
+// The model that last answered, tried first for the next 10 minutes.
 let working = null;
 const WORKING_MS = 10 * 60 * 1000;
+const STAGGER_MS = 15000; // start the next model if nothing has answered by then
+// Models over their daily quota (the free tier allows 20 requests a day per model), skipped until
+// the time Google gives for the reset, so a call isn't wasted on them.
+const exhausted = new Map();
+function retryAt(err) {
+  const m = /retry in (?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?/i.exec(err.message || "");
+  const ms = m ? ((+m[1] || 0) * 3600 + (+m[2] || 0) * 60 + (+m[3] || 0)) * 1000 : 60000;
+  return Date.now() + Math.max(ms, 30000);
+}
+const TOTAL_MS = 90000;
 
 /**
- * Retries overloaded models (503/500) with short backoff, then tries the fallback models. A model
- * that doesn't answer within 20 s is skipped (the last one gets 45 s).
+ * Staggered ("hedged") requests: on the free tier a model can take 8 s or over a minute for the same
+ * prompt, or answer 503 under load. The first model starts at once; every 15 s without an answer (or
+ * right away when one fails) the next one starts alongside it, and the first answer wins. Each model
+ * has its own free quota, so this costs nothing extra. A 400 (bad request) fails at once.
  */
 async function interact(body) {
-  let last;
   const sticky = working && Date.now() - working.at < WORKING_MS ? working.model : null;
-  const order = [...new Set([sticky, MODEL, ...FALLBACKS].filter(Boolean))];
-  for (const [n, model] of order.entries()) {
-    const timeout = n === order.length - 1 ? 45000 : 20000;
-    for (let attempt = 0; attempt < (model === MODEL ? 3 : 1); attempt++) {
-      try {
-        const data = await interactOnce(model, body, timeout);
-        working = { model, at: Date.now() };
-        return data;
-      } catch (err) {
-        last = err;
-        // Overloaded or too slow: try again / move to the next model.
-        const slow = err.name === "TimeoutError" || err.name === "AbortError";
-        if (err.status !== 503 && err.status !== 500 && !slow) throw err;
-        if (working?.model === model) working = null;
-        if (slow) break;
-        if (attempt < 2 && model === MODEL) await sleep(1500 * (attempt + 1));
-      }
-    }
-  }
-  last.busy = true;
-  throw last;
+  const now = Date.now();
+  const order = [...new Set([sticky, MODEL, ...FALLBACKS].filter(Boolean))].filter((m) => !(exhausted.get(m) > now));
+  if (!order.length) throw Object.assign(new Error("Gemini's free daily quota is used up."), { status: 429 });
+  const ctrl = new AbortController();
+  const deadline = setTimeout(() => ctrl.abort(), TOTAL_MS);
+  return new Promise((resolve, reject) => {
+    let next = 0;
+    let running = 0;
+    let done = false;
+    let last = null;
+    let timer = null;
+    const finish = (fn, v) => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      clearTimeout(deadline);
+      ctrl.abort(); // cancel the requests still running
+      fn(v);
+    };
+    const launch = () => {
+      clearTimeout(timer);
+      if (done || next >= order.length) return;
+      const model = order[next++];
+      running++;
+      interactOnce(model, body, ctrl.signal)
+        .then((data) => {
+          working = { model, at: Date.now() };
+          finish(resolve, data);
+        })
+        .catch((err) => {
+          running--;
+          if (done) return;
+          if (err.status === 400) return finish(reject, err);
+          last = err;
+          if (err.status === 429) exhausted.set(model, retryAt(err));
+          if (working?.model === model) working = null;
+          if (next < order.length) launch();
+          else if (!running) finish(reject, Object.assign(last, { busy: true }));
+        });
+      if (next < order.length) timer = setTimeout(launch, STAGGER_MS);
+    };
+    ctrl.signal.addEventListener("abort", () => {
+      if (!done) finish(reject, Object.assign(last || new Error("Gemini took too long."), { busy: true }));
+    });
+    launch();
+  });
 }
 
 /** Text + url citations from an interaction's model_output steps. */
@@ -90,7 +125,8 @@ const turn = (role, text) => ({ type: role === "model" ? "model_output" : "user_
  * One Gemini call. `messages`: [{ role: "user" | "model", text }].
  * Returns { text, sources, grounded } — grounded=false when Google Search wasn't available.
  */
-export async function generate({ system, messages, search = false, json = false, temperature = 0.4, maxTokens = 1500 }) {
+// maxTokens covers thinking too (Gemini 3), so leave room beyond the answer itself.
+export async function generate({ system, messages, search = false, json = false, temperature = 0.4, maxTokens = 4000 }) {
   const body = {
     system_instruction: system,
     input: messages.map((m) => turn(m.role, m.text)),
@@ -167,14 +203,19 @@ export async function tailorResume({ jobTitle, company, requirements, missingSki
     .filter(Boolean)
     .join("\n\n");
 
-  const { text } = await generate({ system, messages: [{ role: "user", text: prompt }], json: true, temperature: 0.3, maxTokens: 2500 });
+  // Gemini 3's thinking counts toward max_output_tokens: at 2,500 the JSON was sometimes cut off.
+  const { text } = await generate({ system, messages: [{ role: "user", text: prompt }], json: true, temperature: 0.3, maxTokens: 8000 });
   const raw = text.replace(/^```(json)?\s*|\s*```$/g, "").trim();
-  let data;
+  let data = null;
   try {
     data = JSON.parse(raw);
   } catch {
-    const m = raw.match(/\{[\s\S]*\}/);
-    data = m ? JSON.parse(m[0]) : null;
+    try {
+      const m = raw.match(/\{[\s\S]*\}/);
+      data = m ? JSON.parse(m[0]) : null;
+    } catch {
+      data = null;
+    }
   }
   if (!data || !Array.isArray(data.rewrites)) throw new Error("Gemini's suggestions came back in an unexpected format. Try again.");
   const s = (v, n) => (typeof v === "string" ? v.slice(0, n) : "");
