@@ -829,7 +829,7 @@ To deploy your own copy:
 | `AGENT_RELAY_EMAILS` | Server | Comma-separated signed-in emails whose **Generate** on the live site uses the relay (the author's). |
 | `CLAUDE_CODE_BIN`, `AGENT_CLAUDE_CODE` | Server | Optional. Path to the `claude` command for the AI Agent's Generate (default `claude`), and `off` to turn Generate off. |
 | `RERANK` | Server | Optional. `off` turns off the reranker; ATS then scores evidence from the Voyage embeddings. |
-| `GEMINI_FALLBACK_MODELS` | Server | Optional. Comma-separated models to try when the main one is overloaded. Default `gemini-3.7-flash,gemini-3.5-flash`. |
+| `GEMINI_FALLBACK_MODELS` | Server | Optional. Comma-separated models to try when the main one is overloaded. Default `gemini-3.6-flash,gemini-3.7-flash,gemini-3.5-flash`. |
 
 `.env.local` is git-ignored. Never commit real values.
 
