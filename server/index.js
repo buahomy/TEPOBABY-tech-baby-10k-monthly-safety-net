@@ -21,7 +21,6 @@ import { ginnyRoutes } from "./ginny/routes.js";
 import { canUseSharedKey, companyOptions, createClientSecret, sessionConfig } from "./interview/realtime.js";
 import { customExpected, getProblem, problemList, warmCache } from "./neetcode/index.js";
 import { schoolForDomain } from "./connect/schools.js";
-import { agentRoutes } from "./agent/routes.js";
 import { userDataRoutes } from "./userData.js";
 
 const {
@@ -145,10 +144,10 @@ app.use("/api/saved/import", express.json({ limit: "512kb" })); // up to 500 sav
 const globalJson = express.json({ limit: "8kb" });
 app.use("/api/neetcode/expected", express.json({ limit: "64kb" })); // custom test inputs
 // Skip the global parser for Ginny (raw PDF uploads) and for bodies a route-specific parser already read.
-// Ginny (raw PDF uploads), account data (/api/me: agent progress and code drafts can be large) and the
-// AI Agent bring their own body parsers with bigger limits; everything else uses the small global one.
+// Ginny (raw PDF uploads) and account data (/api/me: code drafts can be large) bring their own body
+// parsers with bigger limits; everything else uses the small global one.
 app.use((req, res, next) =>
-  /^\/api\/(ginny|me|agent)\//.test(req.path) || req._body ? next() : globalJson(req, res, next),
+  /^\/api\/(ginny|me)\//.test(req.path) || req._body ? next() : globalJson(req, res, next),
 );
 app.use("/api", (_req, res, next) => {
   res.set("Cache-Control", "no-store");
@@ -276,11 +275,6 @@ ginnyRoutes(app, {
   requireUser,
 });
 userDataRoutes(app, { requireXhr, requireUser });
-agentRoutes(app, {
-  readSession: (req) => readSession(parseCookies(req.headers.cookie)[SESSION_COOKIE]),
-  requireXhr,
-  requireUser,
-});
 
 // ---- Interview: behavioral voice practice (OpenAI Realtime API) ----
 // Students use their own OpenAI API key, which stays in their browser: the server only hands out the

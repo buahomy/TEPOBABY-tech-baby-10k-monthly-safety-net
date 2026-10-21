@@ -5,7 +5,6 @@ import Questions from "./pages/Questions";
 import { User, getCurrentUser, signOut } from "./utils/auth";
 import { clearGuestSavedJobs, moveGuestSavedJobsToAccount } from "./utils/savedJobs";
 import { allowDeviceSaves, clearDeviceCopies, flushPending, hydrateAccount } from "./utils/accountSync";
-import { reloadResults } from "./utils/agentResults";
 import {
   Profile,
   clearGuestProfile,
@@ -43,10 +42,9 @@ export default function Tepobaby() {
       const [profile] = await Promise.all([
         moveGuestAnswersToAccount(),
         moveGuestSavedJobsToAccount().catch(() => {}), // device copy stays if this fails
-        // Everything else the app saves (AI Agent, feed view, practice progress…) lives in the account.
+        // Everything else the app saves (feed view, Connect, practice progress…) lives in the account.
         hydrateAccount(user).catch(() => {}),
       ]);
-      reloadResults();
       setStage(route({ kind: "user", user }, profile));
     } catch {
       setStage({ name: "welcome", error: "Signed in, but couldn't load your answers. Please refresh." });
@@ -100,7 +98,6 @@ export default function Tepobaby() {
                   .then(signOut)
                   .then(() => {
                     clearDeviceCopies(); // the account keeps it; this device doesn't
-                    reloadResults();
                     setStage({ name: "welcome" });
                   })
               : (clearGuestProfile(), clearGuestSavedJobs(), setStage({ name: "welcome" }))

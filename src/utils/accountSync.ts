@@ -10,8 +10,6 @@
 // Personal API keys (OpenAI) are deliberately not synced: they stay on the device.
 
 export const SYNCED_KEYS = [
-  "tepobaby.aiAgent.v2",
-  "tepobaby.resumeHeader",
   "tepobaby.feed.view",
   "tepobaby.connect.v1",
   "tepobaby.neetcode.v1",
@@ -86,7 +84,7 @@ const firstPending = new Map<string, number>();
 
 /**
  * Saves one item to the account, after a short pause so typing doesn't send every keystroke, but at
- * least every 3 seconds while something keeps changing (like the agent checking roles one by one).
+ * least every 3 seconds while something keeps changing (like typing in a code editor).
  */
 export function pushKey(key: string) {
   if (!signedIn || !SYNCED_KEYS.includes(key)) return;

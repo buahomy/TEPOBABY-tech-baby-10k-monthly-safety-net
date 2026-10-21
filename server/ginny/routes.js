@@ -33,22 +33,6 @@ function limit(key, max, windowMs) {
 const HOUR = 3600e3;
 const str = (v, max) => (typeof v === "string" ? v.slice(0, max) : "");
 
-/**
- * An edited copy of the student's own resume sections (the Apply agent's tailored version), or
- * null. Same shape the server builds from the PDF: { experience, projects, skills, education }.
- */
-function editedSections(v) {
-  if (!v || typeof v !== "object" || Array.isArray(v)) return null;
-  const out = {};
-  let total = 0;
-  for (const k of ["experience", "projects", "skills", "education"]) {
-    const lines = (Array.isArray(v[k]) ? v[k] : []).slice(0, 80).map((x) => str(x, 600).trim()).filter(Boolean);
-    total += lines.join("").length;
-    out[k] = lines;
-  }
-  return total >= 80 && total <= 40000 ? out : null;
-}
-
 export function ginnyRoutes(app, { readSession, requireXhr, requireUser }) {
   warmReranker();
   const who = (req) => readSession(req)?.sub || `ip:${req.ip}`;
@@ -104,19 +88,10 @@ export function ginnyRoutes(app, { readSession, requireXhr, requireUser }) {
     if (!title || !company) return res.status(400).json({ error: "Pick a job first." });
 
     try {
-      // Resume: an edited copy (Apply agent), the stored one for signed-in students, otherwise the
-      // PDF sent from the device.
+      // Resume: the stored one for signed-in students, otherwise the PDF sent from the device.
       const session = readSession(req);
       let sections = null;
-      if (req.body?.usePdf) {
-        // AI Agent: score the PDF it just rebuilt, read back exactly like an uploaded resume.
-        const b64 = str(req.body?.resumePdf, 8 * 1024 * 1024);
-        if (!b64) return res.status(400).json({ error: "Missing the resume PDF." });
-        sections = sanitize(await pdfToLines(Buffer.from(b64, "base64"))).sections;
-      } else sections = editedSections(req.body?.sections);
-      if (sections) {
-        // use it
-      } else if (session) {
+      if (session) {
         const stored = await loadResume(session.sub);
         if (!stored) return res.status(409).json({ error: "Upload your resume first.", needResume: true });
         sections = stored.sanitized.sections;
@@ -133,7 +108,7 @@ export function ginnyRoutes(app, { readSession, requireXhr, requireUser }) {
       }
 
       // The description is returned so re-scores of the same job don't fetch it again.
-      res.json({ result: await analyze({ sections, jobTitle: title, company, description }), description, sections });
+      res.json({ result: await analyze({ sections, jobTitle: title, company, description }), description });
     } catch (err) {
       fail(res, err, "analysis");
     }
@@ -147,10 +122,8 @@ export function ginnyRoutes(app, { readSession, requireXhr, requireUser }) {
     const list = (v, n, m) => (Array.isArray(v) ? v : []).slice(0, n).map((x) => str(x, m)).filter(Boolean);
     try {
       const session = readSession(req);
-      let sections = editedSections(req.body?.sections);
-      if (sections) {
-        // the Apply agent's edited copy
-      } else if (session) {
+      let sections = null;
+      if (session) {
         const stored = await loadResume(session.sub);
         if (!stored) return res.status(409).json({ error: "Upload your resume first.", needResume: true });
         sections = stored.sanitized.sections;

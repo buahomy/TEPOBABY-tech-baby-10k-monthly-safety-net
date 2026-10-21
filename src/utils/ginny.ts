@@ -147,34 +147,6 @@ export async function deleteResume(signedIn: boolean) {
 
 // ---- ATS analysis ----
 
-/** The resume as the server reads it: one list of lines per section (identifiers removed). */
-export type ResumeSections = { experience: string[]; projects: string[]; skills: string[]; education: string[] };
-
-/**
- * ATS analysis plus what it was run on: the job description (to re-score without fetching it again)
- * and the resume sections (the Apply agent edits a copy of these).
- */
-export async function runAtsDetailed(
-  signedIn: boolean,
-  job: Pick<SavedJob, "title" | "company" | "url">,
-  opts: { description?: string; sections?: ResumeSections; pdfBase64?: string } = {},
-): Promise<{ result: AtsResult; description: string; sections: ResumeSections }> {
-  const body: Record<string, unknown> = { job: { title: job.title, company: job.company, url: job.url } };
-  if (opts.description) body.description = opts.description;
-  if (opts.pdfBase64) Object.assign(body, { usePdf: true, resumePdf: opts.pdfBase64 });
-  else if (opts.sections) body.sections = opts.sections;
-  else if (!signedIn) {
-    const r = guestResumeInMemory || readGuestResume();
-    if (r) body.resumePdf = r.base64;
-  }
-  const res = await fetch("/api/ginny/ats", {
-    method: "POST",
-    headers: { ...XHR, "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  return json(res);
-}
-
 export async function runAts(signedIn: boolean, job: SavedJob, description?: string): Promise<AtsResult> {
   const body: Record<string, unknown> = { job: { title: job.title, company: job.company, url: job.url } };
   if (description) body.description = description;
