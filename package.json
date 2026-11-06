@@ -10,7 +10,8 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "start:api": "NODE_ENV=production node server/index.js",
-    "check:neetcode": "node scripts/check-neetcode.mjs"
+    "check:neetcode": "node scripts/check-neetcode.mjs",
+    "relay": "node --env-file=.env.local scripts/relay.mjs"
   },
   "dependencies": {
     "@codemirror/commands": "^6.11.1",

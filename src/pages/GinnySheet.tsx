@@ -17,6 +17,7 @@ import {
   suggestedQuestions,
   uploadResume,
 } from "../utils/ginny";
+import { Approval, ClaudeThread, claudeStatus, fileUrl, jobText, loadThread, saveThread, sendToClaude } from "../utils/claudeChat";
 import { timeAgo } from "../utils/postings";
 import { Profile } from "../utils/profile";
 import { SavedJob, SavedJobsApi } from "../utils/savedJobs";
@@ -24,7 +25,8 @@ import "./ginny.css";
 
 // Opened from the center "+" button. Two tabs side by side:
 //   Job    — pick ONE job from your saved (♥) jobs.
-//   Ginny! — AI tools for that job: ATS match analysis, and Ask Gemini.
+//   Ginny! — AI tools for that job: ATS match analysis, Ask Gemini, and (author's account only)
+//            a Claude Code chat that runs on the author's Mac.
 
 type Props = {
   user: User | null;
@@ -37,17 +39,19 @@ type Props = {
 };
 
 type Tab = "job" | "ginny";
-type Tool = null | "ats" | "chat";
+type Tool = null | "ats" | "chat" | "claude";
 
 export default function GinnySheet({ user, profile, saved, selectedId, onSelect, onBrowse, onClose }: Props) {
   const job = saved.jobs.find((j) => j.id === selectedId) || null;
   const [tab, setTab] = useState<Tab>(job ? "ginny" : "job");
   const [tool, setTool] = useState<Tool>(null);
   const [status, setStatus] = useState<GinnyStatus | null>(null);
+  const [claude, setClaude] = useState({ allowed: false, online: false });
 
   useEffect(() => {
     getStatus().then(setStatus).catch(() => {});
-  }, []);
+    if (user) claudeStatus().then(setClaude).catch(() => {});
+  }, [user]);
 
   // Close on Escape.
   useEffect(() => {
@@ -110,9 +114,10 @@ export default function GinnySheet({ user, profile, saved, selectedId, onSelect,
               </button>
             </div>
           )}
-          {tab === "ginny" && job && tool === null && <GinnyHome job={job} status={status} onTool={setTool} onChangeJob={() => setTab("job")} />}
+          {tab === "ginny" && job && tool === null && <GinnyHome job={job} status={status} claude={claude.allowed} onTool={setTool} onChangeJob={() => setTab("job")} />}
           {tab === "ginny" && job && tool === "ats" && <AtsPanel user={user} job={job} status={status} />}
           {tab === "ginny" && job && tool === "chat" && <ChatPanel job={job} profile={profile} status={status} />}
+          {tab === "ginny" && job && tool === "claude" && <ClaudePanel job={job} online={claude.online} />}
         </div>
       </div>
     </div>
@@ -181,7 +186,19 @@ function SelectedJob({ job, onChange }: { job: SavedJob; onChange?: () => void }
   );
 }
 
-function GinnyHome({ job, status, onTool, onChangeJob }: { job: SavedJob; status: GinnyStatus | null; onTool: (t: Tool) => void; onChangeJob: () => void }) {
+function GinnyHome({
+  job,
+  status,
+  claude,
+  onTool,
+  onChangeJob,
+}: {
+  job: SavedJob;
+  status: GinnyStatus | null;
+  claude: boolean;
+  onTool: (t: Tool) => void;
+  onChangeJob: () => void;
+}) {
   return (
     <>
       <h2 className="gs-title">Hi, I'm Ginny ✨</h2>
@@ -209,6 +226,18 @@ function GinnyHome({ job, status, onTool, onChangeJob }: { job: SavedJob; status
         </span>
         <Icon name="arrow" />
       </button>
+      {claude && (
+        <button type="button" className="gs-tool" onClick={() => onTool("claude")}>
+          <span className="gs-tool-icon gs-tool-icon--claude" aria-hidden="true">
+            ✳
+          </span>
+          <span className="gs-tool-copy">
+            <span className="gs-tool-title">Claude Code</span>
+            <span className="gs-tool-detail">Tailor your résumé for this job on your Mac. The job description goes in automatically.</span>
+          </span>
+          <Icon name="arrow" />
+        </button>
+      )}
       {status && !status.gemini && <p className="gs-note">Ask Gemini needs a Gemini API key on the server.</p>}
     </>
   );
@@ -655,6 +684,180 @@ function ChatPanel({ job, profile, status }: { job: SavedJob; profile: Profile; 
           <Icon name="arrow" />
         </button>
       </form>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------- Claude Code chat
+
+const TAILOR_PROMPT = "Tailor my résumé to this job, score it with Tepobaby's ATS, and save the PDF to my Desktop.";
+
+function ClaudePanel({ job, online }: { job: SavedJob; online: boolean }) {
+  const [thread, setThread] = useState<ClaudeThread>(loadThread);
+  const [input, setInput] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [text, setText] = useState<string | null>(null); // null while reading the posting
+  const stop = useRef<AbortController | null>(null);
+  const end = useRef<HTMLDivElement>(null);
+  const attached = thread.sentJobs.includes(job.id);
+
+  useEffect(() => {
+    let live = true;
+    setText(null);
+    jobText(job.url)
+      .catch(() => "")
+      .then((t) => live && setText(t));
+    return () => {
+      live = false;
+    };
+  }, [job.url]);
+
+  useEffect(() => saveThread(thread), [thread]);
+  useEffect(() => {
+    end.current?.scrollIntoView({ block: "end" });
+  }, [thread.messages, busy]);
+
+  const send = async (message: string, approve?: Approval[]) => {
+    const q = message.trim();
+    if (!q || busy) return;
+    const includeJob = !attached && !!text?.trim();
+    setInput("");
+    setBusy(true);
+    const ctrl = new AbortController();
+    stop.current = ctrl;
+    setThread((t) => ({
+      ...t,
+      sentJobs: includeJob ? [...t.sentJobs, job.id] : t.sentJobs,
+      messages: [...t.messages.map((m) => ({ ...m, approve: undefined })), { role: "user", text: q }, { role: "claude", text: "", tools: [] }],
+    }));
+    const patch = (fn: (m: ClaudeThread["messages"][number]) => ClaudeThread["messages"][number]) =>
+      setThread((t) => ({ ...t, messages: [...t.messages.slice(0, -1), fn(t.messages[t.messages.length - 1])] }));
+    try {
+      await sendToClaude(
+        {
+          message: q,
+          sessionId: thread.sessionId,
+          approve,
+          job: includeJob ? { title: job.title, company: job.company, url: job.url, text: text! } : undefined,
+        },
+        (e) => {
+          if (e.t === "text") patch((m) => ({ ...m, text: m.text + e.v }));
+          else if (e.t === "tool") patch((m) => ({ ...m, tools: [...(m.tools ?? []), `${e.name}: ${e.detail}`] }));
+          else {
+            patch((m) => ({ ...m, error: e.error ?? undefined, approve: e.approve.length ? e.approve : undefined, files: e.files?.length ? e.files : undefined }));
+            if (e.sessionId) setThread((t) => ({ ...t, sessionId: e.sessionId }));
+          }
+        },
+        ctrl.signal,
+      );
+    } catch (e) {
+      const err = e as Error;
+      patch((m) => ({ ...m, error: err.name === "AbortError" ? "Stopped." : err.message }));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const last = thread.messages[thread.messages.length - 1];
+
+  return (
+    <div className="gs-chat">
+      <h2 className="gs-title gs-title--brand">
+        <span className="gs-claude-mark" aria-hidden="true">
+          ✳
+        </span>{" "}
+        Claude Code
+        <span className={`gs-online${online ? " is-on" : ""}`}>{online ? "Mac online" : "Mac offline"}</span>
+      </h2>
+      <SelectedJob job={job} />
+      {!online && <p className="gs-note">Run npm run relay on your Mac, then reopen this.</p>}
+      <p className="gs-jobtext">
+        {text === null
+          ? "Reading the job posting…"
+          : attached
+            ? "✓ Job description is in this chat"
+            : text
+              ? `✓ Job description ready (${text.length.toLocaleString()} characters), added to your next message`
+              : "Couldn't read this posting. Paste the description into your message."}
+      </p>
+
+      <div className="gs-messages">
+        {thread.messages.length === 0 && (
+          <div className="gs-suggest">
+            <button type="button" className="gs-suggestion" disabled={busy || !online || text === null} onClick={() => send(TAILOR_PROMPT)}>
+              {TAILOR_PROMPT}
+            </button>
+          </div>
+        )}
+        {thread.messages.map((m, i) => (
+          <div key={i} className={`gs-msg gs-msg--${m.role === "user" ? "user" : "model"}`}>
+            {m.tools && m.tools.length > 0 && (
+              <details className="gs-tools">
+                <summary>
+                  {m.tools.length} step{m.tools.length > 1 ? "s" : ""}
+                </summary>
+                {m.tools.map((t, k) => (
+                  <code key={k}>{t}</code>
+                ))}
+              </details>
+            )}
+            {(m.text || m.role === "user") && <div className="gs-msg-text">{m.role === "claude" ? <Markdownish text={m.text} /> : m.text}</div>}
+            {m.files?.map((f) => (
+              <a key={f} className="gs-file" href={fileUrl(f)} target="_blank" rel="noreferrer">
+                📄 {f}
+              </a>
+            ))}
+            {m.error && <p className="ob-error">{m.error}</p>}
+            {m.approve && (
+              <div className="gs-approve">
+                <p>Claude Code wants to run this on your Mac:</p>
+                {m.approve.map((a, k) => (
+                  <code key={k}>{a.detail}</code>
+                ))}
+                <div className="gs-approve-actions">
+                  <button
+                    type="button"
+                    className="gs-approve-yes"
+                    disabled={busy || !m.approve.some((a) => a.canApprove)}
+                    onClick={() => send("Approved. Run it now and continue.", m.approve!.filter((a) => a.canApprove))}
+                  >
+                    Approve
+                  </button>
+                  <button type="button" className="gs-approve-no" disabled={busy} onClick={() => send("Don't run that. Continue without it.")}>
+                    Deny
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+        {busy && !last?.text && <div className="gs-msg gs-msg--model gs-typing">Claude Code is working…</div>}
+        <div ref={end} />
+      </div>
+
+      <form
+        className="gs-input"
+        onSubmit={(e) => {
+          e.preventDefault();
+          send(input);
+        }}
+      >
+        <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Message Claude Code…" aria-label="Message Claude Code" disabled={!online} />
+        {busy ? (
+          <button type="button" className="gs-send gs-stop" onClick={() => stop.current?.abort()} aria-label="Stop">
+            ■
+          </button>
+        ) : (
+          <button type="submit" className="gs-send" disabled={!input.trim() || !online} aria-label="Send">
+            <Icon name="arrow" />
+          </button>
+        )}
+      </form>
+      {thread.messages.length > 0 && !busy && (
+        <button type="button" className="text-link gs-newchat" onClick={() => setThread({ sessionId: null, messages: [], sentJobs: [] })}>
+          New chat
+        </button>
+      )}
     </div>
   );
 }
