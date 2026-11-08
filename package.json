@@ -11,7 +11,10 @@
     "preview": "vite preview",
     "start:api": "NODE_ENV=production node server/index.js",
     "check:neetcode": "node scripts/check-neetcode.mjs",
-    "relay": "node --env-file=.env.local scripts/relay.mjs"
+    "relay": "node --env-file=.env.local scripts/relay.mjs",
+    "relay:on": "node scripts/relay-service.mjs on",
+    "relay:off": "node scripts/relay-service.mjs off",
+    "relay:status": "node scripts/relay-service.mjs status"
   },
   "dependencies": {
     "@codemirror/commands": "^6.11.1",

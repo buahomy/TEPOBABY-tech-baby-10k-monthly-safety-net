@@ -309,6 +309,7 @@ On the Ginny screen, the account listed in `CLAUDE_CHAT_EMAILS` also sees **Clau
 - **What needs Approve:** other shell commands and fetching pages. The exact command appears on an Approve card, and approving allows only that command.
 - **Never reachable:** `.env` files and the rest of the home folder (`~/.ssh`, `~/Library`…).
 - **When it's on:** only while `npm run relay` is running on the Mac, which also keeps it awake. Otherwise it shows **Mac offline**.
+- **Always on without a Terminal window:** `npm run relay:on` installs it as a macOS background service that starts at every login and restarts itself if it stops. `npm run relay:status` shows whether it's running and its log (`~/Library/Logs/tepobaby-relay.log`); `npm run relay:off` removes it.
 
 ## Connect: alumni & recruiters on LinkedIn
 Pick one of your saved (♥) jobs, or type any company, to get two sections.
