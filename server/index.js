@@ -11,7 +11,7 @@
 import crypto from "node:crypto";
 import express from "express";
 import { OAuth2Client } from "google-auth-library";
-import { feedEvents, knownDomain, queryPostings, runDailyUpdate, startJobFeed, syncFromStore } from "./jobs/index.js";
+import { allPostings, feedEvents, knownDomain, queryPostings, runDailyUpdate, startJobFeed, syncFromStore } from "./jobs/index.js";
 import { onVercel } from "./store.js";
 import { getLogo } from "./jobs/logos.js";
 import fs from "node:fs";
@@ -23,6 +23,7 @@ import { customExpected, getProblem, problemList, warmCache } from "./neetcode/i
 import { schoolForDomain } from "./connect/schools.js";
 import { userDataRoutes } from "./userData.js";
 import { claudeChatRoutes } from "./claudeChat.js";
+import { demoLeft, demoLimits, takeDemo } from "./demo.js";
 
 const {
   GOOGLE_CLIENT_ID,
@@ -288,13 +289,18 @@ claudeChatRoutes(app, {
 // session with the student's key. Tepobaby's server never sees or pays for it.
 // Exception: signed-in accounts listed in INTERVIEW_SHARED_KEY_EMAILS use Tepobaby's OPENAI_API_KEY;
 // the server mints their short-lived secret, and the key itself still never reaches the browser.
+// Recruiter demo: anyone else can try a short session on Tepobaby's key, within daily caps
+// (server/demo.js: a few sessions per visitor, a fixed number per day for everyone).
 
 const interviewHits = new Map();
-app.get("/api/interview/status", (req, res) => {
+const demoVoiceOn = () => !!process.env.OPENAI_API_KEY && demoLimits().voiceDaily > 0;
+
+app.get("/api/interview/status", async (req, res) => {
   const session = readSession(parseCookies(req.headers.cookie)[SESSION_COOKIE]);
   const shared = canUseSharedKey(session?.email);
   res.set("Cache-Control", "private, no-store"); // differs per account
-  res.json({ enabled: true, ownKey: !shared, sharedKey: shared, companies: companyOptions() });
+  const demo = !shared && demoVoiceOn() ? { left: await demoLeft("voice", session?.sub || req.ip), minutes: demoLimits().voiceMinutes } : null;
+  res.json({ enabled: true, ownKey: !shared, sharedKey: shared, demo, companies: companyOptions() });
 });
 
 app.post("/api/interview/config", requireXhr, express.json({ limit: "4kb" }), async (req, res) => {
@@ -309,7 +315,14 @@ app.post("/api/interview/config", requireXhr, express.json({ limit: "4kb" }), as
   const level = typeof req.body?.level === "string" ? req.body.level.slice(0, 30) : "";
   const target = typeof req.body?.target === "string" ? req.body.target.slice(0, 120) : "";
   const setup = sessionConfig({ company, level, target });
-  if (!canUseSharedKey(session?.email)) return res.json({ session: setup });
+  const shared = canUseSharedKey(session?.email);
+  if (!shared && !req.body?.demo) return res.json({ session: setup });
+  if (!shared) {
+    if (!demoVoiceOn()) return res.status(403).json({ error: "The free demo interview is off right now. Add your own OpenAI key to practice." });
+    if (!(await takeDemo("voice", session?.sub || req.ip))) {
+      return res.status(429).json({ error: "That's all the free demo interviews for today. Add your own OpenAI key to keep practicing." });
+    }
+  }
 
   try {
     res.json({ session: setup, secret: await createClientSecret(setup) });
@@ -320,6 +333,28 @@ app.post("/api/interview/config", requireXhr, express.json({ limit: "4kb" }), as
     }
     res.status(502).json({ error: "Couldn't start a voice session. Please try again." });
   }
+});
+
+// ---- Under the hood: live numbers for the "How it's built" page ----
+
+app.get("/api/stats", async (_req, res) => {
+  await syncFromStore();
+  const all = allPostings();
+  const bySource = {};
+  for (const p of all) {
+    const s = /SimplifyJobs|speedyapply|pittcsc|vanshb03/i.test(p.source) ? "GitHub job lists" : /Google/i.test(p.source) ? "Google Jobs (SerpApi)" : /University|College/i.test(p.source) || p.id?.startsWith("uni:") ? "University sites" : /Careers|Amazon Jobs|Workday/i.test(p.source) ? "Company career sites" : "Company job boards";
+    bySource[s] = (bySource[s] || 0) + 1;
+  }
+  res.set("Cache-Control", "public, max-age=300");
+  res.json({
+    postings: all.length,
+    companies: new Set(all.map((p) => p.company.toLowerCase())).size,
+    sponsorshipRead: all.filter((p) => p.sponsorship).length,
+    noSponsorship: all.filter((p) => p.sponsorship === "no" || p.sponsorship === "citizens").length,
+    research: all.filter((p) => p.research).length,
+    countries: { US: all.filter((p) => !p.countries?.length || p.countries.includes("US")).length, UK: all.filter((p) => p.countries?.includes("UK")).length, CA: all.filter((p) => p.countries?.includes("CA")).length },
+    bySource: Object.entries(bySource).sort((a, b) => b[1] - a[1]).map(([name, count]) => ({ name, count })),
+  });
 });
 
 // ---- Connect: the signed-in student's school, from their .edu email domain ----

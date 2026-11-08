@@ -9,7 +9,10 @@
 //   POST   /api/ginny/chat          Ask Gemini about the selected job
 //
 // Guests can use both tools too: their resume stays on their device and is sent with each
-// analysis, processed in memory, and never stored on the server.
+// analysis, processed in memory, and never stored on the server. With `sample: true`, the ATS and
+// tailored suggestions use a fictional student's résumé (recruiter demo, no upload needed).
+// Visitors who aren't signed in get a daily cap on Gemini calls (server/demo.js), so a burst of
+// demo traffic can't use up the free Gemini quota for everyone.
 
 import express from "express";
 import { analyze, TIERS } from "./ats.js";
@@ -18,6 +21,8 @@ import { fetchJobDescription } from "./jobDescription.js";
 import { RERANK_MODEL, warmReranker } from "./rerank.js";
 import { MAX_PDF_BYTES, deleteResume, loadResume, pdfToLines, publicMeta, sanitize, saveResume } from "./resume.js";
 import { VOYAGE_MODEL, voyageEnabled } from "./voyage.js";
+import { SAMPLE_RESUME } from "./sampleResume.js";
+import { takeDemo } from "../demo.js";
 
 // Simple in-memory rate limit per user / IP.
 const hits = new Map();
@@ -31,6 +36,7 @@ function limit(key, max, windowMs) {
 }
 
 const HOUR = 3600e3;
+const DEMO_GEMINI_DONE = "That's today's limit of Gemini answers for visitors. Sign in with a .edu email for more.";
 const str = (v, max) => (typeof v === "string" ? v.slice(0, max) : "");
 
 export function ginnyRoutes(app, { readSession, requireXhr, requireUser }) {
@@ -91,7 +97,8 @@ export function ginnyRoutes(app, { readSession, requireXhr, requireUser }) {
       // Resume: the stored one for signed-in students, otherwise the PDF sent from the device.
       const session = readSession(req);
       let sections = null;
-      if (session) {
+      if (req.body?.sample) sections = SAMPLE_RESUME;
+      else if (session) {
         const stored = await loadResume(session.sub);
         if (!stored) return res.status(409).json({ error: "Upload your resume first.", needResume: true });
         sections = stored.sanitized.sections;
@@ -122,8 +129,10 @@ export function ginnyRoutes(app, { readSession, requireXhr, requireUser }) {
     const list = (v, n, m) => (Array.isArray(v) ? v : []).slice(0, n).map((x) => str(x, m)).filter(Boolean);
     try {
       const session = readSession(req);
+      if (!session && !(await takeDemo("gemini", req.ip))) return res.status(429).json({ error: DEMO_GEMINI_DONE });
       let sections = null;
-      if (session) {
+      if (req.body?.sample) sections = SAMPLE_RESUME;
+      else if (session) {
         const stored = await loadResume(session.sub);
         if (!stored) return res.status(409).json({ error: "Upload your resume first.", needResume: true });
         sections = stored.sanitized.sections;
@@ -163,6 +172,8 @@ export function ginnyRoutes(app, { readSession, requireXhr, requireUser }) {
       .map((m) => ({ role: m?.role === "model" ? "model" : "user", text: str(m?.text, 4000) }))
       .filter((m) => m.text);
     if (!messages.length || messages[messages.length - 1].role !== "user") return res.status(400).json({ error: "Ask a question first." });
+
+    if (!readSession(req) && !(await takeDemo("gemini", req.ip))) return res.status(429).json({ error: DEMO_GEMINI_DONE });
 
     const c = req.body?.context || {};
     const ctx = {

@@ -147,10 +147,12 @@ export async function deleteResume(signedIn: boolean) {
 
 // ---- ATS analysis ----
 
-export async function runAts(signedIn: boolean, job: SavedJob, description?: string): Promise<AtsResult> {
+/** `sample`: score a fictional student's résumé instead of yours (recruiter demo). */
+export async function runAts(signedIn: boolean, job: SavedJob, description?: string, sample = false): Promise<AtsResult> {
   const body: Record<string, unknown> = { job: { title: job.title, company: job.company, url: job.url } };
   if (description) body.description = description;
-  if (!signedIn) {
+  if (sample) body.sample = true;
+  else if (!signedIn) {
     const r = guestResumeInMemory || readGuestResume();
     if (r) body.resumePdf = r.base64;
   }
@@ -163,14 +165,15 @@ export async function runAts(signedIn: boolean, job: SavedJob, description?: str
 }
 
 /** Opt-in: Gemini rewrites of the student's own bullets for this job (sends the redacted resume sections). */
-export async function getTailorTips(signedIn: boolean, job: SavedJob, result: AtsResult): Promise<TailorTips> {
+export async function getTailorTips(signedIn: boolean, job: SavedJob, result: AtsResult, sample = false): Promise<TailorTips> {
   const body: Record<string, unknown> = {
     job: { title: job.title, company: job.company },
     requirements: result.requirements,
     missingSkills: result.missingSkills.map((m) => m.skill),
     gaps: result.gaps,
   };
-  if (!signedIn) {
+  if (sample) body.sample = true;
+  else if (!signedIn) {
     const r = guestResumeInMemory || readGuestResume();
     if (r) body.resumePdf = r.base64;
   }

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Main from "./pages/Main";
 import Mess01 from "./pages/Mess01";
 import Questions from "./pages/Questions";
+import { endDemo, startDemo } from "./utils/demo";
 import { User, getCurrentUser, signOut } from "./utils/auth";
 import { clearGuestSavedJobs, moveGuestSavedJobsToAccount } from "./utils/savedJobs";
 import { allowDeviceSaves, clearDeviceCopies, flushPending, hydrateAccount } from "./utils/accountSync";
@@ -18,6 +19,7 @@ import {
 
 // Signed out → welcome screen.
 // Signed in (.edu) → questions until finished → main app (Home tab + bottom nav). Answers saved to the account.
+// Recruiter demo → a guest with a sample student's answers and a few saved jobs → home, no questions.
 // Guest ("I'll just browse around") → same questions → home. Answers saved on this device,
 // and moved into the account if the guest signs in later.
 
@@ -56,6 +58,12 @@ export default function Tepobaby() {
     setStage(route({ kind: "guest" }, startGuestProfile()));
   };
 
+  const enterAsDemo = async () => {
+    allowDeviceSaves();
+    setStage({ name: "loading" });
+    setStage(route({ kind: "guest" }, await startDemo()));
+  };
+
   useEffect(() => {
     getCurrentUser().then((user) => {
       if (user) return enterAsUser(user);
@@ -69,7 +77,7 @@ export default function Tepobaby() {
       return <div className="m01-loading" aria-busy="true" />;
 
     case "welcome":
-      return <Mess01 onGuest={enterAsGuest} initialError={stage.error} />;
+      return <Mess01 onGuest={enterAsGuest} onDemo={enterAsDemo} initialError={stage.error} />;
 
     case "questions": {
       const { who } = stage;
@@ -98,9 +106,10 @@ export default function Tepobaby() {
                   .then(signOut)
                   .then(() => {
                     clearDeviceCopies(); // the account keeps it; this device doesn't
+                    endDemo();
                     setStage({ name: "welcome" });
                   })
-              : (clearGuestProfile(), clearGuestSavedJobs(), setStage({ name: "welcome" }))
+              : (clearGuestProfile(), clearGuestSavedJobs(), endDemo(), setStage({ name: "welcome" }))
           }
         />
       );

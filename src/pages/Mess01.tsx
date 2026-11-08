@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Icon from "../components/Icon";
 import PhoneShell from "../components/PhoneShell";
 import { AUTH_ERRORS, prepareGoogleSignIn, signInWithGoogle } from "../utils/auth";
+import UnderTheHood from "../components/UnderTheHood";
 
 // Welcome screen ported from the Figma Make file "TEPOBABY" (b5IEjWIqPE1QZrVzTYJ3Eu).
 // Shown to signed-out visitors. Styles live in mess01.css, scoped under `.m01`.
@@ -27,10 +28,11 @@ const features = [
   },
 ];
 
-type Props = { onGuest: () => void; initialError?: string };
+type Props = { onGuest: () => void; onDemo: () => void; initialError?: string };
 
-export default function Mess01({ onGuest, initialError = "" }: Props) {
+export default function Mess01({ onGuest, onDemo, initialError = "" }: Props) {
   const [signingIn, setSigningIn] = useState(false);
+  const [hood, setHood] = useState(false);
   const [authError, setAuthError] = useState(initialError);
 
   useEffect(() => {
@@ -145,7 +147,17 @@ export default function Mess01({ onGuest, initialError = "" }: Props) {
               I’ll just browse around
             </div>
             <p className="guest-helper">Explore public job links & contractor roles. Answers are saved on this device only.</p>
+
+            <button type="button" className="demo-action" onClick={onDemo}>
+              <span className="demo-badge">Recruiter?</span>
+              <span>Try the 30-second demo: no sign-up</span>
+              <Icon name="arrow" />
+            </button>
+            <button type="button" className="text-link hood-link" onClick={() => setHood(true)}>
+              How it's built ›
+            </button>
           </div>
+          {hood && <UnderTheHood onClose={() => setHood(false)} />}
         </div>
     </PhoneShell>
   );

@@ -77,6 +77,9 @@ function writeGuest(jobs: SavedJob[]) {
   }
 }
 
+/** Recruiter demo: start the guest with a few saved jobs. */
+export const writeGuestSavedJobs = writeGuest;
+
 export function clearGuestSavedJobs() {
   try {
     localStorage.removeItem(GUEST_KEY);

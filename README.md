@@ -212,6 +212,23 @@ North West grades each part by calling the `update_star_progress` tool (phase, s
 
 **Progress** (the card shuffle, flipped and solved cards, and code drafts) is saved on this device.
 
+## Recruiter demo
+Recruiters can't sign in (sign-in needs a .edu email), so the welcome screen has **Recruiter? Try the 30-second demo**:
+- **No questions:** one tap opens the app as a sample student (senior, F-1 OPT, internships and new grad roles), so the visa filters show too.
+- **Jobs ready:** three real roles from today's feed are saved, and one is already picked in Ginny.
+- **Ginny ATS:** **Try a sample student's résumé** scores a fictional résumé against the job with all three signals. Tailored suggestions work on it too.
+- **Voice interview:** a free 3-minute session on Tepobaby's OpenAI key, no API key needed.
+- **How it's built:** live numbers from the feed (roles, companies, visa terms read, research roles, roles by source), the three pipelines, the stack, and links to GitHub and LinkedIn. It also opens from the welcome screen and the demo bar.
+
+**Caps for the paid features** (`server/demo.js`, counted in Redis so they hold across every Vercel server copy; set any to 0 to turn it off):
+
+| Feature | Per visitor a day | Everyone a day | Setting |
+| --- | --- | --- | --- |
+| Voice interview (3 minutes each) | 2 | 10 | `DEMO_VOICE_PER_VISITOR`, `DEMO_VOICE_DAILY`, `DEMO_VOICE_MINUTES` |
+| Ask Gemini + tailored suggestions (anyone not signed in) | 8 | 40 | `DEMO_GEMINI_PER_VISITOR`, `DEMO_GEMINI_DAILY` |
+
+The voice session's 3-minute stop runs in the browser. The daily caps limit the worst case, and an OpenAI spending limit is the backstop.
+
 ## ＋ Ginny: ATS & Ask Gemini
 Tap the big **＋** in the middle of the bottom bar. A sheet opens with two tabs side by side:
 
@@ -743,6 +760,8 @@ To deploy your own copy:
 | `GEMINI_FALLBACK_MODELS` | Server | Optional. Comma-separated models to try when the main one is overloaded. Default `gemini-3.6-flash,gemini-3.7-flash,gemini-3.5-flash`. |
 | `CLAUDE_CHAT_EMAILS` | Server | Comma-separated signed-in emails that can use Ginny's Claude Code chat. Empty means nobody. |
 | `CLAUDE_RELAY_SECRET` | Server + your Mac | Shared secret between the live site and `npm run relay`. The same value in Vercel and `.env.local`. |
+| `DEMO_VOICE_DAILY`, `DEMO_VOICE_PER_VISITOR`, `DEMO_VOICE_MINUTES` | Server | Optional. Recruiter-demo voice interviews on Tepobaby's key: sessions a day for everyone (10), per visitor (2), and minutes each (3). 0 turns it off. |
+| `DEMO_GEMINI_DAILY`, `DEMO_GEMINI_PER_VISITOR` | Server | Optional. Gemini answers a day for visitors who aren't signed in: everyone (40), per visitor (8). |
 
 `.env.local` is git-ignored. Never commit real values.
 
@@ -770,10 +789,11 @@ API routes (the Vite dev server forwards `/api` to the auth server):
 | `GET /api/postings/stream` | Live updates (Server-Sent Events): sends `update` when the morning update brings new postings |
 | `GET /api/ginny/status` | Which Ginny pieces are set up (Voyage, Gemini, reranker) and the tier cutoffs |
 | `GET` / `PUT` / `DELETE /api/ginny/resume` | The signed-in student's resume (PUT body = PDF bytes) |
-| `POST /api/ginny/ats` | ATS match analysis for one job (guests send their PDF with the request). Returns the result plus the job description used |
+| `POST /api/ginny/ats` | ATS match analysis for one job (guests send their PDF with the request; `sample: true` uses the demo résumé). Returns the result plus the job description used |
 | `GET /api/interview/status` | Whether voice practice is set up, and the interviewer options |
 | `POST /api/interview/config` | The Realtime session setup for one behavioral interview (company persona, rules and STAR tools). No key involved: the browser exchanges it with OpenAI using the student's own key |
 | `GET /api/cron/jobs` | The daily job update, called by Vercel Cron (needs `Authorization: Bearer $CRON_SECRET`) |
+| `GET /api/stats` | Live numbers for "How it's built": roles, companies, visa terms read, research roles, roles by source and country |
 | `GET /api/claude/status` | Whether this account can use the Claude Code chat, and whether the Mac is online |
 | `POST /api/claude/job` | A saved job's description as plain text (allowed accounts only) |
 | `POST /api/claude/chat` | One message to Claude Code on the Mac; streams the reply (allowed accounts only) |

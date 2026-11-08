@@ -16,7 +16,7 @@ export type InterviewHandlers = {
   onError: (message: string) => void;
 };
 
-export type InterviewOptions = { company: string; level: string; target: string };
+export type InterviewOptions = { company: string; level: string; target: string; demo?: boolean };
 
 const XHR = { "X-Requested-With": "XmlHttpRequest", "Content-Type": "application/json" };
 const PHASES: StarPhase[] = ["Situation", "Task", "Action", "Result"];
@@ -25,7 +25,9 @@ const STATUSES: StarStatus[] = ["complete", "needs_clarification", "missing_deta
 /** Thrown when OpenAI rejects the student's key, so the app can ask for a new one. */
 export class BadKeyError extends Error {}
 
-export async function getInterviewStatus(): Promise<{ enabled: boolean; sharedKey?: boolean; companies: { id: string; label: string }[] }> {
+export type VoiceDemo = { left: number; minutes: number };
+
+export async function getInterviewStatus(): Promise<{ enabled: boolean; sharedKey?: boolean; demo?: VoiceDemo | null; companies: { id: string; label: string }[] }> {
   const res = await fetch("/api/interview/status");
   return res.json();
 }

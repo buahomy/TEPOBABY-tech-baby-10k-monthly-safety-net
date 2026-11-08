@@ -1,7 +1,7 @@
 import { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { Profile } from "../../utils/profile";
 import { checkOpenAIKey, clearOpenAIKey, getOpenAIKey, looksLikeKey, maskKey, saveOpenAIKey } from "../../utils/openaiKey";
-import { BadKeyError, StarPhase, StarStatus, getInterviewStatus, startVoiceInterview } from "../../utils/realtime";
+import { BadKeyError, StarPhase, StarStatus, VoiceDemo, getInterviewStatus, startVoiceInterview } from "../../utils/realtime";
 import "../interview.css";
 
 // Interview tab: Behavioral (live AI voice interviewer, STAR tracker) and Technical (NeetCode 150
@@ -62,6 +62,8 @@ export default function InterviewTab({ profile }: Props) {
 function Behavioral({ profile }: { profile: Profile }) {
   const [enabled, setEnabled] = useState<boolean | null>(null);
   const [sharedKey, setSharedKey] = useState(false); // this account uses Tepobaby's key
+  const [demo, setDemo] = useState<VoiceDemo | null>(null); // free demo sessions on Tepobaby's key
+  const [demoRun, setDemoRun] = useState(false); // this session is a demo one
   const [apiKey, setApiKey] = useState(getOpenAIKey);
   const [editingKey, setEditingKey] = useState(() => !getOpenAIKey());
   const [company, setCompany] = useState("generic");
@@ -109,6 +111,7 @@ function Behavioral({ profile }: { profile: Profile }) {
       .then((s) => {
         setEnabled(s.enabled);
         setSharedKey(!!s.sharedKey);
+        setDemo(s.demo ?? null);
       })
       .catch(() => setEnabled(false));
     return () => {
@@ -125,14 +128,20 @@ function Behavioral({ profile }: { profile: Profile }) {
     return () => window.clearInterval(t);
   }, [state]);
   useEffect(() => {
-    if (seconds >= MAX_MINUTES * 60) stopRef.current?.();
-  }, [seconds]);
+    if (seconds >= limitMinutes * 60) stopRef.current?.();
+  }, [seconds]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const demoReady = !sharedKey && !apiKey && !!demo && demo.left > 0;
+  const limitMinutes = demoRun && demo ? demo.minutes : MAX_MINUTES;
 
   const start = async () => {
-    if (!apiKey && !sharedKey) {
+    const useDemo = demoReady;
+    if (!apiKey && !sharedKey && !useDemo) {
       setEditingKey(true);
       return;
     }
+    setDemoRun(useDemo);
+    if (useDemo) setDemo((d) => (d ? { ...d, left: d.left - 1 } : d));
     setError("");
     setBoxes(emptyBoxes());
     setLastPhase(null);
@@ -146,8 +155,9 @@ function Behavioral({ profile }: { profile: Profile }) {
           company,
           level: profile.answers.academicLevel || "",
           target: targetFrom(profile),
+          demo: useDemo,
         },
-        sharedKey ? null : apiKey,
+        sharedKey || useDemo ? null : apiKey,
         {
           onState: (st) => {
             setState(st);
@@ -183,7 +193,7 @@ function Behavioral({ profile }: { profile: Profile }) {
 
   const live = state === "live" || state === "connecting";
   const label =
-    state === "connecting" ? "Connecting…" : state === "live" ? (speaking === "agent" ? "North West is speaking" : speaking === "user" ? "Listening…" : "Your turn") : "Start practice";
+    state === "connecting" ? "Connecting…" : state === "live" ? (speaking === "agent" ? "North West is speaking" : speaking === "user" ? "Listening…" : "Your turn") : demoReady ? "Start free demo" : "Start practice";
   const mm = String(Math.floor(seconds / 60)).padStart(1, "0");
   const ss = String(seconds % 60).padStart(2, "0");
   const picked = COMPANIES.find((c) => c.id === company)!;
@@ -219,6 +229,13 @@ function Behavioral({ profile }: { profile: Profile }) {
             <span>🔑 Using Tepobaby's OpenAI key for your account</span>
           </div>
         ) : editingKey ? (
+          <>
+            {demoReady && (
+              <p className="iv-demo">
+                🎤 <strong>Free demo:</strong> tap the button below for a {demo!.minutes}-minute interview on Tepobaby's key, no API key
+                needed ({demo!.left} left today). Or add your own key for full 15-minute sessions.
+              </p>
+            )}
           <KeyForm
             current={apiKey}
             onSaved={(k) => {
@@ -228,6 +245,7 @@ function Behavioral({ profile }: { profile: Profile }) {
             }}
             onCancel={apiKey ? () => setEditingKey(false) : undefined}
           />
+          </>
         ) : (
           <div className="iv-keyrow">
             <span>
@@ -314,7 +332,7 @@ function Behavioral({ profile }: { profile: Profile }) {
             type="button"
             className={`iv-orb${live ? " is-live" : ""}${speaking ? ` is-${speaking}` : ""}`}
             onClick={live ? stop : start}
-            disabled={enabled === false || state === "connecting" || (!apiKey && !sharedKey && !live)}
+            disabled={enabled === false || state === "connecting" || (!apiKey && !sharedKey && !demoReady && !live)}
             aria-label={live ? "End practice" : "Start practice"}
           >
             <img className="iv-orb-logo" src="/logos/openai-white.png" alt="" />
@@ -328,7 +346,8 @@ function Behavioral({ profile }: { profile: Profile }) {
               </span>
             )}
           </p>
-          {live && <p className="iv-hint">Tap to end. Sessions stop after {MAX_MINUTES} minutes.</p>}
+          {live && <p className="iv-hint">Tap to end. Sessions stop after {limitMinutes} minutes.</p>}
+          {!live && demoReady && !editingKey && <p className="iv-hint">Free {demo!.minutes}-minute demo · {demo!.left} left today</p>}
         </div>
 
         {question && (
