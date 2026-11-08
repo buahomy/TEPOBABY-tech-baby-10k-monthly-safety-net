@@ -256,6 +256,7 @@ function AtsPanel({ user, job, status }: { user: User | null; job: SavedJob; sta
   const [needDescription, setNeedDescription] = useState(false);
   const [description, setDescription] = useState("");
   const [result, setResult] = useState<AtsResult | null>(null);
+  const [sample, setSample] = useState(false); // scored the demo résumé, not the visitor's
   const fileInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -272,11 +273,12 @@ function AtsPanel({ user, job, status }: { user: User | null; job: SavedJob; sta
     return () => window.clearInterval(t);
   }, [busy]);
 
-  const analyze = async (withDescription?: string) => {
+  const analyze = async (withDescription?: string, useSample = false) => {
     setBusy("analyze");
     setError("");
+    setSample(useSample);
     try {
-      setResult(await runAts(signedIn, job, withDescription));
+      setResult(await runAts(signedIn, job, withDescription, useSample));
       setNeedDescription(false);
     } catch (e) {
       const err = e as Error & { needDescription?: boolean; needResume?: boolean };
@@ -334,9 +336,16 @@ function AtsPanel({ user, job, status }: { user: User | null; job: SavedJob; sta
             </span>
           </>
         ) : (
-          <button type="button" className="primary-action tab-cta" onClick={() => fileInput.current?.click()} disabled={!!busy}>
-            <span>{busy === "upload" ? "Uploading…" : "Upload your resume (PDF)"}</span>
-          </button>
+          <>
+            <button type="button" className="primary-action tab-cta" onClick={() => fileInput.current?.click()} disabled={!!busy}>
+              <span>{busy === "upload" ? "Uploading…" : "Upload your resume (PDF)"}</span>
+            </button>
+            {!signedIn && (
+              <button type="button" className="gs-sample" onClick={() => analyze(undefined, true)} disabled={!!busy}>
+                No résumé handy? <strong>Try a sample student's résumé ›</strong>
+              </button>
+            )}
+          </>
         )}
         <input ref={fileInput} type="file" accept="application/pdf,.pdf" hidden onChange={(e) => (onFile(e.target.files?.[0]), (e.target.value = ""))} />
       </div>
@@ -375,7 +384,8 @@ function AtsPanel({ user, job, status }: { user: User | null; job: SavedJob; sta
 
       {error && !busy && <p className="ob-error">{error}</p>}
 
-      {result && !busy && <AtsReport result={result} status={status} job={job} signedIn={signedIn} onRerun={() => analyze()} />}
+      {result && !busy && sample && <p className="gs-hint">Scored with a fictional student's résumé (Python, React, Go, AWS).</p>}
+      {result && !busy && <AtsReport result={result} status={status} job={job} signedIn={signedIn} sample={sample} onRerun={() => analyze(undefined, sample)} />}
     </>
   );
 }
@@ -397,12 +407,14 @@ function AtsReport({
   status,
   job,
   signedIn,
+  sample,
   onRerun,
 }: {
   result: AtsResult;
   status: GinnyStatus | null;
   job: SavedJob;
   signedIn: boolean;
+  sample: boolean;
   onRerun: () => void;
 }) {
   const r = result;
@@ -414,7 +426,7 @@ function AtsReport({
     setTipsBusy(true);
     setTipsError("");
     try {
-      setTips(await getTailorTips(signedIn, job, r));
+      setTips(await getTailorTips(signedIn, job, r, sample));
     } catch (e) {
       setTipsError((e as Error).message);
     } finally {

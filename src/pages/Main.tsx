@@ -6,6 +6,8 @@ import { User } from "../utils/auth";
 import { Profile } from "../utils/profile";
 import { useSavedJobs } from "../utils/savedJobs";
 import GinnySheet from "./GinnySheet";
+import UnderTheHood from "../components/UnderTheHood";
+import { isDemo } from "../utils/demo";
 import ConnectTab from "./tabs/ConnectTab";
 import HomeTab from "./tabs/HomeTab";
 import InterviewTab from "./tabs/InterviewTab";
@@ -30,6 +32,8 @@ export default function Main({ user, profile, onEdit, onSignIn, onSignOut }: Pro
   const scroller = useRef<HTMLDivElement>(null);
   const firstName = user?.name.split(" ")[0] || "there";
   const saved = useSavedJobs(!!user);
+  const [hood, setHood] = useState(false);
+  const demo = !user && isDemo();
 
   // Each tab opens at the top.
   useEffect(() => {
@@ -40,6 +44,19 @@ export default function Main({ user, profile, onEdit, onSignIn, onSignOut }: Pro
     <PhoneShell label="tepobaby" className="phone-frame--flex">
       <div className="main">
         <div className="main-scroll" ref={scroller}>
+          {demo && (
+            <div className="demo-bar">
+              <span>
+                <strong>Recruiter demo</strong> · tap <b>＋</b> for the AI tools
+              </span>
+              <button type="button" onClick={() => setHood(true)}>
+                How it's built
+              </button>
+              <button type="button" onClick={onSignOut}>
+                Exit
+              </button>
+            </div>
+          )}
           {tab === "home" && <HomeTab firstName={firstName} profile={profile} saved={saved} />}
           {tab === "interview" && <InterviewTab profile={profile} />}
           {tab === "connect" && (
@@ -67,6 +84,8 @@ export default function Main({ user, profile, onEdit, onSignIn, onSignOut }: Pro
             />
           )}
         </div>
+
+        {hood && <UnderTheHood onClose={() => setHood(false)} />}
 
         <BottomNav active={tab} onSelect={setTab} onPlus={() => setGinnyOpen(true)} />
 
