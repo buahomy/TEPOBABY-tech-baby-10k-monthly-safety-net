@@ -62,7 +62,8 @@ export async function startDemo() {
     );
     const all = lists.flat();
     const readable = (p: Posting) => /greenhouse|lever|ashby|myworkdayjobs|amazon\.jobs|careers\.microsoft/i.test(p.url);
-    const tech = (p: Posting) => /software|engineer|developer|data|machine learning/i.test(p.title);
+    // Software and data roles, so the sample résumé (Python, React, Go, AWS) gets a fair first score.
+    const tech = (p: Posting) => /software|developer|full[- ]?stack|front[- ]?end|back[- ]?end|\bswe\b|data (scien|engineer)|machine learning|\bml\b/i.test(p.title);
     // Best: tech roles on boards Ginny can read; then any readable role; then anything.
     const ranked = [...all.filter((p) => readable(p) && tech(p)), ...all.filter(readable), ...all];
     const pick = ranked.filter((p, i) => ranked.findIndex((q) => q.id === p.id) === i).slice(0, 3);
