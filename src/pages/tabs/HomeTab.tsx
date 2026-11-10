@@ -3,7 +3,7 @@ import CompanyLogo from "../../components/CompanyLogo";
 import HeartButton from "../../components/HeartButton";
 import TierLaunchpad from "../../components/TierLaunchpad";
 import { LEVELS, Level, RESOURCES, WINDOWS, WindowId } from "../../data/homeFeed";
-import { Posting, PostingsResponse, fetchPostings, subscribeToPostings, timeAgo } from "../../utils/postings";
+import { Posting, PostingsResponse, Track, fetchPostings, subscribeToPostings, timeAgo } from "../../utils/postings";
 import { Profile } from "../../utils/profile";
 import { SavedJobsApi } from "../../utils/savedJobs";
 import { canSaveLocally, pushKey } from "../../utils/accountSync";
@@ -35,8 +35,20 @@ type View = {
   countries?: Country[];
   research?: boolean;
   remoteNyc?: boolean;
+  track?: Track | null;
   shown?: Record<string, number>;
 };
+
+// Role type chips: what kind of tech role. Every role a CS graduate can take on OPT, not only engineering.
+const TRACK_CHIPS: { id: Track | null; label: string; badge?: string }[] = [
+  { id: null, label: "All roles" },
+  { id: "eng", label: "💻 Engineering" },
+  { id: "ai", label: "🤖 AI & ML", badge: "🤖 AI" },
+  { id: "sales", label: "💼 Tech sales", badge: "💼 Tech sales" },
+  { id: "product", label: "🧭 Product & design", badge: "🧭 Product" },
+  { id: "data", label: "📊 Data & analytics", badge: "📊 Data" },
+];
+const TRACK_BADGE = Object.fromEntries(TRACK_CHIPS.filter((t) => t.badge).map((t) => [t.id, t.badge]));
 type Country = "US" | "UK" | "CA";
 const COUNTRIES: { id: Country; label: string }[] = [
   { id: "US", label: "🇺🇸 US" },
@@ -66,6 +78,7 @@ export default function HomeTab({ firstName, profile, saved }: Props) {
   const [windowId, setWindowId] = useState<WindowId>(() => readView().windowId ?? (defaultLevel(profile) === "rotational" ? "open" : "fresh"));
   const [research, setResearch] = useState(() => readView().research ?? false);
   const [remoteNyc, setRemoteNyc] = useState(() => readView().remoteNyc ?? false);
+  const [track, setTrack] = useState<Track | null>(() => readView().track ?? null);
   // "All open" lists everything still open: programs, research and startup roles stay open for weeks.
   const windows = WINDOWS;
   const needsSponsorship =
@@ -73,13 +86,13 @@ export default function HomeTab({ firstName, profile, saved }: Props) {
   const [hideNoSponsorship, setHideNoSponsorship] = useState(() => readView().hideNoSponsorship ?? needsSponsorship);
   const [countries, setCountries] = useState<Country[]>(() => (readView().countries?.length ? readView().countries! : ["US"]));
   // How many postings this list was expanded to ("Show more"), per tab + window + filter.
-  const listKey = `${level}|${windowId}|${hideNoSponsorship ? 1 : 0}|${countries.join("")}|${research ? "r" : ""}|${remoteNyc ? "n" : ""}`;
+  const listKey = `${level}|${windowId}|${hideNoSponsorship ? 1 : 0}|${countries.join("")}|${research ? "r" : ""}|${remoteNyc ? "n" : ""}|${track ?? ""}`;
   const shownFor = (key: string) => Math.max(PAGE, readView().shown?.[key] ?? PAGE);
   const setShown = (key: string, n: number) => writeView({ shown: { ...(readView().shown ?? {}), [key]: n } });
 
   useEffect(() => {
-    writeView({ level, windowId, hideNoSponsorship, countries, research, remoteNyc });
-  }, [level, windowId, hideNoSponsorship, countries, research, remoteNyc]);
+    writeView({ level, windowId, hideNoSponsorship, countries, research, remoteNyc, track });
+  }, [level, windowId, hideNoSponsorship, countries, research, remoteNyc, track]);
 
   const [feed, setFeed] = useState<PostingsResponse | null>(null);
   const [postings, setPostings] = useState<Posting[]>([]);
@@ -95,7 +108,7 @@ export default function HomeTab({ firstName, profile, saved }: Props) {
     const load = (quiet: boolean) => {
       if (!quiet) setLoading(true);
       // Reload as many as the student had expanded to, not just the first page.
-      fetchPostings({ level, window: windowId, hideNoSponsorship, countries, research, remoteNyc, limit: shownFor(listKey), signal: ctrl.signal })
+      fetchPostings({ level, window: windowId, hideNoSponsorship, countries, research, remoteNyc, track, limit: shownFor(listKey), signal: ctrl.signal })
         .then((data) => {
           setFeed(data);
           setPostings(data.postings);
@@ -116,12 +129,12 @@ export default function HomeTab({ firstName, profile, saved }: Props) {
       window.clearInterval(fallback);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [level, windowId, hideNoSponsorship, countries, research, remoteNyc]);
+  }, [level, windowId, hideNoSponsorship, countries, research, remoteNyc, track]);
 
   const loadMore = () => {
     setLoadingMore(true);
     const key = listKey;
-    fetchPostings({ level, window: windowId, hideNoSponsorship, countries, research, remoteNyc, limit: PAGE, offset: postings.length })
+    fetchPostings({ level, window: windowId, hideNoSponsorship, countries, research, remoteNyc, track, limit: PAGE, offset: postings.length })
       .then((data) =>
         setPostings((prev) => {
           const next = [...prev, ...data.postings];
@@ -231,6 +244,24 @@ export default function HomeTab({ firstName, profile, saved }: Props) {
           ))}
         </div>
 
+        <div className="role-tracks" role="group" aria-label="Role type">
+          {TRACK_CHIPS.map((t) => {
+            const n = feed?.trackCounts?.[t.id ?? "all"];
+            return (
+              <button
+                key={t.id ?? "all"}
+                type="button"
+                aria-pressed={track === t.id}
+                className={track === t.id ? "is-on" : ""}
+                onClick={() => setTrack(t.id)}
+              >
+                {t.label}
+                {n !== undefined && <span className="track-count">{n}</span>}
+              </button>
+            );
+          })}
+        </div>
+
         {needsSponsorship && (
           <label className="toggle-row">
             <input
@@ -258,7 +289,9 @@ export default function HomeTab({ firstName, profile, saved }: Props) {
               ? "Programs for freshmen & sophomores (like Microsoft Explore) are rare and mostly open Aug–Oct. None were posted in this window. Try “This week”, or check Internship: many internships accept every class year."
               : level === "rotational"
                 ? "No rotational programs in this window. Try “All open”: most programs stay open for weeks."
-                : "No new postings in this window. Try “This week”."}
+                : track
+                  ? "No roles of this type in this window. Try “All open”, or another role type."
+                  : "No new postings in this window. Try “This week”."}
           </p>
         ) : (
           <ul className="posting-list">
@@ -272,6 +305,7 @@ export default function HomeTab({ firstName, profile, saved }: Props) {
                     <span className="posting-meta">
                       <span className="posting-loc">{p.location}</span> · {timeAgo(p.postedAt, p.postedApprox)}
                       {p.program && level !== "rotational" && <span className="chip-program">Rotational program</span>}
+                      {p.track && TRACK_BADGE[p.track] && !track && <span className="chip-track">{TRACK_BADGE[p.track]}</span>}
                       {p.startup && <span className="chip-startup">🚀 {p.startup}</span>}
                       {p.levelGuess && <span className="chip-level">Level not stated</span>}
                       {p.research && <span className="chip-research">🎓 Research</span>}

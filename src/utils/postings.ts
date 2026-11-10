@@ -2,6 +2,9 @@
 
 import { Level, WindowId } from "../data/homeFeed";
 
+/** Role type: engineering, AI & ML, tech sales, product & design, data & analytics ("other": non-tech programs). */
+export type Track = "eng" | "ai" | "sales" | "product" | "data";
+
 export type Posting = {
   id: string;
   source: string;
@@ -20,6 +23,7 @@ export type Posting = {
   remoteNyc?: boolean; // remote, or in New York City
   startup?: string; // e.g. "YC W24": from a startup's own job board
   levelGuess?: boolean; // the title doesn't say the level (common at startups)
+  track?: Track | "other";
 };
 
 export type PostingsResponse = {
@@ -28,6 +32,7 @@ export type PostingsResponse = {
   schedule: string;
   total: number;
   counts: Record<Level, { fresh: number; week: number; open: number }>;
+  trackCounts?: Record<Track | "all", number>; // this tab + window, other filters applied
   postings: Posting[];
 };
 
@@ -38,6 +43,7 @@ export async function fetchPostings(opts: {
   countries?: string[];
   research?: boolean;
   remoteNyc?: boolean;
+  track?: Track | null;
   offset?: number;
   limit?: number;
   signal?: AbortSignal;
@@ -51,6 +57,7 @@ export async function fetchPostings(opts: {
   if (opts.countries?.length) params.set("countries", opts.countries.join(","));
   if (opts.research) params.set("research", "1");
   if (opts.remoteNyc) params.set("place", "remote_nyc");
+  if (opts.track) params.set("track", opts.track);
   if (opts.hideNoSponsorship) params.set("visa", "1");
   const res = await fetch(`/api/postings?${params}`, { signal: opts.signal });
   if (!res.ok) throw new Error("Couldn't load postings.");

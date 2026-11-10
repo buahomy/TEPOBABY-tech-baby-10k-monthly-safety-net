@@ -18,7 +18,7 @@ import { EventEmitter } from "node:events";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { MAX_AGE_MS, PROGRAM_MAX_AGE_MS, RESEARCH_MAX_AGE_MS, countriesOf, isProgram, isRemoteOrNyc, isResearch } from "./classify.js";
+import { MAX_AGE_MS, PROGRAM_MAX_AGE_MS, RESEARCH_MAX_AGE_MS, countriesOf, isProgram, isRemoteOrNyc, isResearch, roleTrack, TRACKS } from "./classify.js";
 import { addDomains } from "./logos.js";
 import * as store from "../store.js";
 import { fetchCompanyBoards } from "./sources/ats.js";
@@ -109,6 +109,7 @@ function rebuild() {
       p.countries = countriesOf(p.location);
       p.research = isResearch(p);
       p.remoteNyc = isRemoteOrNyc(p.location);
+      p.track = roleTrack(p.title);
       // Programs, research roles and startup roles stay open for weeks.
       const maxAge = p.program ? PROGRAM_MAX_AGE_MS : p.research || p.startup ? RESEARCH_MAX_AGE_MS : MAX_AGE_MS;
       if (now - new Date(p.postedAt).getTime() > maxAge) continue;
@@ -257,7 +258,7 @@ export async function startJobFeed() {
  * visaFriendly: hide roles whose job description says they don't sponsor (or need U.S. citizenship /
  * a clearance). Roles that don't say either way are kept.
  */
-export function queryPostings({ level, maxHours = 72, visaFriendly = false, countries = ["US"], research = false, remoteNyc = false, limit = 30, offset = 0 }) {
+export function queryPostings({ level, maxHours = 72, visaFriendly = false, countries = ["US"], research = false, remoteNyc = false, track = null, limit = 30, offset = 0 }) {
   const now = Date.now();
   const inWindow = (p, hours) => now - new Date(p.postedAt).getTime() <= hours * 3600e3;
   const visaOk = (p) => !visaFriendly || (p.sponsorship !== "no" && p.sponsorship !== "citizens");
@@ -268,9 +269,16 @@ export function queryPostings({ level, maxHours = 72, visaFriendly = false, coun
   const ok = (p) => visaOk(p) && placeOk(p) && researchOk(p) && remoteNycOk(p);
   const inLevel = (p, lv) => (lv === "rotational" ? p.program : p.level === lv);
 
+  const trackOk = (p) => !track || p.track === track;
+
+  // Role type chip counts, for this tab and window with the other filters applied.
+  const base = merged.filter((p) => inLevel(p, level) && ok(p) && inWindow(p, maxHours));
+  const trackCounts = { all: base.length };
+  for (const t of TRACKS) trackCounts[t] = base.filter((p) => p.track === t).length;
+
   const counts = {};
   for (const lv of ["underclassmen", "internship", "entry", "rotational"]) {
-    const pool = merged.filter((p) => inLevel(p, lv) && ok(p));
+    const pool = merged.filter((p) => inLevel(p, lv) && ok(p) && trackOk(p));
     counts[lv] = {
       fresh: pool.filter((p) => inWindow(p, 72)).length,
       week: pool.filter((p) => inWindow(p, 168)).length,
@@ -278,13 +286,14 @@ export function queryPostings({ level, maxHours = 72, visaFriendly = false, coun
     };
   }
 
-  const matching = merged.filter((p) => inLevel(p, level) && ok(p) && inWindow(p, maxHours));
+  const matching = base.filter(trackOk);
   return {
     updatedAt,
     nextUpdateAt: nextRunAt().toISOString(),
     schedule: `Daily at ${DAILY_TIME} ET`,
     total: matching.length,
     counts,
+    trackCounts,
     postings: matching.slice(offset, offset + limit),
     sources: Object.values(state.sources).flatMap((s) => s.sources || []),
   };
