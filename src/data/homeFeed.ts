@@ -10,7 +10,7 @@ export const LEVELS: { id: Level; label: string }[] = [
   { id: "rotational", label: "Rotational Programs" },
 ];
 
-// "open" (every program still listed, up to 60 days) is only offered on the Rotational Programs tab:
+// "open": everything still listed (programs up to 60 days, research and startup roles up to 30), on every tab:
 // programs like Microsoft's Finance Rotation Program stay open for weeks.
 export const WINDOWS = [
   { id: "fresh", label: "Last 48–72h", maxHours: 72 },

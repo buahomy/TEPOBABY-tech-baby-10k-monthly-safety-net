@@ -912,3 +912,24 @@
 .m01 .chip-country {
   font-size: 11px;
 }
+
+/* Job feed: startup and level badges */
+.m01 .chip-startup,
+.m01 .chip-level {
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.m01 .chip-startup {
+  color: #fdba74;
+  background: rgba(249, 115, 22, 0.14);
+}
+
+.m01 .chip-level {
+  color: var(--text-tertiary);
+  background: rgba(255, 255, 255, 0.06);
+}

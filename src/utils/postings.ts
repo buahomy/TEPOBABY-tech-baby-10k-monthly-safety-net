@@ -17,6 +17,9 @@ export type Posting = {
   program?: boolean; // rotational / development program
   countries?: ("US" | "CA" | "UK" | "other")[];
   research?: boolean; // research role or at a university / lab
+  remoteNyc?: boolean; // remote, or in New York City
+  startup?: string; // e.g. "YC W24": from a startup's own job board
+  levelGuess?: boolean; // the title doesn't say the level (common at startups)
 };
 
 export type PostingsResponse = {
@@ -34,6 +37,7 @@ export async function fetchPostings(opts: {
   hideNoSponsorship: boolean;
   countries?: string[];
   research?: boolean;
+  remoteNyc?: boolean;
   offset?: number;
   limit?: number;
   signal?: AbortSignal;
@@ -46,6 +50,7 @@ export async function fetchPostings(opts: {
   });
   if (opts.countries?.length) params.set("countries", opts.countries.join(","));
   if (opts.research) params.set("research", "1");
+  if (opts.remoteNyc) params.set("place", "remote_nyc");
   if (opts.hideNoSponsorship) params.set("visa", "1");
   const res = await fetch(`/api/postings?${params}`, { signal: opts.signal });
   if (!res.ok) throw new Error("Couldn't load postings.");

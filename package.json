@@ -14,7 +14,8 @@
     "relay": "node --env-file=.env.local scripts/relay.mjs",
     "relay:on": "node scripts/relay-service.mjs on",
     "relay:off": "node scripts/relay-service.mjs off",
-    "relay:status": "node scripts/relay-service.mjs status"
+    "relay:status": "node scripts/relay-service.mjs status",
+    "discover-startups": "node scripts/discover-startups.mjs"
   },
   "dependencies": {
     "@codemirror/commands": "^6.11.1",

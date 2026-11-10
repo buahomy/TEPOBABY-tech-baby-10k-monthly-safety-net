@@ -16,6 +16,24 @@
       "domain": "airtable.com"
     },
     {
+      "slug": "albedo",
+      "name": "Albedo",
+      "domain": "albedo.com",
+      "startup": "YC W21"
+    },
+    {
+      "slug": "algolia",
+      "name": "Algolia",
+      "domain": "algolia.com",
+      "startup": "YC W14"
+    },
+    {
+      "slug": "alpaca",
+      "name": "Alpaca",
+      "domain": "alpaca.markets",
+      "startup": "YC W19"
+    },
+    {
       "slug": "andurilindustries",
       "name": "Anduril",
       "domain": "anduril.com"
@@ -26,9 +44,57 @@
       "domain": "anthropic.com"
     },
     {
+      "slug": "aon3d",
+      "name": "AON3D",
+      "domain": "aon3d.com",
+      "startup": "YC W17"
+    },
+    {
+      "slug": "apolloio",
+      "name": "Apollo.io",
+      "domain": "apollo.io",
+      "startup": "YC W16"
+    },
+    {
       "slug": "asana",
       "name": "Asana",
       "domain": "asana.com"
+    },
+    {
+      "slug": "assemblyai",
+      "name": "AssemblyAI",
+      "domain": "assemblyai.com",
+      "startup": "YC S17"
+    },
+    {
+      "slug": "astranis",
+      "name": "Astranis",
+      "domain": "astranis.com",
+      "startup": "YC W16"
+    },
+    {
+      "slug": "attain",
+      "name": "Attain",
+      "domain": "joinattain.com",
+      "startup": "YC W22"
+    },
+    {
+      "slug": "axiom",
+      "name": "Axiom",
+      "domain": "axiom.trade",
+      "startup": "YC W25"
+    },
+    {
+      "slug": "beam",
+      "name": "Beam",
+      "domain": "beam.cloud",
+      "startup": "YC W22"
+    },
+    {
+      "slug": "bitmovin",
+      "name": "Bitmovin",
+      "domain": "bitmovin.com",
+      "startup": "YC S15"
     },
     {
       "slug": "block",
@@ -41,14 +107,38 @@
       "domain": "brex.com"
     },
     {
+      "slug": "carbonchain",
+      "name": "CarbonChain",
+      "domain": "carbonchain.com",
+      "startup": "YC S20"
+    },
+    {
+      "slug": "checkr",
+      "name": "Checkr",
+      "domain": "checkr.com",
+      "startup": "YC S14"
+    },
+    {
       "slug": "chime",
       "name": "Chime",
       "domain": "chime.com"
     },
     {
+      "slug": "clara",
+      "name": "Clara",
+      "domain": "askclara.com",
+      "startup": "YC S26"
+    },
+    {
       "slug": "cloudflare",
       "name": "Cloudflare",
       "domain": "cloudflare.com"
+    },
+    {
+      "slug": "coast",
+      "name": "Coast",
+      "domain": "trycoast.com",
+      "startup": "YC S21"
     },
     {
       "slug": "coinbase",
@@ -66,6 +156,12 @@
       "domain": "datadoghq.com"
     },
     {
+      "slug": "diligent",
+      "name": "Diligent",
+      "domain": "godiligent.ai",
+      "startup": "YC S23"
+    },
+    {
       "slug": "discord",
       "name": "Discord",
       "domain": "discord.com"
@@ -74,6 +170,12 @@
       "slug": "doordashusa",
       "name": "DoorDash",
       "domain": "doordash.com"
+    },
+    {
+      "slug": "dots",
+      "name": "Dots 💸",
+      "domain": "usedots.com",
+      "startup": "YC S21"
     },
     {
       "slug": "dropbox",
@@ -111,14 +213,68 @@
       "domain": "flexport.com"
     },
     {
+      "slug": "generalproximity",
+      "name": "General Proximity",
+      "domain": "generalproximity.bio",
+      "startup": "YC W20"
+    },
+    {
       "slug": "gitlab",
       "name": "GitLab",
       "domain": "gitlab.com"
     },
     {
+      "slug": "givecampus",
+      "name": "GiveCampus",
+      "domain": "go.givecampus.com",
+      "startup": "YC S15"
+    },
+    {
+      "slug": "goatgroup",
+      "name": "GOAT Group",
+      "domain": "goatgroup.com",
+      "startup": "YC W11"
+    },
+    {
       "slug": "gusto",
       "name": "Gusto",
       "domain": "gusto.com"
+    },
+    {
+      "slug": "hackerrank",
+      "name": "HackerRank",
+      "domain": "hackerrank.com",
+      "startup": "YC S11"
+    },
+    {
+      "slug": "haven",
+      "name": "Haven",
+      "domain": "havenservicing.com",
+      "startup": "YC W20"
+    },
+    {
+      "slug": "hazel",
+      "name": "Hazel",
+      "domain": "hazelai.com",
+      "startup": "YC W24"
+    },
+    {
+      "slug": "hive",
+      "name": "Hive",
+      "domain": "hive.co",
+      "startup": "YC S14"
+    },
+    {
+      "slug": "humaninterest",
+      "name": "Human Interest",
+      "domain": "humaninterest.com",
+      "startup": "YC S15"
+    },
+    {
+      "slug": "icarus",
+      "name": "Icarus",
+      "domain": "icarus.one",
+      "startup": "YC F25"
     },
     {
       "slug": "imc",
@@ -129,6 +285,12 @@
       "slug": "instacart",
       "name": "Instacart",
       "domain": "instacart.com"
+    },
+    {
+      "slug": "instawork",
+      "name": "Instawork",
+      "domain": "instawork.com",
+      "startup": "YC S15"
     },
     {
       "slug": "intercom",
@@ -146,9 +308,45 @@
       "domain": "jumptrading.com"
     },
     {
+      "slug": "juno",
+      "name": "Juno",
+      "domain": "junocompanion.com",
+      "startup": "YC S26"
+    },
+    {
+      "slug": "lattice",
+      "name": "Lattice",
+      "domain": "lattice.com",
+      "startup": "YC W16"
+    },
+    {
+      "slug": "legalist",
+      "name": "Legalist",
+      "domain": "legalist.com",
+      "startup": "YC S16"
+    },
+    {
+      "slug": "limrun",
+      "name": "Limrun",
+      "domain": "lim.run",
+      "startup": "YC S26"
+    },
+    {
+      "slug": "lob",
+      "name": "Lob",
+      "domain": "lob.com",
+      "startup": "YC S13"
+    },
+    {
       "slug": "lyft",
       "name": "Lyft",
       "domain": "lyft.com"
+    },
+    {
+      "slug": "maymobility",
+      "name": "May Mobility",
+      "domain": "maymobility.com",
+      "startup": "YC S17"
     },
     {
       "slug": "mercury",
@@ -156,9 +354,39 @@
       "domain": "mercury.com"
     },
     {
+      "slug": "meruhealth",
+      "name": "Meru Health",
+      "domain": "meruhealth.com",
+      "startup": "YC S18"
+    },
+    {
+      "slug": "modernhealth",
+      "name": "Modern Health",
+      "domain": "modernhealth.com",
+      "startup": "YC W18"
+    },
+    {
       "slug": "mongodb",
       "name": "MongoDB",
       "domain": "mongodb.com"
+    },
+    {
+      "slug": "morph",
+      "name": "Morph",
+      "domain": "morphllm.com",
+      "startup": "YC S23"
+    },
+    {
+      "slug": "nabis",
+      "name": "Nabis",
+      "domain": "nabis.com",
+      "startup": "YC W19"
+    },
+    {
+      "slug": "newton",
+      "name": "Newton",
+      "domain": "joinnewton.com",
+      "startup": "YC W24"
     },
     {
       "slug": "nextdoor",
@@ -166,9 +394,27 @@
       "domain": "nextdoor.com"
     },
     {
+      "slug": "niraenergy",
+      "name": "Nira Energy",
+      "domain": "niraenergy.com",
+      "startup": "YC W22"
+    },
+    {
+      "slug": "novacredit",
+      "name": "Nova Credit",
+      "domain": "novacredit.com",
+      "startup": "YC S16"
+    },
+    {
       "slug": "nuro",
       "name": "Nuro",
       "domain": "nuro.ai"
+    },
+    {
+      "slug": "odeko",
+      "name": "Odeko",
+      "domain": "odeko.com",
+      "startup": "YC S19"
     },
     {
       "slug": "okta",
@@ -176,9 +422,51 @@
       "domain": "okta.com"
     },
     {
+      "slug": "openwork",
+      "name": "OpenWork",
+      "domain": "openworklabs.com",
+      "startup": "YC S26"
+    },
+    {
+      "slug": "ophelia",
+      "name": "Ophelia",
+      "domain": "ophelia.com",
+      "startup": "YC W20"
+    },
+    {
+      "slug": "orbitaloperations",
+      "name": "Orbital Operations",
+      "domain": "orbitalops.tech",
+      "startup": "YC W25"
+    },
+    {
+      "slug": "osmosis",
+      "name": "Osmosis",
+      "domain": "osmosis.ai",
+      "startup": "YC W25"
+    },
+    {
+      "slug": "pairteam",
+      "name": "Pair Team",
+      "domain": "pairteam.com",
+      "startup": "YC S19"
+    },
+    {
+      "slug": "pelago",
+      "name": "Pelago",
+      "domain": "pelagohealth.com",
+      "startup": "YC W18"
+    },
+    {
       "slug": "peloton",
       "name": "Peloton",
       "domain": "onepeloton.com"
+    },
+    {
+      "slug": "picnicai",
+      "name": "PicnicAI",
+      "domain": "picnic.ai",
+      "startup": "YC S14"
     },
     {
       "slug": "pinterest",
@@ -191,9 +479,57 @@
       "domain": "point72.com"
     },
     {
+      "slug": "porter",
+      "name": "Porter",
+      "domain": "porter.run",
+      "startup": "YC S20"
+    },
+    {
+      "slug": "postscript",
+      "name": "Postscript",
+      "domain": "postscript.io",
+      "startup": "YC W19"
+    },
+    {
+      "slug": "prodigal",
+      "name": "Prodigal",
+      "domain": "prodigaltech.com",
+      "startup": "YC S18"
+    },
+    {
+      "slug": "prolific",
+      "name": "Prolific",
+      "domain": "prolific.com",
+      "startup": "YC S19"
+    },
+    {
+      "slug": "prospa",
+      "name": "Prospa",
+      "domain": "getprospa.com",
+      "startup": "YC W21"
+    },
+    {
+      "slug": "qventus",
+      "name": "Qventus",
+      "domain": "qventus.com",
+      "startup": "YC W15"
+    },
+    {
+      "slug": "recidiviz",
+      "name": "Recidiviz",
+      "domain": "recidiviz.org",
+      "startup": "YC S19"
+    },
+    {
       "slug": "reddit",
       "name": "Reddit",
       "domain": "reddit.com"
+    },
+    {
+      "slug": "reflex",
+      "name": "Reflex",
+      "domain": "reflex.dev",
+      "startup": "YC W23"
     },
     {
       "slug": "riotgames",
@@ -226,9 +562,21 @@
       "domain": "scale.com"
     },
     {
+      "slug": "sendbird",
+      "name": "Sendbird",
+      "domain": "sendbird.com",
+      "startup": "YC W16"
+    },
+    {
       "slug": "sofi",
       "name": "SoFi",
       "domain": "sofi.com"
+    },
+    {
+      "slug": "spaceium",
+      "name": "Spaceium Inc",
+      "domain": "spaceium.com",
+      "startup": "YC S24"
     },
     {
       "slug": "spacex",
@@ -244,6 +592,18 @@
       "slug": "stripe",
       "name": "Stripe",
       "domain": "stripe.com"
+    },
+    {
+      "slug": "swayable",
+      "name": "Swayable",
+      "domain": "swayable.com",
+      "startup": "YC W18"
+    },
+    {
+      "slug": "tempo",
+      "name": "Tempo",
+      "domain": "tempo.fit",
+      "startup": "YC W15"
     },
     {
       "slug": "toast",
@@ -276,6 +636,12 @@
       "domain": "waymo.com"
     },
     {
+      "slug": "xendit",
+      "name": "Xendit",
+      "domain": "xendit.co",
+      "startup": "YC S15"
+    },
+    {
       "slug": "ziprecruiter",
       "name": "ZipRecruiter",
       "domain": "ziprecruiter.com"
@@ -288,9 +654,81 @@
   ],
   "lever": [
     {
+      "slug": "blue",
+      "name": "Blue",
+      "domain": "heyblue.com",
+      "startup": "YC S25"
+    },
+    {
+      "slug": "canarytechnologies",
+      "name": "Canary Technologies",
+      "domain": "canarytechnologies.com",
+      "startup": "YC S18"
+    },
+    {
+      "slug": "doola",
+      "name": "doola",
+      "domain": "doola.com",
+      "startup": "YC S20"
+    },
+    {
+      "slug": "epsilon3",
+      "name": "Epsilon3",
+      "domain": "epsilon3.io",
+      "startup": "YC S21"
+    },
+    {
+      "slug": "fampay",
+      "name": "FamPay",
+      "domain": "fampay.in",
+      "startup": "YC S19"
+    },
+    {
+      "slug": "finn",
+      "name": "Finn",
+      "domain": "getfinn.us",
+      "startup": "YC W23"
+    },
+    {
+      "slug": "gridware",
+      "name": "Gridware",
+      "domain": "gridware.io",
+      "startup": "YC W21"
+    },
+    {
+      "slug": "handoff",
+      "name": "Handoff",
+      "domain": "handoff.ai",
+      "startup": "YC W20"
+    },
+    {
+      "slug": "mashgin",
+      "name": "Mashgin",
+      "domain": "mashgin.com",
+      "startup": "YC W15"
+    },
+    {
       "slug": "matchgroup",
       "name": "Match Group",
       "domain": "mtch.com"
+    },
+    {
+      "slug": "multiplylabs",
+      "name": "Multiply Labs",
+      "domain": "multiplylabs.com",
+      "startup": "YC S16"
+    },
+    {
+      "slug": "mytos",
+      "name": "Mytos",
+      "domain": "mytos.bio",
+      "startup": "YC S18"
+    },
+    {
+      "slug": "netomi",
+      "name": "Netomi",
+      "domain": "netomi.com",
+      "startup": "YC W16"
     },
     {
       "slug": "palantir",
@@ -298,9 +736,51 @@
       "domain": "palantir.com"
     },
     {
+      "slug": "postera",
+      "name": "PostEra",
+      "domain": "postera.ai",
+      "startup": "YC W20"
+    },
+    {
+      "slug": "prosper",
+      "name": "Prosper",
+      "domain": "getprosper.ai",
+      "startup": "YC S23"
+    },
+    {
+      "slug": "quartzy",
+      "name": "Quartzy",
+      "domain": "quartzy.com",
+      "startup": "YC S11"
+    },
+    {
+      "slug": "sapling",
+      "name": "Sapling.ai",
+      "domain": "sapling.ai",
+      "startup": "YC W19"
+    },
+    {
       "slug": "shieldai",
       "name": "Shield AI",
       "domain": "shield.ai"
+    },
+    {
+      "slug": "skyways",
+      "name": "Skyways",
+      "domain": "skyways.com",
+      "startup": "YC S17"
+    },
+    {
+      "slug": "smartcuts",
+      "name": "Smartcuts",
+      "domain": "trysmartcuts.com",
+      "startup": "YC W21"
+    },
+    {
+      "slug": "snappr",
+      "name": "Snappr",
+      "domain": "snappr.com",
+      "startup": "YC W17"
     },
     {
       "slug": "spotify",
@@ -308,9 +788,51 @@
       "domain": "spotify.com"
     },
     {
+      "slug": "text",
+      "name": "Text.ai",
+      "domain": "text.ai",
+      "startup": "YC S25"
+    },
+    {
+      "slug": "thunkable",
+      "name": "Thunkable",
+      "domain": "thunkable.com",
+      "startup": "YC W16"
+    },
+    {
+      "slug": "tovala",
+      "name": "Tovala",
+      "domain": "tovala.com",
+      "startup": "YC W16"
+    },
+    {
+      "slug": "unusual",
+      "name": "Unusual",
+      "domain": "unusual.ai",
+      "startup": "YC F24"
+    },
+    {
+      "slug": "vergesense",
+      "name": "VergeSense",
+      "domain": "vergesense.com",
+      "startup": "YC S17"
+    },
+    {
+      "slug": "voltalabs",
+      "name": "Volta Labs, Inc.",
+      "domain": "voltalabs.com",
+      "startup": "YC W19"
+    },
+    {
       "slug": "wealthfront",
       "name": "Wealthfront",
       "domain": "wealthfront.com"
+    },
+    {
+      "slug": "zippi",
+      "name": "Zippi",
+      "domain": "zippi.com.br",
+      "startup": "YC S19"
     },
     {
       "slug": "zoox",
@@ -320,9 +842,705 @@
   ],
   "ashby": [
     {
+      "slug": "9-mothers",
+      "name": "9 Mothers",
+      "domain": "9mothers.com",
+      "startup": "YC S26"
+    },
+    {
+      "slug": "abacum",
+      "name": "Abacum",
+      "domain": "abacum.ai",
+      "startup": "YC W21"
+    },
+    {
+      "slug": "abundant",
+      "name": "Abundant",
+      "domain": "abundant.ai",
+      "startup": "YC F24"
+    },
+    {
+      "slug": "accord",
+      "name": "Accord",
+      "domain": "inaccord.com",
+      "startup": "YC W20"
+    },
+    {
+      "slug": "adaptyv",
+      "name": "Adaptyv",
+      "domain": "adaptyvbio.com",
+      "startup": "YC S21"
+    },
+    {
+      "slug": "afterquery",
+      "name": "AfterQuery",
+      "domain": "afterquery.com",
+      "startup": "YC W25"
+    },
+    {
+      "slug": "agave",
+      "name": "Agave",
+      "domain": "useagave.com",
+      "startup": "YC W22"
+    },
+    {
+      "slug": "agentmail",
+      "name": "AgentMail",
+      "domain": "agentmail.to",
+      "startup": "YC S25"
+    },
+    {
+      "slug": "aios",
+      "name": "AIOS",
+      "domain": "aiosmedical.notion.site",
+      "startup": "YC W20"
+    },
+    {
+      "slug": "aiprise",
+      "name": "AiPrise",
+      "domain": "aiprise.com",
+      "startup": "YC S22"
+    },
+    {
+      "slug": "airgoods",
+      "name": "Airgoods",
+      "domain": "airgoods.com",
+      "startup": "YC S23"
+    },
+    {
+      "slug": "aleph",
+      "name": "Aleph",
+      "domain": "getaleph.com",
+      "startup": "YC S21"
+    },
+    {
+      "slug": "ambient.ai",
+      "name": "Ambient.ai",
+      "domain": "ambient.ai",
+      "startup": "YC W17"
+    },
+    {
+      "slug": "ambral",
+      "name": "Ambral",
+      "domain": "ambral.com",
+      "startup": "YC S25"
+    },
+    {
+      "slug": "andromedasurgical",
+      "name": "Andromeda Surgical",
+      "domain": "andromedasurgical.com",
+      "startup": "YC S23"
+    },
+    {
+      "slug": "anima",
+      "name": "Anima",
+      "domain": "animahealth.com",
+      "startup": "YC W21"
+    },
+    {
+      "slug": "answerthis",
+      "name": "AnswerThis",
+      "domain": "answerthis.io",
+      "startup": "YC F25"
+    },
+    {
+      "slug": "anthrogen",
+      "name": "Anthrogen",
+      "domain": "anthrogen.com",
+      "startup": "YC S24"
+    },
+    {
+      "slug": "apolink",
+      "name": "Apolink",
+      "domain": "apolink.space",
+      "startup": "YC F24"
+    },
+    {
+      "slug": "aragorn",
+      "name": "Aragorn AI",
+      "domain": "aragorn.ai",
+      "startup": "YC S22"
+    },
+    {
+      "slug": "arini",
+      "name": "Arini",
+      "domain": "arini.ai",
+      "startup": "YC W24"
+    },
+    {
+      "slug": "arketa",
+      "name": "Arketa",
+      "domain": "arketa.com",
+      "startup": "YC S20"
+    },
+    {
+      "slug": "arq",
+      "name": "ARQ",
+      "domain": "arqfinance.com",
+      "startup": "YC S21"
+    },
+    {
+      "slug": "artie",
+      "name": "Artie",
+      "domain": "artie.com",
+      "startup": "YC S23"
+    },
+    {
+      "slug": "artisan",
+      "name": "Artisan",
+      "domain": "artisan.co",
+      "startup": "YC W24"
+    },
+    {
+      "slug": "artosai",
+      "name": "Artos",
+      "domain": "artosai.com",
+      "startup": "YC W24"
+    },
+    {
+      "slug": "ashby",
+      "name": "Ashby",
+      "domain": "ashbyhq.com",
+      "startup": "YC W19"
+    },
+    {
+      "slug": "asimov",
+      "name": "Asimov",
+      "domain": "tryasimov.ai",
+      "startup": "YC W26"
+    },
+    {
+      "slug": "assembly",
+      "name": "Assembly",
+      "domain": "assembly.com",
+      "startup": "YC W18"
+    },
+    {
+      "slug": "astro-mechanica",
+      "name": "Astro Mechanica",
+      "domain": "astromecha.co",
+      "startup": "YC W24"
+    },
+    {
+      "slug": "atlas",
+      "name": "Atlas",
+      "domain": "atlascard.com",
+      "startup": "YC W19"
+    },
+    {
+      "slug": "atob",
+      "name": "AtoB",
+      "domain": "atob.com",
+      "startup": "YC S20"
+    },
+    {
+      "slug": "atomic",
+      "name": "Atomic",
+      "domain": "atomicvest.com",
+      "startup": "YC S20"
+    },
+    {
+      "slug": "auctor",
+      "name": "Auctor",
+      "domain": "getauctor.com",
+      "startup": "YC S25"
+    },
+    {
+      "slug": "aurelian",
+      "name": "Aurelian",
+      "domain": "aurelian.com",
+      "startup": "YC S22"
+    },
+    {
+      "slug": "authzed",
+      "name": "authzed",
+      "domain": "authzed.com",
+      "startup": "YC W21"
+    },
+    {
+      "slug": "automat",
+      "name": "Automat",
+      "domain": "runautomat.com",
+      "startup": "YC W23"
+    },
+    {
+      "slug": "autumn",
+      "name": "Autumn",
+      "domain": "useautumn.com",
+      "startup": "YC S25"
+    },
+    {
+      "slug": "avallon",
+      "name": "Avallon AI",
+      "domain": "avallon.ai",
+      "startup": "YC S25"
+    },
+    {
+      "slug": "avoca",
+      "name": "Avoca",
+      "domain": "avoca.ai",
+      "startup": "YC W23"
+    },
+    {
+      "slug": "axle-health",
+      "name": "Axle Health",
+      "domain": "axlehealth.com",
+      "startup": "YC W21"
+    },
+    {
+      "slug": "belvo",
+      "name": "Belvo",
+      "domain": "belvo.com",
+      "startup": "YC W20"
+    },
+    {
+      "slug": "benepass",
+      "name": "Benepass",
+      "domain": "benepass.com",
+      "startup": "YC W20"
+    },
+    {
+      "slug": "beyondreachlabs",
+      "name": "Beyond Reach Labs",
+      "domain": "beyondreachlabs.com",
+      "startup": "YC W26"
+    },
+    {
+      "slug": "bild-ai",
+      "name": "Bild AI",
+      "domain": "bild.ai",
+      "startup": "YC W25"
+    },
+    {
+      "slug": "blacksmith",
+      "name": "Blacksmith",
+      "domain": "blacksmith.sh",
+      "startup": "YC W24"
+    },
+    {
+      "slug": "bland",
+      "name": "Bland AI",
+      "domain": "bland.com",
+      "startup": "YC S23"
+    },
+    {
+      "slug": "blee",
+      "name": "Blee",
+      "domain": "blee.com",
+      "startup": "YC S22"
+    },
+    {
+      "slug": "blissway",
+      "name": "Blissway",
+      "domain": "blissway.com",
+      "startup": "YC S20"
+    },
+    {
+      "slug": "bolna",
+      "name": "Bolna AI",
+      "domain": "bolna.ai",
+      "startup": "YC F25"
+    },
+    {
+      "slug": "bootloop",
+      "name": "BootLoop",
+      "domain": "bootloop.ai",
+      "startup": "YC S25"
+    },
+    {
+      "slug": "brainbaselabs",
+      "name": "Brainbase Labs",
+      "domain": "brainbaselabs.com",
+      "startup": "YC W24"
+    },
+    {
+      "slug": "bree",
+      "name": "Bree",
+      "domain": "trybree.com",
+      "startup": "YC S21"
+    },
+    {
+      "slug": "brettonai",
+      "name": "Bretton AI",
+      "domain": "bretton.com",
+      "startup": "YC S23"
+    },
+    {
+      "slug": "brighterway",
+      "name": "Brighterway",
+      "domain": "brighterway.ai",
+      "startup": "YC S24"
+    },
+    {
+      "slug": "broccoli",
+      "name": "Broccoli AI",
+      "domain": "broccoli.com",
+      "startup": "YC W22"
+    },
+    {
+      "slug": "brumby",
+      "name": "Brumby",
+      "domain": "brumby.com",
+      "startup": "YC W26"
+    },
+    {
+      "slug": "bunkerhillhealth",
+      "name": "Bunkerhill Health",
+      "domain": "bunkerhillhealth.com",
+      "startup": "YC W19"
+    },
+    {
+      "slug": "camber",
+      "name": "Camber",
+      "domain": "camber.health",
+      "startup": "YC W21"
+    },
+    {
+      "slug": "cambio",
+      "name": "Cambio",
+      "domain": "cambio.ai",
+      "startup": "YC S22"
+    },
+    {
+      "slug": "cambly",
+      "name": "Cambly",
+      "domain": "cambly.com",
+      "startup": "YC W14"
+    },
+    {
+      "slug": "campfire",
+      "name": "Campfire",
+      "domain": "campfire.ai",
+      "startup": "YC S23"
+    },
+    {
+      "slug": "candidhealth",
+      "name": "Candid Health",
+      "domain": "joincandidhealth.com",
+      "startup": "YC W20"
+    },
+    {
+      "slug": "captivateiq",
+      "name": "CaptivateIQ",
+      "domain": "captivateiq.com",
+      "startup": "YC W18"
+    },
+    {
+      "slug": "capy",
+      "name": "Capy",
+      "domain": "capy.ai",
+      "startup": "YC F24"
+    },
+    {
+      "slug": "cardboard",
+      "name": "Cardboard",
+      "domain": "cardboard.ai",
+      "startup": "YC W26"
+    },
+    {
+      "slug": "caribou",
+      "name": "Caribou",
+      "domain": "usecaribou.com",
+      "startup": "YC W19"
+    },
+    {
+      "slug": "casca",
+      "name": "Casca",
+      "domain": "cascading.ai",
+      "startup": "YC S23"
+    },
+    {
+      "slug": "casco",
+      "name": "Casco",
+      "domain": "casco.com",
+      "startup": "YC S25"
+    },
+    {
+      "slug": "castle",
+      "name": "Castle",
+      "domain": "castle.io",
+      "startup": "YC W16"
+    },
+    {
+      "slug": "charge-robotics",
+      "name": "Charge Robotics",
+      "domain": "chargerobotics.com",
+      "startup": "YC S21"
+    },
+    {
+      "slug": "chariot",
+      "name": "Chariot",
+      "domain": "givechariot.com",
+      "startup": "YC S22"
+    },
+    {
+      "slug": "chestnut",
+      "name": "Chestnut",
+      "domain": "chestnutmortgage.com",
+      "startup": "YC S25"
+    },
+    {
+      "slug": "cinder",
+      "name": "Cinder",
+      "domain": "cinder.ai",
+      "startup": "YC W22"
+    },
+    {
+      "slug": "circleback",
+      "name": "Circleback",
+      "domain": "circleback.ai",
+      "startup": "YC W24"
+    },
+    {
+      "slug": "circuithub",
+      "name": "CircuitHub",
+      "domain": "circuithub.com",
+      "startup": "YC W12"
+    },
+    {
+      "slug": "claim-health",
+      "name": "Claim Health",
+      "domain": "claimhealth.com",
+      "startup": "YC S25"
+    },
+    {
+      "slug": "claimsorted",
+      "name": "ClaimSorted",
+      "domain": "claimsorted.com",
+      "startup": "YC S24"
+    },
+    {
+      "slug": "clarion",
+      "name": "Clarion",
+      "domain": "clarionhealth.com",
+      "startup": "YC W24"
+    },
+    {
+      "slug": "classdojo",
+      "name": "ClassDojo",
+      "domain": "classdojo.com",
+      "startup": "YC S12"
+    },
+    {
+      "slug": "clearly-ai",
+      "name": "Clearly AI",
+      "domain": "clearly-ai.com",
+      "startup": "YC S24"
+    },
+    {
+      "slug": "clipboard",
+      "name": "Clipboard",
+      "domain": "clipboardworks.com",
+      "startup": "YC W17"
+    },
+    {
+      "slug": "codes-health",
+      "name": "Codes Health",
+      "domain": "codeshealth.com",
+      "startup": "YC S24"
+    },
+    {
       "slug": "cohere",
       "name": "Cohere",
       "domain": "cohere.com"
+    },
+    {
+      "slug": "cointracker",
+      "name": "CoinTracker",
+      "domain": "cointracker.com",
+      "startup": "YC W18"
+    },
+    {
+      "slug": "comena",
+      "name": "Comena",
+      "domain": "comena.ai",
+      "startup": "YC S25"
+    },
+    {
+      "slug": "commodityai",
+      "name": "CommodityAI",
+      "domain": "commodityai.io",
+      "startup": "YC W24"
+    },
+    {
+      "slug": "complete",
+      "name": "Complete",
+      "domain": "complete.so",
+      "startup": "YC W22"
+    },
+    {
+      "slug": "complif",
+      "name": "Complif",
+      "domain": "complif.com",
+      "startup": "YC W22"
+    },
+    {
+      "slug": "complir",
+      "name": "Complir",
+      "domain": "complir.io",
+      "startup": "YC S26"
+    },
+    {
+      "slug": "concourse",
+      "name": "Concourse",
+      "domain": "concourse.ai",
+      "startup": "YC W23"
+    },
+    {
+      "slug": "conduit",
+      "name": "Conduit",
+      "domain": "helloconduit.com",
+      "startup": "YC W23"
+    },
+    {
+      "slug": "confido",
+      "name": "Confido",
+      "domain": "confidotech.com",
+      "startup": "YC S21"
+    },
+    {
+      "slug": "conveo",
+      "name": "Conveo",
+      "domain": "conveo.ai",
+      "startup": "YC S24"
+    },
+    {
+      "slug": "cosine",
+      "name": "Cosine",
+      "domain": "cosine.sh",
+      "startup": "YC W23"
+    },
+    {
+      "slug": "credal",
+      "name": "Credal.ai",
+      "domain": "credal.ai",
+      "startup": "YC W23"
+    },
+    {
+      "slug": "ctgt",
+      "name": "CTGT",
+      "domain": "ctgt.ai",
+      "startup": "YC F24"
+    },
+    {
+      "slug": "curri",
+      "name": "Curri",
+      "domain": "curri.com",
+      "startup": "YC S19"
+    },
+    {
+      "slug": "darwin",
+      "name": "Darwin",
+      "domain": "darwinrobotics.ai",
+      "startup": "YC F25"
+    },
+    {
+      "slug": "datafold",
+      "name": "Datafold",
+      "domain": "datafold.com",
+      "startup": "YC S20"
+    },
+    {
+      "slug": "dataleap",
+      "name": "Dataleap",
+      "domain": "dataleap.ai",
+      "startup": "YC S24"
+    },
+    {
+      "slug": "david-ai",
+      "name": "David AI",
+      "domain": "withdavid.ai",
+      "startup": "YC S24"
+    },
+    {
+      "slug": "decodahealth",
+      "name": "Decoda Health",
+      "domain": "decodahealth.com",
+      "startup": "YC S23"
+    },
+    {
+      "slug": "dedalus-labs",
+      "name": "Dedalus Labs",
+      "domain": "dedaluslabs.ai",
+      "startup": "YC S25"
+    },
+    {
+      "slug": "deepgram",
+      "name": "Deepgram",
+      "domain": "deepgram.com",
+      "startup": "YC W16"
+    },
+    {
+      "slug": "deepnote",
+      "name": "Deepnote",
+      "domain": "deepnote.com",
+      "startup": "YC S19"
+    },
+    {
+      "slug": "diligencesquared",
+      "name": "DiligenceSquared",
+      "domain": "diligencesquared.com",
+      "startup": "YC F25"
+    },
+    {
+      "slug": "dispatch",
+      "name": "Dispatch",
+      "domain": "dispatch.space",
+      "startup": "YC S26"
+    },
+    {
+      "slug": "ditto",
+      "name": "Ditto",
+      "domain": "dittowords.com",
+      "startup": "YC W20"
+    },
+    {
+      "slug": "dodo",
+      "name": "Dodo",
+      "domain": "dodo.ai",
+      "startup": "YC S24"
+    },
+    {
+      "slug": "domu",
+      "name": "Domu Technology Inc.",
+      "domain": "domu.ai",
+      "startup": "YC S24"
+    },
+    {
+      "slug": "double",
+      "name": "Double",
+      "domain": "doublehq.com",
+      "startup": "YC S21"
+    },
+    {
+      "slug": "duffel",
+      "name": "Duffel",
+      "domain": "duffel.com",
+      "startup": "YC S18"
+    },
+    {
+      "slug": "dyneti",
+      "name": "Dyneti Technologies",
+      "domain": "dyneti.com",
+      "startup": "YC W19"
+    },
+    {
+      "slug": "eightsleep",
+      "name": "Eight Sleep",
+      "domain": "eightsleep.com",
+      "startup": "YC S15"
+    },
+    {
+      "slug": "ekho",
+      "name": "Ekho",
+      "domain": "ekho.com",
+      "startup": "YC S22"
+    },
+    {
+      "slug": "electricair",
+      "name": "Electric Air",
+      "domain": "electricair.io",
+      "startup": "YC S23"
     },
     {
       "slug": "elevenlabs",
@@ -330,9 +1548,291 @@
       "domain": "elevenlabs.io"
     },
     {
+      "slug": "ello",
+      "name": "Ello",
+      "domain": "ello.com",
+      "startup": "YC W20"
+    },
+    {
+      "slug": "eloquentai",
+      "name": "Eloquent AI",
+      "domain": "eloquentai.co",
+      "startup": "YC S25"
+    },
+    {
+      "slug": "elyos",
+      "name": "Elyos AI",
+      "domain": "elyos.ai",
+      "startup": "YC S23"
+    },
+    {
+      "slug": "encord",
+      "name": "Encord",
+      "domain": "encord.com",
+      "startup": "YC W21"
+    },
+    {
+      "slug": "enode",
+      "name": "Enode",
+      "domain": "enode.com",
+      "startup": "YC W21"
+    },
+    {
+      "slug": "escape",
+      "name": "Escape",
+      "domain": "escape.tech",
+      "startup": "YC W23"
+    },
+    {
+      "slug": "event-horizon-labs",
+      "name": "Event Horizon Labs",
+      "domain": "ehl.markets",
+      "startup": "YC W24"
+    },
+    {
+      "slug": "eventual",
+      "name": "Eventual",
+      "domain": "daft.ai",
+      "startup": "YC W22"
+    },
+    {
+      "slug": "fernstone",
+      "name": "Fernstone",
+      "domain": "fernstone.com",
+      "startup": "YC F25"
+    },
+    {
+      "slug": "fieldguide",
+      "name": "Fieldguide",
+      "domain": "fieldguide.com",
+      "startup": "YC S20"
+    },
+    {
+      "slug": "finch",
+      "name": "Finch",
+      "domain": "tryfinch.com",
+      "startup": "YC S20"
+    },
+    {
+      "slug": "finni-health",
+      "name": "Finni Health",
+      "domain": "finnihealth.com",
+      "startup": "YC W23"
+    },
+    {
+      "slug": "finny",
+      "name": "FINNY AI",
+      "domain": "finny.com",
+      "startup": "YC S24"
+    },
+    {
+      "slug": "finto",
+      "name": "Finto",
+      "domain": "gofinto.com",
+      "startup": "YC S25"
+    },
+    {
+      "slug": "firecrawl",
+      "name": "Firecrawl",
+      "domain": "firecrawl.dev",
+      "startup": "YC S22"
+    },
+    {
+      "slug": "firstwork",
+      "name": "FirstWork",
+      "domain": "firstwork.com",
+      "startup": "YC S24"
+    },
+    {
+      "slug": "flai",
+      "name": "Flai",
+      "domain": "useflai.com",
+      "startup": "YC S25"
+    },
+    {
+      "slug": "fleek",
+      "name": "Fleek",
+      "domain": "joinfleek.com",
+      "startup": "YC W22"
+    },
+    {
+      "slug": "fleetline",
+      "name": "Fleetline",
+      "domain": "fleetline.ai",
+      "startup": "YC S25"
+    },
+    {
+      "slug": "fleetworks",
+      "name": "FleetWorks",
+      "domain": "fleetworks.ai",
+      "startup": "YC S23"
+    },
+    {
+      "slug": "flex",
+      "name": "Flex",
+      "domain": "withflex.com",
+      "startup": "YC S23"
+    },
+    {
+      "slug": "flint",
+      "name": "Flint",
+      "domain": "withflint.com",
+      "startup": "YC S20"
+    },
+    {
+      "slug": "flowtel",
+      "name": "Flowtel",
+      "domain": "flowtel.ai",
+      "startup": "YC W25"
+    },
+    {
+      "slug": "flutterflow",
+      "name": "FlutterFlow",
+      "domain": "flutterflow.io",
+      "startup": "YC W21"
+    },
+    {
+      "slug": "formance",
+      "name": "Formance",
+      "domain": "formance.com",
+      "startup": "YC S21"
+    },
+    {
+      "slug": "fortuna-health",
+      "name": "Fortuna Health",
+      "domain": "fortunahealth.com",
+      "startup": "YC S23"
+    },
+    {
+      "slug": "fours",
+      "name": "Fours",
+      "domain": "fours.com",
+      "startup": "YC W23"
+    },
+    {
+      "slug": "freshpaint",
+      "name": "Freshpaint",
+      "domain": "freshpaint.io",
+      "startup": "YC S19"
+    },
+    {
+      "slug": "furtherai",
+      "name": "FurtherAI",
+      "domain": "furtherai.com",
+      "startup": "YC W24"
+    },
+    {
+      "slug": "garage",
+      "name": "Garage",
+      "domain": "shopgarage.com",
+      "startup": "YC W24"
+    },
+    {
+      "slug": "gecko-robotics",
+      "name": "Gecko Robotics",
+      "domain": "geckorobotics.com",
+      "startup": "YC W16"
+    },
+    {
+      "slug": "generalastronautics",
+      "name": "General Astronautics",
+      "domain": "generalastro.com",
+      "startup": "YC W26"
+    },
+    {
+      "slug": "gigs",
+      "name": "Gigs",
+      "domain": "gigs.com",
+      "startup": "YC W21"
+    },
+    {
+      "slug": "glimpse",
+      "name": "Glimpse",
+      "domain": "tryglimpse.com",
+      "startup": "YC S20"
+    },
+    {
+      "slug": "golinks",
+      "name": "GoLinks",
+      "domain": "golinks.io",
+      "startup": "YC W19"
+    },
+    {
+      "slug": "govdash",
+      "name": "GovDash",
+      "domain": "govdash.com",
+      "startup": "YC W22"
+    },
+    {
+      "slug": "goveagle",
+      "name": "GovEagle",
+      "domain": "goveagle.com",
+      "startup": "YC W23"
+    },
+    {
+      "slug": "greatquestion",
+      "name": "Great Question",
+      "domain": "greatquestion.co",
+      "startup": "YC W21"
+    },
+    {
+      "slug": "greenboard",
+      "name": "Greenboard",
+      "domain": "greenboard.com",
+      "startup": "YC W24"
+    },
+    {
+      "slug": "greptile",
+      "name": "Greptile",
+      "domain": "greptile.com",
+      "startup": "YC W24"
+    },
+    {
+      "slug": "guild",
+      "name": "GUILD",
+      "domain": "guildai.co",
+      "startup": "YC S26"
+    },
+    {
+      "slug": "halluminate",
+      "name": "Halluminate",
+      "domain": "halluminate.ai",
+      "startup": "YC S25"
+    },
+    {
+      "slug": "happl",
+      "name": "Happl",
+      "domain": "happl.com",
+      "startup": "YC W22"
+    },
+    {
+      "slug": "harperinsure",
+      "name": "Harper",
+      "domain": "harperinsure.com",
+      "startup": "YC W25"
+    },
+    {
       "slug": "harvey",
       "name": "Harvey",
       "domain": "harvey.ai"
+    },
+    {
+      "slug": "healthtech-1",
+      "name": "Healthtech 1",
+      "domain": "healthtech1.uk",
+      "startup": "YC S23"
+    },
+    {
+      "slug": "hedge",
+      "name": "Hedge",
+      "domain": "hedgespecialty.com",
+      "startup": "YC S26"
+    },
+    {
+      "slug": "herondata",
+      "name": "Heron",
+      "domain": "herondata.io",
+      "startup": "YC S20"
     },
     {
       "slug": "hex",
@@ -340,9 +1840,357 @@
       "domain": "hex.tech"
     },
     {
+      "slug": "hockeystack",
+      "name": "HockeyStack",
+      "domain": "hockeystack.com",
+      "startup": "YC S23"
+    },
+    {
+      "slug": "homebase",
+      "name": "Homebase",
+      "domain": "gethomebase.com",
+      "startup": "YC W21"
+    },
+    {
+      "slug": "hotplate",
+      "name": "Hotplate",
+      "domain": "hotplate.com",
+      "startup": "YC S20"
+    },
+    {
+      "slug": "hud",
+      "name": "HUD",
+      "domain": "hud.ai",
+      "startup": "YC W25"
+    },
+    {
+      "slug": "humaans",
+      "name": "Humaans",
+      "domain": "humaans.io",
+      "startup": "YC W21"
+    },
+    {
+      "slug": "humanarchive",
+      "name": "Human Archive",
+      "domain": "humanarchive.ai",
+      "startup": "YC W26"
+    },
+    {
+      "slug": "hyperbound",
+      "name": "Hyperbound",
+      "domain": "hyperbound.ai",
+      "startup": "YC S23"
+    },
+    {
+      "slug": "hypercubic",
+      "name": "Hypercubic",
+      "domain": "hypercubic.ai",
+      "startup": "YC F25"
+    },
+    {
+      "slug": "idler",
+      "name": "idler",
+      "domain": "idler.ai",
+      "startup": "YC S25"
+    },
+    {
+      "slug": "infera",
+      "name": "Infera",
+      "domain": "infera.bio",
+      "startup": "YC S26"
+    },
+    {
+      "slug": "infinite",
+      "name": "Infinite",
+      "domain": "infinite.net",
+      "startup": "YC W25"
+    },
+    {
+      "slug": "infisical",
+      "name": "Infisical",
+      "domain": "infisical.com",
+      "startup": "YC W23"
+    },
+    {
+      "slug": "influxdata",
+      "name": "InfluxData",
+      "domain": "influxdata.com",
+      "startup": "YC W13"
+    },
+    {
+      "slug": "inkeep",
+      "name": "Inkeep",
+      "domain": "inkeep.com",
+      "startup": "YC W23"
+    },
+    {
+      "slug": "innate",
+      "name": "Innate",
+      "domain": "innate.bot",
+      "startup": "YC F24"
+    },
+    {
+      "slug": "interfere",
+      "name": "Interfere",
+      "domain": "interfere.com",
+      "startup": "YC S25"
+    },
+    {
+      "slug": "invert",
+      "name": "Invert",
+      "domain": "invertbio.com",
+      "startup": "YC W22"
+    },
+    {
+      "slug": "invopop",
+      "name": "Invopop",
+      "domain": "invopop.com",
+      "startup": "YC W23"
+    },
+    {
+      "slug": "jeevyfabrication",
+      "name": "Jeevy Fabrication",
+      "domain": "jeevyfabrication.com",
+      "startup": "YC S25"
+    },
+    {
+      "slug": "jiga",
+      "name": "Jiga",
+      "domain": "jiga.io",
+      "startup": "YC W21"
+    },
+    {
+      "slug": "juicebox",
+      "name": "Juicebox",
+      "domain": "juicebox.ai",
+      "startup": "YC S22"
+    },
+    {
+      "slug": "julius",
+      "name": "Julius",
+      "domain": "julius.ai",
+      "startup": "YC S22"
+    },
+    {
+      "slug": "junction",
+      "name": "Junction",
+      "domain": "junction.com",
+      "startup": "YC W20"
+    },
+    {
+      "slug": "kalshi",
+      "name": "Kalshi",
+      "domain": "kalshi.com",
+      "startup": "YC W19"
+    },
+    {
+      "slug": "kastle",
+      "name": "Kastle",
+      "domain": "kastle.ai",
+      "startup": "YC S24"
+    },
+    {
+      "slug": "kingdom",
+      "name": "Kingdom",
+      "domain": "kingdomsuperculture.com",
+      "startup": "YC S20"
+    },
+    {
+      "slug": "kivo-health",
+      "name": "Kivo Health",
+      "domain": "kivohealth.com",
+      "startup": "YC W23"
+    },
+    {
+      "slug": "klarify",
+      "name": "Klarify",
+      "domain": "klarify.ca",
+      "startup": "YC S26"
+    },
+    {
+      "slug": "knowtex",
+      "name": "Knowtex",
+      "domain": "knowtex.ai",
+      "startup": "YC S22"
+    },
+    {
+      "slug": "kodex",
+      "name": "Kodex",
+      "domain": "kodexglobal.com",
+      "startup": "YC S21"
+    },
+    {
+      "slug": "kombo",
+      "name": "Kombo",
+      "domain": "kombo.dev",
+      "startup": "YC S22"
+    },
+    {
+      "slug": "lance",
+      "name": "Lance",
+      "domain": "lance.live",
+      "startup": "YC W26"
+    },
+    {
+      "slug": "langdock",
+      "name": "Langdock",
+      "domain": "langdock.com",
+      "startup": "YC S23"
+    },
+    {
+      "slug": "lapel",
+      "name": "Lapel",
+      "domain": "lapel.com",
+      "startup": "YC S25"
+    },
+    {
+      "slug": "latent",
+      "name": "Latent",
+      "domain": "latenthealth.com",
+      "startup": "YC W23"
+    },
+    {
+      "slug": "legionhealth",
+      "name": "Legion Health",
+      "domain": "legionhealth.com",
+      "startup": "YC S21"
+    },
+    {
+      "slug": "legora",
+      "name": "Legora",
+      "domain": "legora.com",
+      "startup": "YC W24"
+    },
+    {
+      "slug": "lightdash",
+      "name": "Lightdash",
+      "domain": "lightdash.com",
+      "startup": "YC S20"
+    },
+    {
       "slug": "linear",
       "name": "Linear",
       "domain": "linear.app"
+    },
+    {
+      "slug": "litellm",
+      "name": "LiteLLM",
+      "domain": "litellm.ai",
+      "startup": "YC W23"
+    },
+    {
+      "slug": "liveflow",
+      "name": "LiveFlow",
+      "domain": "liveflow.com",
+      "startup": "YC W21"
+    },
+    {
+      "slug": "lucis",
+      "name": "Lucis",
+      "domain": "lucis.life",
+      "startup": "YC S25"
+    },
+    {
+      "slug": "luminai",
+      "name": "Luminai",
+      "domain": "luminai.com",
+      "startup": "YC S20"
+    },
+    {
+      "slug": "luminal",
+      "name": "Luminal",
+      "domain": "luminal.com",
+      "startup": "YC S25"
+    },
+    {
+      "slug": "mach9",
+      "name": "Mach9",
+      "domain": "mach9.ai",
+      "startup": "YC S21"
+    },
+    {
+      "slug": "magic",
+      "name": "Magic",
+      "domain": "getmagic.com",
+      "startup": "YC W15"
+    },
+    {
+      "slug": "magicpatterns",
+      "name": "Magic Patterns",
+      "domain": "magicpatterns.com",
+      "startup": "YC W23"
+    },
+    {
+      "slug": "mangodesk",
+      "name": "MangoDesk",
+      "domain": "mangodesk.com",
+      "startup": "YC S25"
+    },
+    {
+      "slug": "marble",
+      "name": "Marble",
+      "domain": "joinmarble.ai",
+      "startup": "YC S26"
+    },
+    {
+      "slug": "mednet",
+      "name": "Mednet",
+      "domain": "themednet.org",
+      "startup": "YC W17"
+    },
+    {
+      "slug": "mem0",
+      "name": "Mem0",
+      "domain": "mem0.ai",
+      "startup": "YC S24"
+    },
+    {
+      "slug": "mercura",
+      "name": "Mercura",
+      "domain": "mercura.ai",
+      "startup": "YC W25"
+    },
+    {
+      "slug": "mesh",
+      "name": "Mesh",
+      "domain": "usemesh.com",
+      "startup": "YC W25"
+    },
+    {
+      "slug": "metal",
+      "name": "Metal",
+      "domain": "metal.ai",
+      "startup": "YC W23"
+    },
+    {
+      "slug": "meticulous",
+      "name": "Meticulous",
+      "domain": "meticulous.ai",
+      "startup": "YC S21"
+    },
+    {
+      "slug": "metriport",
+      "name": "Metriport",
+      "domain": "metriport.com",
+      "startup": "YC S22"
+    },
+    {
+      "slug": "middesk",
+      "name": "Middesk",
+      "domain": "middesk.com",
+      "startup": "YC W19"
+    },
+    {
+      "slug": "mintlify",
+      "name": "Mintlify",
+      "domain": "mintlify.com",
+      "startup": "YC W22"
+    },
+    {
+      "slug": "misolabs",
+      "name": "Miso Labs",
+      "domain": "misolabs.ai",
+      "startup": "YC S26"
     },
     {
       "slug": "modal",
@@ -350,9 +2198,141 @@
       "domain": "modal.com"
     },
     {
+      "slug": "moderntreasury",
+      "name": "Modern Treasury",
+      "domain": "moderntreasury.com",
+      "startup": "YC S18"
+    },
+    {
+      "slug": "momentic",
+      "name": "Momentic",
+      "domain": "momentic.ai",
+      "startup": "YC W24"
+    },
+    {
+      "slug": "morpho",
+      "name": "MorphoAI",
+      "domain": "morpho.ai",
+      "startup": "YC S25"
+    },
+    {
+      "slug": "mosaic",
+      "name": "Mosaic",
+      "domain": "mosaic.so",
+      "startup": "YC W25"
+    },
+    {
+      "slug": "moss",
+      "name": "Moss",
+      "domain": "moss.dev",
+      "startup": "YC F25"
+    },
+    {
+      "slug": "mutiny",
+      "name": "Mutiny",
+      "domain": "mutinyhq.com",
+      "startup": "YC S18"
+    },
+    {
+      "slug": "nango",
+      "name": "Nango",
+      "domain": "nango.dev",
+      "startup": "YC W23"
+    },
+    {
+      "slug": "nash",
+      "name": "Nash",
+      "domain": "usenash.com",
+      "startup": "YC S21"
+    },
+    {
+      "slug": "nectar",
+      "name": "Nectar",
+      "domain": "nectarclimate.com",
+      "startup": "YC S23"
+    },
+    {
+      "slug": "nomic",
+      "name": "Nomic Bio",
+      "domain": "nomic.bio",
+      "startup": "YC W20"
+    },
+    {
+      "slug": "notabene",
+      "name": "Notabene",
+      "domain": "notabene.id",
+      "startup": "YC S20"
+    },
+    {
       "slug": "notion",
       "name": "Notion",
       "domain": "notion.so"
+    },
+    {
+      "slug": "novig",
+      "name": "Novig",
+      "domain": "novig.com",
+      "startup": "YC S22"
+    },
+    {
+      "slug": "nowadays",
+      "name": "Nowadays",
+      "domain": "nowadays.ai",
+      "startup": "YC S23"
+    },
+    {
+      "slug": "nox-metals",
+      "name": "Nox Metals",
+      "domain": "noxmetals.co",
+      "startup": "YC S25"
+    },
+    {
+      "slug": "numeral",
+      "name": "Numeral",
+      "domain": "numeral.com",
+      "startup": "YC W23"
+    },
+    {
+      "slug": "odys-aviation",
+      "name": "Odys Aviation",
+      "domain": "odysaviation.com",
+      "startup": "YC S21"
+    },
+    {
+      "slug": "offdeal",
+      "name": "OffDeal",
+      "domain": "offdeal.io",
+      "startup": "YC W24"
+    },
+    {
+      "slug": "offstream",
+      "name": "Offstream",
+      "domain": "useoffstream.com",
+      "startup": "YC S24"
+    },
+    {
+      "slug": "onerobot",
+      "name": "One Robot",
+      "domain": "onerobot.io",
+      "startup": "YC W26"
+    },
+    {
+      "slug": "onechronos",
+      "name": "OneChronos",
+      "domain": "onechronos.com",
+      "startup": "YC S16"
+    },
+    {
+      "slug": "oneleet",
+      "name": "Oneleet",
+      "domain": "oneleet.com",
+      "startup": "YC S22"
+    },
+    {
+      "slug": "oneschema",
+      "name": "OneSchema",
+      "domain": "oneschema.co",
+      "startup": "YC S21"
     },
     {
       "slug": "openai",
@@ -360,9 +2340,123 @@
       "domain": "openai.com"
     },
     {
+      "slug": "opencall",
+      "name": "Opencall",
+      "domain": "opencall.ai",
+      "startup": "YC W24"
+    },
+    {
+      "slug": "outset",
+      "name": "Outset",
+      "domain": "outset.ai",
+      "startup": "YC S23"
+    },
+    {
+      "slug": "overview",
+      "name": "Overview",
+      "domain": "overview.ai",
+      "startup": "YC W19"
+    },
+    {
+      "slug": "padlet",
+      "name": "Padlet",
+      "domain": "padlet.com",
+      "startup": "YC W13"
+    },
+    {
+      "slug": "paradigm",
+      "name": "Paradigm",
+      "domain": "paradigmai.com",
+      "startup": "YC W24"
+    },
+    {
+      "slug": "parallel-bio",
+      "name": "Parallel Bio",
+      "domain": "parallel.bio",
+      "startup": "YC S21"
+    },
+    {
+      "slug": "parameter",
+      "name": "Parameter",
+      "domain": "parameter.ai",
+      "startup": "YC W26"
+    },
+    {
+      "slug": "pax-historia",
+      "name": "Pax Historia",
+      "domain": "paxhistoria.co",
+      "startup": "YC W26"
+    },
+    {
+      "slug": "permitflow",
+      "name": "PermitFlow",
+      "domain": "permitflow.com",
+      "startup": "YC W22"
+    },
+    {
       "slug": "perplexity",
       "name": "Perplexity",
       "domain": "perplexity.ai"
+    },
+    {
+      "slug": "pharos",
+      "name": "Pharos",
+      "domain": "pharos.health",
+      "startup": "YC S24"
+    },
+    {
+      "slug": "phoenix",
+      "name": "Phoenix",
+      "domain": "phoenix.ca",
+      "startup": "YC W21"
+    },
+    {
+      "slug": "phonely",
+      "name": "Phonely",
+      "domain": "phonely.ai",
+      "startup": "YC S24"
+    },
+    {
+      "slug": "pirros",
+      "name": "Pirros",
+      "domain": "pirros.com",
+      "startup": "YC W23"
+    },
+    {
+      "slug": "pivotrobotics",
+      "name": "Pivot Robotics",
+      "domain": "pivotrobotics.com",
+      "startup": "YC W24"
+    },
+    {
+      "slug": "pocket",
+      "name": "Pocket",
+      "domain": "heypocket.com",
+      "startup": "YC W26"
+    },
+    {
+      "slug": "pointone",
+      "name": "PointOne",
+      "domain": "pointone.com",
+      "startup": "YC W24"
+    },
+    {
+      "slug": "polymath",
+      "name": "Polymath",
+      "domain": "polymathlabs.ai",
+      "startup": "YC W26"
+    },
+    {
+      "slug": "popl",
+      "name": "Popl",
+      "domain": "popl.co",
+      "startup": "YC W21"
+    },
+    {
+      "slug": "posh",
+      "name": "Posh",
+      "domain": "poshenergy.com",
+      "startup": "YC W22"
     },
     {
       "slug": "posthog",
@@ -370,9 +2464,135 @@
       "domain": "posthog.com"
     },
     {
+      "slug": "prelim",
+      "name": "Prelim",
+      "domain": "prelim.com",
+      "startup": "YC S17"
+    },
+    {
+      "slug": "probablygenetic",
+      "name": "Probably Genetic",
+      "domain": "probablygenetic.com",
+      "startup": "YC W19"
+    },
+    {
+      "slug": "promise",
+      "name": "Promise",
+      "domain": "promise-pay.com",
+      "startup": "YC W18"
+    },
+    {
+      "slug": "proofofhuman",
+      "name": "Proof of Human",
+      "domain": "poh.org",
+      "startup": "YC S23"
+    },
+    {
+      "slug": "provision",
+      "name": "Provision",
+      "domain": "provision.com",
+      "startup": "YC S22"
+    },
+    {
+      "slug": "pulse",
+      "name": "Pulse",
+      "domain": "runpulse.com",
+      "startup": "YC S24"
+    },
+    {
+      "slug": "pure",
+      "name": "Pure",
+      "domain": "collectpure.com",
+      "startup": "YC S23"
+    },
+    {
+      "slug": "pylon",
+      "name": "Pylon",
+      "domain": "usepylon.com",
+      "startup": "YC W23"
+    },
+    {
+      "slug": "quicknode",
+      "name": "Quicknode",
+      "domain": "quicknode.com",
+      "startup": "YC W21"
+    },
+    {
+      "slug": "quindar",
+      "name": "Quindar",
+      "domain": "quindar.space",
+      "startup": "YC S22"
+    },
+    {
+      "slug": "radar",
+      "name": "RADAR",
+      "domain": "goradar.com",
+      "startup": "YC W13"
+    },
+    {
+      "slug": "raindrop",
+      "name": "Raindrop",
+      "domain": "raindrop.ai",
+      "startup": "YC W24"
+    },
+    {
+      "slug": "rallyuxr",
+      "name": "Rally",
+      "domain": "rallyuxr.com",
+      "startup": "YC W22"
+    },
+    {
       "slug": "ramp",
       "name": "Ramp",
       "domain": "ramp.com"
+    },
+    {
+      "slug": "reach",
+      "name": "Reach",
+      "domain": "reachpower.com",
+      "startup": "YC S15"
+    },
+    {
+      "slug": "reacher",
+      "name": "Reacher",
+      "domain": "reacherapp.com",
+      "startup": "YC S25"
+    },
+    {
+      "slug": "ready",
+      "name": "Ready",
+      "domain": "ready.net",
+      "startup": "YC S20"
+    },
+    {
+      "slug": "realitydefender",
+      "name": "Reality Defender",
+      "domain": "realitydefender.com",
+      "startup": "YC W22"
+    },
+    {
+      "slug": "recall",
+      "name": "Recall.ai",
+      "domain": "recall.ai",
+      "startup": "YC W20"
+    },
+    {
+      "slug": "reducto",
+      "name": "Reducto",
+      "domain": "reducto.ai",
+      "startup": "YC W24"
+    },
+    {
+      "slug": "reform",
+      "name": "Reform",
+      "domain": "reformhq.com",
+      "startup": "YC W24"
+    },
+    {
+      "slug": "relace",
+      "name": "Relace",
+      "domain": "relace.ai",
+      "startup": "YC W23"
     },
     {
       "slug": "replit",
@@ -380,9 +2600,123 @@
       "domain": "replit.com"
     },
     {
+      "slug": "replo",
+      "name": "Replo",
+      "domain": "replo.app",
+      "startup": "YC S21"
+    },
+    {
+      "slug": "rescale",
+      "name": "Rescale",
+      "domain": "rescale.com",
+      "startup": "YC W12"
+    },
+    {
+      "slug": "retell-ai",
+      "name": "Retell AI",
+      "domain": "retellai.com",
+      "startup": "YC W24"
+    },
+    {
+      "slug": "revenuecat",
+      "name": "RevenueCat",
+      "domain": "revenuecat.com",
+      "startup": "YC S18"
+    },
+    {
+      "slug": "reviserobotics",
+      "name": "Revise Robotics",
+      "domain": "reviserobotics.com",
+      "startup": "YC W25"
+    },
+    {
+      "slug": "rivet",
+      "name": "Rivet",
+      "domain": "rivet.dev",
+      "startup": "YC W23"
+    },
+    {
+      "slug": "rivia",
+      "name": "Rivia.AI",
+      "domain": "rivia.ai",
+      "startup": "YC S21"
+    },
+    {
+      "slug": "roboflow",
+      "name": "Roboflow",
+      "domain": "roboflow.com",
+      "startup": "YC S20"
+    },
+    {
+      "slug": "rollstack",
+      "name": "Rollstack",
+      "domain": "rollstack.com",
+      "startup": "YC W23"
+    },
+    {
+      "slug": "runa",
+      "name": "Runa",
+      "domain": "runahr.com",
+      "startup": "YC W18"
+    },
+    {
       "slug": "runway",
       "name": "Runway",
       "domain": "runwayml.com"
+    },
+    {
+      "slug": "ryvn",
+      "name": "Ryvn",
+      "domain": "ryvn.ai",
+      "startup": "YC F24"
+    },
+    {
+      "slug": "safetykit",
+      "name": "SafetyKit",
+      "domain": "safetykit.com",
+      "startup": "YC S23"
+    },
+    {
+      "slug": "salespatriot",
+      "name": "SalesPatriot",
+      "domain": "salespatriot.com",
+      "startup": "YC W25"
+    },
+    {
+      "slug": "salient",
+      "name": "Salient",
+      "domain": "trysalient.com",
+      "startup": "YC W23"
+    },
+    {
+      "slug": "serifhealth",
+      "name": "Serif Health",
+      "domain": "serifhealth.com",
+      "startup": "YC W22"
+    },
+    {
+      "slug": "sf-tensor",
+      "name": "SF Tensor",
+      "domain": "sf-tensor.com",
+      "startup": "YC F25"
+    },
+    {
+      "slug": "shadeform",
+      "name": "Shadeform",
+      "domain": "shadeform.ai",
+      "startup": "YC S23"
+    },
+    {
+      "slug": "shepherd",
+      "name": "Shepherd",
+      "domain": "shepherdinsurance.com",
+      "startup": "YC W21"
+    },
+    {
+      "slug": "shortstory",
+      "name": "Short Story",
+      "domain": "shortstorybox.com",
+      "startup": "YC S19"
     },
     {
       "slug": "sierra",
@@ -390,9 +2724,303 @@
       "domain": "sierra.ai"
     },
     {
+      "slug": "sieve",
+      "name": "Sieve",
+      "domain": "sievedata.com",
+      "startup": "YC W22"
+    },
+    {
+      "slug": "sift",
+      "name": "Sift",
+      "domain": "sift.com",
+      "startup": "YC S11"
+    },
+    {
+      "slug": "signoz",
+      "name": "SigNoz",
+      "domain": "signoz.io",
+      "startup": "YC W21"
+    },
+    {
+      "slug": "sim",
+      "name": "Sim",
+      "domain": "sim.ai",
+      "startup": "YC S25"
+    },
+    {
+      "slug": "simple-ai",
+      "name": "Simple AI",
+      "domain": "usesimple.ai",
+      "startup": "YC S24"
+    },
+    {
+      "slug": "slope",
+      "name": "Slope",
+      "domain": "slopepay.com",
+      "startup": "YC S21"
+    },
+    {
+      "slug": "snapmagic",
+      "name": "SnapMagic",
+      "domain": "snapmagic.com",
+      "startup": "YC S15"
+    },
+    {
+      "slug": "sola",
+      "name": "Sola",
+      "domain": "sola-solutions.com",
+      "startup": "YC S23"
+    },
+    {
+      "slug": "solidroad",
+      "name": "Solidroad",
+      "domain": "solidroad.com",
+      "startup": "YC W25"
+    },
+    {
+      "slug": "solveintelligence",
+      "name": "Solve Intelligence",
+      "domain": "solveintelligence.com",
+      "startup": "YC S23"
+    },
+    {
+      "slug": "spade",
+      "name": "Spade",
+      "domain": "spade.com",
+      "startup": "YC W22"
+    },
+    {
+      "slug": "speak",
+      "name": "Speak",
+      "domain": "speak.com",
+      "startup": "YC W17"
+    },
+    {
+      "slug": "spellbrush",
+      "name": "Spellbrush",
+      "domain": "spellbrush.com",
+      "startup": "YC W18"
+    },
+    {
+      "slug": "sphere",
+      "name": "Sphere",
+      "domain": "getsphere.com",
+      "startup": "YC W22"
+    },
+    {
+      "slug": "spruceid",
+      "name": "SpruceID",
+      "domain": "spruceid.com",
+      "startup": "YC W21"
+    },
+    {
+      "slug": "spur",
+      "name": "Spur",
+      "domain": "spurtest.com",
+      "startup": "YC S24"
+    },
+    {
+      "slug": "stable",
+      "name": "Stable",
+      "domain": "usestable.com",
+      "startup": "YC W20"
+    },
+    {
+      "slug": "stepful",
+      "name": "Stepful",
+      "domain": "stepful.com",
+      "startup": "YC S21"
+    },
+    {
+      "slug": "stilta",
+      "name": "Stilta",
+      "domain": "stilta.com",
+      "startup": "YC W26"
+    },
+    {
+      "slug": "stream",
+      "name": "Stream",
+      "domain": "stream.claims",
+      "startup": "YC S22"
+    },
+    {
       "slug": "supabase",
       "name": "Supabase",
       "domain": "supabase.com"
+    },
+    {
+      "slug": "svix",
+      "name": "Svix",
+      "domain": "svix.com",
+      "startup": "YC W21"
+    },
+    {
+      "slug": "sweep",
+      "name": "Sweep",
+      "domain": "sweep.dev",
+      "startup": "YC S23"
+    },
+    {
+      "slug": "sweetspot",
+      "name": "Sweetspot",
+      "domain": "sweetspot.so",
+      "startup": "YC S23"
+    },
+    {
+      "slug": "sygaldry-technologies",
+      "name": "Sygaldry Technologies",
+      "domain": "sygaldry.com",
+      "startup": "YC S25"
+    },
+    {
+      "slug": "tailor",
+      "name": "Tailor",
+      "domain": "tailor.tech",
+      "startup": "YC S22"
+    },
+    {
+      "slug": "taktile",
+      "name": "Taktile",
+      "domain": "taktile.com",
+      "startup": "YC S20"
+    },
+    {
+      "slug": "tamarindbio",
+      "name": "Tamarind Bio",
+      "domain": "tamarind.bio",
+      "startup": "YC W24"
+    },
+    {
+      "slug": "tank-payments",
+      "name": "Tank Payments",
+      "domain": "tankpayments.com",
+      "startup": "YC S22"
+    },
+    {
+      "slug": "tavus",
+      "name": "Tavus",
+      "domain": "tavus.io",
+      "startup": "YC S21"
+    },
+    {
+      "slug": "tekton-dynamics",
+      "name": "Tekton Dynamics",
+      "domain": "tekton-dynamics.com",
+      "startup": "YC W24"
+    },
+    {
+      "slug": "telli",
+      "name": "telli",
+      "domain": "telli.com",
+      "startup": "YC F24"
+    },
+    {
+      "slug": "tennr",
+      "name": "Tennr",
+      "domain": "tennr.com",
+      "startup": "YC W23"
+    },
+    {
+      "slug": "tenor",
+      "name": "Tenor",
+      "domain": "heytenor.com",
+      "startup": "YC S26"
+    },
+    {
+      "slug": "terminal",
+      "name": "Terminal",
+      "domain": "withterminal.com",
+      "startup": "YC S23"
+    },
+    {
+      "slug": "thera",
+      "name": "Thera",
+      "domain": "getthera.com",
+      "startup": "YC S22"
+    },
+    {
+      "slug": "thundercompute",
+      "name": "Thunder Compute",
+      "domain": "thundercompute.com",
+      "startup": "YC S24"
+    },
+    {
+      "slug": "titan",
+      "name": "Titan",
+      "domain": "titan.com",
+      "startup": "YC S18"
+    },
+    {
+      "slug": "topline-pro",
+      "name": "Topline Pro",
+      "domain": "toplinepro.com",
+      "startup": "YC W21"
+    },
+    {
+      "slug": "runtrellis",
+      "name": "Trellis AI",
+      "domain": "runtrellis.com",
+      "startup": "YC W24"
+    },
+    {
+      "slug": "triomics",
+      "name": "Triomics",
+      "domain": "triomics.com",
+      "startup": "YC W21"
+    },
+    {
+      "slug": "trm-labs",
+      "name": "TRM Labs",
+      "domain": "trmlabs.com",
+      "startup": "YC S19"
+    },
+    {
+      "slug": "tsenta",
+      "name": "Tsenta",
+      "domain": "tsenta.com",
+      "startup": "YC S26"
+    },
+    {
+      "slug": "tuesday-labs",
+      "name": "Tuesday Labs",
+      "domain": "tuesdaylabs.com",
+      "startup": "YC W24"
+    },
+    {
+      "slug": "turion-space",
+      "name": "Turion Space",
+      "domain": "turionspace.com",
+      "startup": "YC S21"
+    },
+    {
+      "slug": "twenty",
+      "name": "Twenty",
+      "domain": "twenty.com",
+      "startup": "YC S23"
+    },
+    {
+      "slug": "ultra",
+      "name": "Ultra",
+      "domain": "ultra.tech",
+      "startup": "YC S24"
+    },
+    {
+      "slug": "upcodes",
+      "name": "UpCodes",
+      "domain": "up.codes",
+      "startup": "YC S17"
+    },
+    {
+      "slug": "uplane",
+      "name": "Uplane",
+      "domain": "uplane.com",
+      "startup": "YC F25"
+    },
+    {
+      "slug": "usul",
+      "name": "Usul",
+      "domain": "usul.com",
+      "startup": "YC S24"
     },
     {
       "slug": "vanta",
@@ -400,9 +3028,135 @@
       "domain": "vanta.com"
     },
     {
+      "slug": "vapi",
+      "name": "Vapi",
+      "domain": "vapi.ai",
+      "startup": "YC W21"
+    },
+    {
+      "slug": "variance",
+      "name": "Variance",
+      "domain": "variance.com",
+      "startup": "YC W23"
+    },
+    {
+      "slug": "vector",
+      "name": "Vector",
+      "domain": "vector.co",
+      "startup": "YC W23"
+    },
+    {
+      "slug": "verahealth",
+      "name": "Vera Health",
+      "domain": "vera-health.ai",
+      "startup": "YC S24"
+    },
+    {
+      "slug": "veritus",
+      "name": "Veritus",
+      "domain": "veritus.com",
+      "startup": "YC S25"
+    },
+    {
+      "slug": "versemedical",
+      "name": "Verse Medical",
+      "domain": "versemedical.com",
+      "startup": "YC S18"
+    },
+    {
+      "slug": "vetcove",
+      "name": "Vetcove",
+      "domain": "vetcove.com",
+      "startup": "YC S16"
+    },
+    {
+      "slug": "vitalize",
+      "name": "Vitalize",
+      "domain": "vitalize.care",
+      "startup": "YC W23"
+    },
+    {
+      "slug": "voize",
+      "name": "voize",
+      "domain": "voize.de",
+      "startup": "YC W22"
+    },
+    {
+      "slug": "vooma",
+      "name": "Vooma",
+      "domain": "vooma.ai",
+      "startup": "YC W23"
+    },
+    {
+      "slug": "vori",
+      "name": "Vori",
+      "domain": "vori.com",
+      "startup": "YC W20"
+    },
+    {
+      "slug": "vorticity",
+      "name": "Vorticity",
+      "domain": "vorticity.xyz",
+      "startup": "YC S19"
+    },
+    {
       "slug": "watershed",
       "name": "Watershed",
       "domain": "watershed.com"
+    },
+    {
+      "slug": "weave",
+      "name": "Weave",
+      "domain": "weaveos.com",
+      "startup": "YC W25"
+    },
+    {
+      "slug": "webflow",
+      "name": "Webflow",
+      "domain": "webflow.com",
+      "startup": "YC S13"
+    },
+    {
+      "slug": "wonderly",
+      "name": "Wonderly",
+      "domain": "wonderly.com",
+      "startup": "YC W20"
+    },
+    {
+      "slug": "ycombinator",
+      "name": "Y Combinator",
+      "domain": "ycombinator.com",
+      "startup": "YC Unspecified"
+    },
+    {
+      "slug": "zapier",
+      "name": "Zapier",
+      "domain": "zapier.com",
+      "startup": "YC S12"
+    },
+    {
+      "slug": "zeit-ai",
+      "name": "Zeit AI",
+      "domain": "zeit-ai.com",
+      "startup": "YC S24"
+    },
+    {
+      "slug": "zensors",
+      "name": "Zensors",
+      "domain": "zensors.com",
+      "startup": "YC S21"
+    },
+    {
+      "slug": "ziina",
+      "name": "Ziina",
+      "domain": "ziina.com",
+      "startup": "YC W21"
+    },
+    {
+      "slug": "zip",
+      "name": "Zip",
+      "domain": "ziphq.com",
+      "startup": "YC S20"
     }
   ]
 }
