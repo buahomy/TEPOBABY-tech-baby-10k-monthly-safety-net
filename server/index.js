@@ -12,6 +12,7 @@ import crypto from "node:crypto";
 import express from "express";
 import { OAuth2Client } from "google-auth-library";
 import { allPostings, feedEvents, knownDomain, queryPostings, runDailyUpdate, startJobFeed, syncFromStore } from "./jobs/index.js";
+import { TRACKS } from "./jobs/classify.js";
 import { onVercel } from "./store.js";
 import { getLogo } from "./jobs/logos.js";
 import fs from "node:fs";
@@ -425,6 +426,7 @@ app.get("/api/postings", async (req, res) => {
       countries: countries.length ? countries : ["US"],
       research: req.query.research === "1",
       remoteNyc: req.query.place === "remote_nyc",
+      track: TRACKS.includes(req.query.track) ? req.query.track : null,
       limit,
       offset,
     }),

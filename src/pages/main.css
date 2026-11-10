@@ -914,6 +914,50 @@
 }
 
 /* Job feed: startup and level badges */
+/* Role type chips (one row, scrolls sideways on small phones) */
+.m01 .role-tracks {
+  display: flex;
+  gap: 6px;
+  margin: 0 -14px;
+  overflow-x: auto;
+  padding: 0 14px 2px;
+  scrollbar-width: none;
+}
+
+.m01 .role-tracks::-webkit-scrollbar {
+  display: none;
+}
+
+.m01 .role-tracks button {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 11px;
+  border: 1px solid var(--stroke-strong);
+  border-radius: 999px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.m01 .role-tracks button.is-on {
+  border-color: transparent;
+  color: #0b0d17;
+  background: var(--text);
+}
+
+.m01 .track-count {
+  color: var(--text-tertiary);
+  font-size: 10px;
+}
+
+.m01 .role-tracks button.is-on .track-count {
+  color: #4b5168;
+}
+
+.m01 .chip-track,
 .m01 .chip-startup,
 .m01 .chip-level {
   margin-left: 6px;
@@ -922,6 +966,11 @@
   font-size: 10px;
   font-weight: 700;
   white-space: nowrap;
+}
+
+.m01 .chip-track {
+  color: #93c5fd;
+  background: rgba(59, 130, 246, 0.14);
 }
 
 .m01 .chip-startup {

@@ -8,7 +8,7 @@
 const UNDERCLASS = /\b(freshman|freshmen|sophomore|first[- ]year|second[- ]year|underclass\w*|explore (program|intern)|early insight|discovery (program|day)|step intern|high school|pre-?university|insight program|extern(ship)?)\b/i;
 const INTERN = /\b(intern|interns|internship|co-?op|summer analyst|summer associate|apprentice(ship)?)\b/i;
 const ENTRY =
-  /\b(new grad\w*|graduate|grad\b|entry[- ]level|junior|jr\.?|university|early[- ]career|campus|associate (software|engineer|developer|data|product|solutions?|account|technical|sales|customer|implementation|consultant|analyst|program|business|it|ux|design)\w*|apm|associate product manager|(customer success|sales|solutions?|support|it|operations|marketing|product|business|data|technical|implementation|gtm) associate|sales development rep\w*|business development rep\w*|sdr|bdr|(engineer|developer|analyst|scientist|consultant|specialist|representative) (i|1)\b|level (i|1)\b|rotational|residency|fellowship)\b/i;
+  /\b(new grad\w*|graduate|grad\b|entry[- ]level|junior|jr\.?|university|early[- ]career|campus|associate (software|engineer|developer|data|product|solutions?|account|technical|sales|customer|implementation|consultant|analyst|program|business|it|ux|design)\w*|apm|associate product manager|(customer success|sales|solutions?|support|it|operations|marketing|product|business|data|technical|implementation|gtm) associate|sales development rep\w*|business development rep\w*|sdr|bdr|(engineer|developer|analyst|scientist|consultant|specialist|representative) (i|1)\b|level (i|1)\b|(sales|tech|technical|solutions?|engineering|graduate|early[- ]career) academy|rotational|residency|fellowship)\b/i;
 const TOO_SENIOR = /\b(senior|sr\.?|staff|principal|lead|manager|director|head of|vp|vice president|architect|(engineer|developer|scientist) (ii|iii|iv|2|3|4))\b/i;
 
 // Keep tech / tech-adjacent roles from broad sources (company job boards, HN, Google Jobs): engineering,
@@ -27,6 +27,28 @@ const PROGRAM =
 
 export function isTech(title) {
   return TECH.test(title) || TECH_ADJACENT.test(title);
+}
+
+// ---- Role type (the "Role type" chips on Home) ----
+// One per posting, checked in this order so "Sales Engineer, AI" is tech sales and "Data Scientist,
+// Machine Learning" is AI. Tech roles that fit none are engineering; non-tech programs are "other".
+const SALES_TRACK =
+  /\b(sales|solutions? (engineer|consultant|architect|specialist)|pre-?sales|sdr|bdr|business development|account (executive|manager|development)|customer success|technical account|partnerships?|gtm|go-to-market|revenue operations|implementation (consultant|specialist|manager|analyst)|customer (solutions|engineer))\b/i;
+const AI_TRACK =
+  /\b(ai|a\.i\.|artificial intelligence|machine learning|ml|mle|llms?|gen ?ai|generative|deep learning|nlp|natural language|computer vision|applied scien\w*|research scien\w*|forward deployed|prompt engineer\w*|ai agents?|agentic|reinforcement learning)\b/i;
+const PRODUCT_TRACK =
+  /\b(product (manager|management|owner|analyst|designer|design|operations|marketing|specialist)|apm|associate product|(ux|ui|user experience|product) (designer|design|research\w*)|user research\w*|designer|program manag\w*|technical program)\b/i;
+const DATA_TRACK = /\b(data|analytics|analyst|business intelligence|bi|insights|statistic\w*)\b/i;
+
+export const TRACKS = ["eng", "ai", "sales", "product", "data"];
+
+/** "eng" | "ai" | "sales" | "product" | "data" | "other" */
+export function roleTrack(title = "") {
+  if (SALES_TRACK.test(title)) return "sales";
+  if (AI_TRACK.test(title)) return "ai";
+  if (PRODUCT_TRACK.test(title)) return "product";
+  if (DATA_TRACK.test(title)) return "data";
+  return isTech(title) ? "eng" : "other";
 }
 
 // ---- Remote or New York City (the "Remote / NYC" filter) ----
