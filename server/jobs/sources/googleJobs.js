@@ -7,8 +7,10 @@ import { domainFromUrl } from "../logos.js";
 
 const QUERIES = [
   "software engineer intern",
-  "software engineer new grad",
-  "entry level software engineer",
+  // New grad SWE roles are well covered by the GitHub lists and company boards; these two searches go
+  // to the tech roles beyond engineering that those miss.
+  "associate product manager new grad",
+  "sales engineer OR solutions engineer OR sales development representative new grad",
   "data science intern",
   "rotational program new grad",
   // Research & universities: undergraduate research, lab and research-intern roles.

@@ -18,7 +18,7 @@ import { EventEmitter } from "node:events";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { MAX_AGE_MS, PROGRAM_MAX_AGE_MS, RESEARCH_MAX_AGE_MS, countriesOf, isProgram, isResearch } from "./classify.js";
+import { MAX_AGE_MS, PROGRAM_MAX_AGE_MS, RESEARCH_MAX_AGE_MS, countriesOf, isProgram, isRemoteOrNyc, isResearch } from "./classify.js";
 import { addDomains } from "./logos.js";
 import * as store from "../store.js";
 import { fetchCompanyBoards } from "./sources/ats.js";
@@ -108,7 +108,9 @@ function rebuild() {
       p.program = isProgram(p.title);
       p.countries = countriesOf(p.location);
       p.research = isResearch(p);
-      const maxAge = p.program ? PROGRAM_MAX_AGE_MS : p.research ? RESEARCH_MAX_AGE_MS : MAX_AGE_MS;
+      p.remoteNyc = isRemoteOrNyc(p.location);
+      // Programs, research roles and startup roles stay open for weeks.
+      const maxAge = p.program ? PROGRAM_MAX_AGE_MS : p.research || p.startup ? RESEARCH_MAX_AGE_MS : MAX_AGE_MS;
       if (now - new Date(p.postedAt).getTime() > maxAge) continue;
       const key = p.url.toLowerCase();
       const fuzzy = `${p.company}|${p.title}|${p.location}`.toLowerCase();
@@ -255,14 +257,15 @@ export async function startJobFeed() {
  * visaFriendly: hide roles whose job description says they don't sponsor (or need U.S. citizenship /
  * a clearance). Roles that don't say either way are kept.
  */
-export function queryPostings({ level, maxHours = 72, visaFriendly = false, countries = ["US"], research = false, limit = 30, offset = 0 }) {
+export function queryPostings({ level, maxHours = 72, visaFriendly = false, countries = ["US"], research = false, remoteNyc = false, limit = 30, offset = 0 }) {
   const now = Date.now();
   const inWindow = (p, hours) => now - new Date(p.postedAt).getTime() <= hours * 3600e3;
   const visaOk = (p) => !visaFriendly || (p.sponsorship !== "no" && p.sponsorship !== "citizens");
   // Country filter (US / UK / CA): postings whose place we can't tell (e.g. "3 Locations") count as US.
   const placeOk = (p) => (p.countries?.length ? p.countries.some((c) => countries.includes(c)) : countries.includes("US"));
   const researchOk = (p) => !research || p.research;
-  const ok = (p) => visaOk(p) && placeOk(p) && researchOk(p);
+  const remoteNycOk = (p) => !remoteNyc || p.remoteNyc;
+  const ok = (p) => visaOk(p) && placeOk(p) && researchOk(p) && remoteNycOk(p);
   const inLevel = (p, lv) => (lv === "rotational" ? p.program : p.level === lv);
 
   const counts = {};

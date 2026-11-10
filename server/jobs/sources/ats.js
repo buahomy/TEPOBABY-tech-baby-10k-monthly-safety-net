@@ -1,10 +1,11 @@
 // Company job boards via their public ATS APIs (no HTML scraping).
 // The company list lives in server/jobs/companies.json — add slugs there to widen coverage.
+// `npm run discover-startups` adds the boards of hiring Y Combinator startups (marked `startup`).
 
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { classify, cleanText, fetchJson, isProgram, isRelevant, mapLimit, maxAgeFor, normalizeUrl } from "../classify.js";
+import { RESEARCH_MAX_AGE_MS, classify, cleanText, fetchJson, isProgram, isRelevant, mapLimit, maxAgeFor, normalizeUrl, startupLevel } from "../classify.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 
@@ -49,7 +50,7 @@ export async function loadCompanies() {
   return JSON.parse(await fs.readFile(path.join(here, "..", "companies.json"), "utf8"));
 }
 
-async function fromBoard(provider, slug, company, domain, now) {
+async function fromBoard(provider, slug, company, domain, startup, now) {
   const p = PROVIDERS[provider];
   const data = await fetchJson(p.url(slug), { timeoutMs: 30000 });
   const out = [];
@@ -57,9 +58,11 @@ async function fromBoard(provider, slug, company, domain, now) {
     const j = p.map(raw);
     const posted = new Date(j.posted).getTime();
     const title = cleanText(j.title);
-    if (!j.url || !posted || now - posted > maxAgeFor(title)) continue;
+    if (!j.url || !posted || now - posted > (startup ? Math.max(RESEARCH_MAX_AGE_MS, maxAgeFor(title)) : maxAgeFor(title))) continue;
     if (!isRelevant(title)) continue;
-    const level = classify(title);
+    const stated = classify(title);
+    // Startups rarely write "new grad" or "intern": keep their non-senior tech roles, marked unlabeled.
+    const level = stated || (startup ? startupLevel(title) : null);
     if (!level) continue;
     out.push({
       id: `${provider}:${slug}:${j.id}`,
@@ -74,6 +77,8 @@ async function fromBoard(provider, slug, company, domain, now) {
       sponsorship: null,
       domain: domain || null,
       program: isProgram(title),
+      ...(startup ? { startup } : {}),
+      ...(!stated ? { levelGuess: true } : {}),
     });
   }
   return out;
@@ -86,9 +91,9 @@ export async function fetchCompanyBoards() {
     PROVIDERS[provider] ? list.map((c) => ({ provider, ...c })) : [],
   );
 
-  const results = await mapLimit(boards, 6, async (b) => {
+  const results = await mapLimit(boards, 12, async (b) => {
     try {
-      return { ok: true, postings: await fromBoard(b.provider, b.slug, b.name, b.domain, now) };
+      return { ok: true, postings: await fromBoard(b.provider, b.slug, b.name, b.domain, b.startup, now) };
     } catch (err) {
       return { ok: false, board: `${b.provider}/${b.slug}`, error: err.message, postings: [] };
     }

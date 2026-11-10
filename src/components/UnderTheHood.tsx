@@ -20,8 +20,8 @@ const REPO = "https://github.com/buahomy/TEPOBABY-tech-baby-10k-monthly-safety-n
 const PIPELINES = [
   {
     title: "Live job feed",
-    steps: ["6 source types every morning", "Vercel Cron, 7 AM ET", "Classify level, country, research", "Read each description for visa terms", "Upstash Redis → your phone"],
-    detail: "SimplifyJobs GitHub lists, 80 Greenhouse / Lever / Ashby boards, Microsoft, Amazon and Workday career APIs, university sites, and Google Jobs via SerpApi. Duplicates merged; reposting sites dropped.",
+    steps: ["7 source types every morning, incl. 450+ YC startup boards", "Vercel Cron, 7 AM ET", "Classify level, country, research", "Read each description for visa terms", "Upstash Redis → your phone"],
+    detail: "SimplifyJobs GitHub lists, the Greenhouse / Lever / Ashby boards of 80 tech companies and 450+ hiring Y Combinator startups, Microsoft, Amazon and Workday career APIs, university sites, and Google Jobs via SerpApi. Duplicates merged; reposting sites dropped.",
   },
   {
     title: "ATS match score",

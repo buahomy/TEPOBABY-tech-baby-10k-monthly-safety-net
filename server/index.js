@@ -342,7 +342,7 @@ app.get("/api/stats", async (_req, res) => {
   const all = allPostings();
   const bySource = {};
   for (const p of all) {
-    const s = /SimplifyJobs|speedyapply|pittcsc|vanshb03/i.test(p.source) ? "GitHub job lists" : /Google/i.test(p.source) ? "Google Jobs (SerpApi)" : /University|College/i.test(p.source) || p.id?.startsWith("uni:") ? "University sites" : /Careers|Amazon Jobs|Workday/i.test(p.source) ? "Company career sites" : "Company job boards";
+    const s = p.startup ? "YC startup boards" : /SimplifyJobs|speedyapply|pittcsc|vanshb03/i.test(p.source) ? "GitHub job lists" : /Google/i.test(p.source) ? "Google Jobs (SerpApi)" : /University|College/i.test(p.source) || p.id?.startsWith("uni:") ? "University sites" : /Careers|Amazon Jobs|Workday/i.test(p.source) ? "Company career sites" : "Company job boards";
     bySource[s] = (bySource[s] || 0) + 1;
   }
   res.set("Cache-Control", "public, max-age=300");
@@ -352,6 +352,8 @@ app.get("/api/stats", async (_req, res) => {
     sponsorshipRead: all.filter((p) => p.sponsorship).length,
     noSponsorship: all.filter((p) => p.sponsorship === "no" || p.sponsorship === "citizens").length,
     research: all.filter((p) => p.research).length,
+    startups: new Set(all.filter((p) => p.startup).map((p) => p.company)).size,
+    remoteNyc: all.filter((p) => p.remoteNyc).length,
     countries: { US: all.filter((p) => !p.countries?.length || p.countries.includes("US")).length, UK: all.filter((p) => p.countries?.includes("UK")).length, CA: all.filter((p) => p.countries?.includes("CA")).length },
     bySource: Object.entries(bySource).sort((a, b) => b[1] - a[1]).map(([name, count]) => ({ name, count })),
   });
@@ -404,7 +406,7 @@ app.get("/api/postings", async (req, res) => {
   await syncFromStore();
   const level = String(req.query.level || "internship");
   if (!LEVELS.has(level)) return res.status(400).json({ error: "Unknown level." });
-  // "open": every program still listed (they're kept 60 days).
+  // "open": everything still listed (programs are kept 60 days; research and startup roles 30).
   const maxHours = { week: 168, open: 60 * 24 }[req.query.window] || 72;
   // Up to 500, so a list the student expanded with "Show more" can be reloaded in one request.
   const limit = Math.min(Math.max(Number.parseInt(req.query.limit, 10) || 30, 1), 500);
@@ -422,6 +424,7 @@ app.get("/api/postings", async (req, res) => {
       visaFriendly: req.query.visa === "1",
       countries: countries.length ? countries : ["US"],
       research: req.query.research === "1",
+      remoteNyc: req.query.place === "remote_nyc",
       limit,
       offset,
     }),

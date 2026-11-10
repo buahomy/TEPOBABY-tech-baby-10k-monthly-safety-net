@@ -8,12 +8,17 @@
 const UNDERCLASS = /\b(freshman|freshmen|sophomore|first[- ]year|second[- ]year|underclass\w*|explore (program|intern)|early insight|discovery (program|day)|step intern|high school|pre-?university|insight program|extern(ship)?)\b/i;
 const INTERN = /\b(intern|interns|internship|co-?op|summer analyst|summer associate|apprentice(ship)?)\b/i;
 const ENTRY =
-  /\b(new grad\w*|graduate|grad\b|entry[- ]level|junior|jr\.?|university|early[- ]career|campus|associate (software|engineer|developer|data)|(engineer|developer|analyst|scientist) (i|1)\b|level (i|1)\b|rotational|residency|fellowship)\b/i;
+  /\b(new grad\w*|graduate|grad\b|entry[- ]level|junior|jr\.?|university|early[- ]career|campus|associate (software|engineer|developer|data|product|solutions?|account|technical|sales|customer|implementation|consultant|analyst|program|business|it|ux|design)\w*|apm|associate product manager|(customer success|sales|solutions?|support|it|operations|marketing|product|business|data|technical|implementation|gtm) associate|sales development rep\w*|business development rep\w*|sdr|bdr|(engineer|developer|analyst|scientist|consultant|specialist|representative) (i|1)\b|level (i|1)\b|rotational|residency|fellowship)\b/i;
 const TOO_SENIOR = /\b(senior|sr\.?|staff|principal|lead|manager|director|head of|vp|vice president|architect|(engineer|developer|scientist) (ii|iii|iv|2|3|4))\b/i;
 
-// Keep tech / tech-adjacent roles from broad sources (company job boards, HN, Google Jobs).
+// Keep tech / tech-adjacent roles from broad sources (company job boards, HN, Google Jobs): engineering,
+// plus roles a CS graduate can take on OPT that aren't engineering: tech sales (sales / solutions
+// engineers, SDRs, account executives), product, design, analytics, IT and support, QA, developer
+// relations and tech consulting.
 const TECH =
   /\b(software|engineer\w*|developer|swe|sde|data|machine learning|ml|ai|artificial intelligence|security|cyber|quant\w*|research|infrastructure|sre|devops|cloud|frontend|front-end|backend|back-end|full[- ]?stack|mobile|ios|android|web|product manag\w*|it support|systems|platform|firmware|embedded|robotics|computer|technology|analytics|forward deployed)\b/i;
+const TECH_ADJACENT =
+  /\b(solutions? (consultant|architect|specialist)|pre-?sales|sales development|business development rep\w*|sdr|bdr|account executive|customer success|technical account|implementation (consultant|specialist|analyst|manager)|technical (consultant|support|writer|program|specialist|analyst|sales)|it (analyst|specialist|technician|operations|associate)|help ?desk|service desk|product (manager|management|analyst|designer|design|operations|marketing|specialist|owner)|apm|program manag\w*|business (analyst|intelligence|systems)|systems analyst|bi analyst|operations analyst|strategy (&|and) operations|bizops|revenue operations|growth (analyst|associate|marketing)|developer (advocate|relations|experience|success)|devrel|quality assurance|qa|ux|ui|user research\w*|tech\w* consult\w*|digital consult\w*|salesforce|crm|network\w*|saas|gtm|go-to-market)\b/i;
 
 // Rotational and early-career development programs in any function (finance, product, sales,
 // engineering…), e.g. Microsoft's Finance Rotation Program (FRP) or Amazon's AFRP.
@@ -21,7 +26,20 @@ const PROGRAM =
   /\b(rotation|rotations|rotational|(leadership )?development program|(graduate|early[- ]career|analyst|associate) program|ldp|fldp|tdp|afrp|frp|launch graduate)\b/i;
 
 export function isTech(title) {
-  return TECH.test(title);
+  return TECH.test(title) || TECH_ADJACENT.test(title);
+}
+
+// ---- Remote or New York City (the "Remote / NYC" filter) ----
+
+const REMOTE = /\b(remote|anywhere|distributed|work from home|wfh)\b/i;
+const NYC = /\b(new york city|nyc|manhattan|brooklyn|queens|bronx|staten island)\b/i;
+
+/** Remote, or anywhere in New York City ("New York, NY", "Brooklyn", "NYC · Remote"…), not upstate NY. */
+export function isRemoteOrNyc(location = "") {
+  if (REMOTE.test(location) || NYC.test(location)) return true;
+  // "New York, NY" / "New York, New York, USA" / "New York": a place that starts with New York.
+  // "Albany, New York" (the state) doesn't count.
+  return location.split(/·|;|\||\/|\s[-–]\s|\s{2,}|\bhybrid\b|\bin\b/i).some((place) => /^\s*new york\b(?!\s*state)/i.test(place));
 }
 
 /** A rotational / development program that's open to students or new grads. */
@@ -38,6 +56,9 @@ export const isRelevant = (title) => isTech(title) || isProgram(title);
 /** Programs stay open for weeks, so they're kept longer than regular postings. */
 export const maxAgeFor = (title) => (isProgram(title) ? PROGRAM_MAX_AGE_MS : MAX_AGE_MS);
 
+/** Startups rarely label levels: a tech role that isn't marked senior counts, flagged "level not stated". */
+export const startupLevel = (title) => (isRelevant(title) && !TOO_SENIOR.test(title) && !/\b(manager|head|vp|chief|cto|ceo|coo)\b/i.test(title) ? "entry" : null);
+
 /** Level from a role title, or null if it isn't early-career. `hint` comes from curated lists. */
 export function classify(title, hint) {
   if (UNDERCLASS.test(title)) return "underclassmen";
@@ -45,6 +66,7 @@ export function classify(title, hint) {
   if (hint === "entry") return TOO_SENIOR.test(title) && !ENTRY.test(title) ? null : "entry";
   if (INTERN.test(title)) return "internship";
   if (ENTRY.test(title) && !TOO_SENIOR.test(title)) return "entry";
+  if (/\b(associate product manager|apm)\b/i.test(title) && !/\b(senior|sr\.?|staff|principal|lead|director)\b/i.test(title)) return "entry";
   if (isProgram(title)) return "entry";
   return null;
 }

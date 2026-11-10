@@ -34,6 +34,7 @@ type View = {
   hideNoSponsorship?: boolean;
   countries?: Country[];
   research?: boolean;
+  remoteNyc?: boolean;
   shown?: Record<string, number>;
 };
 type Country = "US" | "UK" | "CA";
@@ -64,20 +65,21 @@ export default function HomeTab({ firstName, profile, saved }: Props) {
   const [level, setLevel] = useState<Level>(() => readView().level ?? defaultLevel(profile));
   const [windowId, setWindowId] = useState<WindowId>(() => readView().windowId ?? (defaultLevel(profile) === "rotational" ? "open" : "fresh"));
   const [research, setResearch] = useState(() => readView().research ?? false);
-  // "All open" for programs and research roles, which stay open for weeks.
-  const windows = WINDOWS.filter((w) => w.id !== "open" || level === "rotational" || research);
+  const [remoteNyc, setRemoteNyc] = useState(() => readView().remoteNyc ?? false);
+  // "All open" lists everything still open: programs, research and startup roles stay open for weeks.
+  const windows = WINDOWS;
   const needsSponsorship =
     profile.answers.needsSponsorship === "yes" || profile.answers.workAuthorized === "no";
   const [hideNoSponsorship, setHideNoSponsorship] = useState(() => readView().hideNoSponsorship ?? needsSponsorship);
   const [countries, setCountries] = useState<Country[]>(() => (readView().countries?.length ? readView().countries! : ["US"]));
   // How many postings this list was expanded to ("Show more"), per tab + window + filter.
-  const listKey = `${level}|${windowId}|${hideNoSponsorship ? 1 : 0}|${countries.join("")}|${research ? "r" : ""}`;
+  const listKey = `${level}|${windowId}|${hideNoSponsorship ? 1 : 0}|${countries.join("")}|${research ? "r" : ""}|${remoteNyc ? "n" : ""}`;
   const shownFor = (key: string) => Math.max(PAGE, readView().shown?.[key] ?? PAGE);
   const setShown = (key: string, n: number) => writeView({ shown: { ...(readView().shown ?? {}), [key]: n } });
 
   useEffect(() => {
-    writeView({ level, windowId, hideNoSponsorship, countries, research });
-  }, [level, windowId, hideNoSponsorship, countries, research]);
+    writeView({ level, windowId, hideNoSponsorship, countries, research, remoteNyc });
+  }, [level, windowId, hideNoSponsorship, countries, research, remoteNyc]);
 
   const [feed, setFeed] = useState<PostingsResponse | null>(null);
   const [postings, setPostings] = useState<Posting[]>([]);
@@ -93,7 +95,7 @@ export default function HomeTab({ firstName, profile, saved }: Props) {
     const load = (quiet: boolean) => {
       if (!quiet) setLoading(true);
       // Reload as many as the student had expanded to, not just the first page.
-      fetchPostings({ level, window: windowId, hideNoSponsorship, countries, research, limit: shownFor(listKey), signal: ctrl.signal })
+      fetchPostings({ level, window: windowId, hideNoSponsorship, countries, research, remoteNyc, limit: shownFor(listKey), signal: ctrl.signal })
         .then((data) => {
           setFeed(data);
           setPostings(data.postings);
@@ -114,12 +116,12 @@ export default function HomeTab({ firstName, profile, saved }: Props) {
       window.clearInterval(fallback);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [level, windowId, hideNoSponsorship, countries, research]);
+  }, [level, windowId, hideNoSponsorship, countries, research, remoteNyc]);
 
   const loadMore = () => {
     setLoadingMore(true);
     const key = listKey;
-    fetchPostings({ level, window: windowId, hideNoSponsorship, countries, research, limit: PAGE, offset: postings.length })
+    fetchPostings({ level, window: windowId, hideNoSponsorship, countries, research, remoteNyc, limit: PAGE, offset: postings.length })
       .then((data) =>
         setPostings((prev) => {
           const next = [...prev, ...data.postings];
@@ -180,10 +182,17 @@ export default function HomeTab({ firstName, profile, saved }: Props) {
             className={`feed-research${research ? " is-on" : ""}`}
             onClick={() => {
               setResearch(!research);
-              if (research && windowId === "open" && level !== "rotational") setWindowId("week");
             }}
           >
             🎓 Research
+          </button>
+          <button
+            type="button"
+            aria-pressed={remoteNyc}
+            className={`feed-research${remoteNyc ? " is-on" : ""}`}
+            onClick={() => setRemoteNyc(!remoteNyc)}
+          >
+            📍 Remote / NYC
           </button>
         </div>
 
@@ -197,9 +206,8 @@ export default function HomeTab({ firstName, profile, saved }: Props) {
               className={`level-tab${level === l.id ? " is-active" : ""}`}
               onClick={() => {
                 setLevel(l.id);
-                // Programs stay open for weeks, so show them all; other tabs have no "All open".
+                // Programs stay open for weeks, so the Rotational tab opens on "All open".
                 if (l.id === "rotational") setWindowId("open");
-                else if (windowId === "open") setWindowId("fresh");
               }}
             >
               <span>{l.label}</span>
@@ -264,6 +272,8 @@ export default function HomeTab({ firstName, profile, saved }: Props) {
                     <span className="posting-meta">
                       <span className="posting-loc">{p.location}</span> · {timeAgo(p.postedAt, p.postedApprox)}
                       {p.program && level !== "rotational" && <span className="chip-program">Rotational program</span>}
+                      {p.startup && <span className="chip-startup">🚀 {p.startup}</span>}
+                      {p.levelGuess && <span className="chip-level">Level not stated</span>}
                       {p.research && <span className="chip-research">🎓 Research</span>}
                       {p.countries?.includes("UK") && <span className="chip-country">🇬🇧</span>}
                       {p.countries?.includes("CA") && <span className="chip-country">🇨🇦</span>}
