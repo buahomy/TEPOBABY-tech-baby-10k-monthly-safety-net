@@ -9,7 +9,7 @@ import { RESEARCH_MAX_AGE_MS, classify, cleanText, fetchJson, isProgram, isRelev
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 
-const PROVIDERS = {
+export const PROVIDERS = {
   greenhouse: {
     url: (slug) => `https://boards-api.greenhouse.io/v1/boards/${slug}/jobs`,
     jobs: (d) => d.jobs || [],
@@ -50,7 +50,7 @@ export async function loadCompanies() {
   return JSON.parse(await fs.readFile(path.join(here, "..", "companies.json"), "utf8"));
 }
 
-async function fromBoard(provider, slug, company, domain, startup, now) {
+export async function fromBoard(provider, slug, company, domain, startup, now) {
   const p = PROVIDERS[provider];
   const data = await fetchJson(p.url(slug), { timeoutMs: 30000 });
   const out = [];

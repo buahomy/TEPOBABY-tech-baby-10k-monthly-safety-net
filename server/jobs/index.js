@@ -22,6 +22,7 @@ import { MAX_AGE_MS, PROGRAM_MAX_AGE_MS, RESEARCH_MAX_AGE_MS, countriesOf, isPro
 import { addDomains } from "./logos.js";
 import * as store from "../store.js";
 import { fetchCompanyBoards } from "./sources/ats.js";
+import { fetchDiscoveredBoards } from "./sources/discovered.js";
 import { fetchCareerSites } from "./sources/careers.js";
 import { fetchUniversities } from "./sources/universities.js";
 import { applyKnownSponsorship, enrichSponsorship } from "./sponsorship.js";
@@ -39,6 +40,7 @@ export const DAILY_TIME = /^\d{1,2}:\d{2}$/.test(process.env.JOBS_DAILY_TIME || 
 const SOURCES = [
   { id: "github", run: fetchGithubLists },
   { id: "ats", run: fetchCompanyBoards },
+  { id: "found", run: fetchDiscoveredBoards },
   { id: "careers", run: fetchCareerSites },
   { id: "universities", run: fetchUniversities },
   { id: "hn", run: fetchHackerNews },
@@ -135,7 +137,7 @@ function rebuild() {
 async function runSource(s) {
   const started = Date.now();
   try {
-    const results = await s.run();
+    const results = await s.run({ previous: state });
     // When one site in a source fails (e.g. Microsoft rate-limits us), keep its postings from the last
     // good run instead of dropping them until tomorrow.
     const previous = state.sources[s.id]?.postings || [];
