@@ -382,6 +382,17 @@ On your **Profile**, inside **Demographic & Identity Information**, Tepobaby sug
 
 Each logo comes from the organization's own website (its app icon or site icon), with Google's favicon service as a backup, and every program in the list has a real logo. The list lives in [src/data/communities.json](src/data/communities.json), so adding a program is one entry. Your answers are only used inside the app to choose what to show; nothing extra is sent anywhere.
 
+## Testing & quality assurance
+
+| Command | What it checks |
+| --- | --- |
+| `npm run test:unit` | The job-feed rules in [server/jobs/classify.js](server/jobs/classify.js): level from a title, role type, which roles count as tech, and Remote / NYC (about 50 titles and locations). Node's built-in test runner; runs in GitHub Actions on every pull request ([.github/workflows/test.yml](.github/workflows/test.yml)). |
+| `npm run test:e2e` | [Playwright](https://playwright.dev) end-to-end and API tests in [e2e/](e2e/), on a desktop browser and a phone-sized one (Pixel 7). Starts the app if it isn't running. |
+| `npm run test:e2e:ui` | The same tests in Playwright's UI mode, to watch each step. |
+| `npm test` | Both. |
+
+The Playwright suite covers what a visitor does: "How it's built" shows live numbers and closes with Escape; the recruiter demo opens the live feed with links to the original postings; the Role type chips and 📍 Remote / NYC return only matching roles (checked in the API response and on screen); filters survive a reload; and no screen scrolls sideways. The API tests check input handling (unknown levels are rejected, unknown role types are ignored), that each filter returns only what it says, and that counts add up. Tests assert behaviour, not specific listings, because the feed changes every morning. Failures keep a trace and a screenshot in `test-results/` (`npx playwright show-trace …`).
+
 ## Design decisions & pain points
 How I built Tepobaby (with Claude Code): each decision, why I made it, and the pain point behind it.
 

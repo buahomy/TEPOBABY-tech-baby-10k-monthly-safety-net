@@ -40,7 +40,7 @@ const PIPELINES = [
   },
 ];
 
-const STACK = ["React", "TypeScript", "Vite", "Node.js", "Express", "Vercel", "Upstash Redis", "Google OAuth", "Voyage AI", "Transformers.js", "Gemini", "OpenAI Realtime", "SerpApi", "Claude Code"];
+const STACK = ["React", "TypeScript", "Vite", "Node.js", "Express", "Vercel", "Upstash Redis", "Google OAuth", "Voyage AI", "Transformers.js", "Gemini", "OpenAI Realtime", "SerpApi", "Claude Code", "Playwright"];
 
 export default function UnderTheHood({ onClose }: { onClose: () => void }) {
   const [stats, setStats] = useState<Stats | null>(null);
