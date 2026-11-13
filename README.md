@@ -6,7 +6,40 @@ This is only for U.S. college students who need to lock in and get the job prosp
 
 **Try it:** [tepobaby.vercel.app](https://tepobaby.vercel.app) works on any phone or computer. On iPhone, tap Share → **Add to Home Screen** to install it like an app.
 
-**Contents:** [Questionnaire](#getting-to-know-you-questionnaire) · [Sign-in](#sign-in-with-your-edu-google-account) · [Home](#home) · [Interview](#interview) · [＋ Ginny](#-ginny-ats--ask-gemini) · [Connect](#connect-alumni--recruiters-on-linkedin) · [Profile & organizations](#profile--organizations) · [Design decisions](#design-decisions--pain-points) · [Deployment](#deployment-vercel)
+**Contents:** [Tech stack](#tech-stack) · [Questionnaire](#getting-to-know-you-questionnaire) · [Sign-in](#sign-in-with-your-edu-google-account) · [Home](#home) · [Interview](#interview) · [＋ Ginny](#-ginny-ats--ask-gemini) · [Connect](#connect-alumni--recruiters-on-linkedin) · [Profile & organizations](#profile--organizations) · [Testing](#testing--quality-assurance) · [Design decisions](#design-decisions--pain-points) · [Deployment](#deployment-vercel)
+
+## Tech stack
+
+**In short:** the frontend is **React 18 in TypeScript**, built with **Vite**; the backend is **Node.js + Express in JavaScript**; it's hosted on **Vercel** with **Upstash Redis** for data.
+
+| Part | Language | Frameworks & libraries |
+| --- | --- | --- |
+| Frontend (the app you see, in [src/](src/)) | **TypeScript** (`.tsx` / `.ts`, no plain JavaScript files) | **React 18**, **Vite 5**, plain CSS (hand-written color tokens and dark theme, no Tailwind), hand-written screen navigation (no React Router), **CodeMirror 6** (NeetCode code editor), **Pyodide** (runs Python solutions in the browser) |
+| Backend (API, job feed, ATS, in [server/](server/)) | **JavaScript** (Node.js ES modules) | **Express 5**, `google-auth-library` (Google sign-in), **Transformers.js** (MiniLM reranker for ATS), `unpdf` (reads résumé PDFs) |
+| Data | | **Upstash Redis** on Vercel; local JSON files in `server/data/` during development |
+| Hosting | | **Vercel** (static frontend + one serverless function for the API), **Vercel Cron** for the daily 7 AM ET job update |
+
+**AI & outside APIs**
+
+| Service | Used for |
+| --- | --- |
+| Voyage AI | Embeddings for the ATS semantic score |
+| Gemini | Interview research with Google Search sources |
+| OpenAI Realtime (over WebRTC) | Live voice mock interviews |
+| Claude Code | Résumé tailoring from a phone (author only), through a relay and Cloudflare tunnel |
+| SerpApi | Google Jobs results and the daily job-board search |
+| Greenhouse, Lever, Ashby, Workday, Microsoft and Amazon job APIs | The live job feed |
+
+**Testing & tools**
+
+| Tool | Used for |
+| --- | --- |
+| **Playwright** | End-to-end and API tests on desktop and phone-sized browsers (`npm run test:e2e`) |
+| Node test runner | Unit tests for the job-feed rules (`npm run test:unit`), run by **GitHub Actions** on every pull request |
+| TypeScript compiler | Type-checking the frontend (`npx tsc --noEmit`) |
+| Claude Code and Cursor | AI-assisted development |
+
+See [Testing & quality assurance](#testing--quality-assurance) for what the tests cover.
 
 ## Getting to know you (questionnaire)
 Before your home page, Tepobaby asks 4 short sections, one page each:
