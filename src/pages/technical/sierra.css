@@ -1,0 +1,537 @@
+/* Interview → Technical → Sierra OA. Built on the mess01.css tokens (scoped under .m01), with a pine
+   accent for this section so it reads as its own track next to the NeetCode cards. */
+
+.m01 .so {
+  --pine: #34d399;
+  --pine-soft: rgba(52, 211, 153, 0.12);
+  --amber: #fbbf24;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.m01 .so-eyebrow {
+  display: block;
+  color: var(--pine);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.m01 .so-hero,
+.m01 .so-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--stroke);
+  border-radius: 18px;
+  background: var(--surface-raised);
+}
+
+.m01 .so-hero {
+  border-color: rgba(52, 211, 153, 0.28);
+  background: linear-gradient(160deg, rgba(52, 211, 153, 0.1), rgba(255, 255, 255, 0.03) 60%);
+}
+
+.m01 .so-hero h2 {
+  font-size: 26px;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.m01 .so-hero p,
+.m01 .so-block p {
+  color: var(--text-secondary);
+  font-size: 13.5px;
+}
+
+.m01 .so-hero strong,
+.m01 .so-block p strong {
+  color: var(--text);
+}
+
+.m01 .so-block h3 {
+  font-size: 16px;
+  letter-spacing: -0.01em;
+}
+
+.m01 .so-tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+@media (min-width: 720px) {
+  .m01 .so-tiles {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.m01 .so-tile {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.m01 .so-tile span {
+  color: var(--text-tertiary);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.m01 .so-tile strong {
+  font-size: 15px;
+}
+
+.m01 .so-tile p {
+  font-size: 12px !important;
+}
+
+.m01 .so-list {
+  display: grid;
+  gap: 8px;
+}
+
+.m01 .so-card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 1px solid var(--stroke);
+  border-radius: 14px;
+  color: var(--text);
+  text-align: left;
+  background: rgba(255, 255, 255, 0.03);
+  transition: border-color 120ms ease, transform 120ms ease;
+}
+
+.m01 .so-card:hover {
+  border-color: rgba(52, 211, 153, 0.45);
+}
+
+.m01 .so-card:active {
+  transform: scale(0.99);
+}
+
+.m01 .so-card.is-done {
+  border-color: rgba(52, 211, 153, 0.35);
+}
+
+.m01 .so-card-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.m01 .so-card p {
+  color: var(--text-secondary);
+  font-size: 12.5px;
+}
+
+.m01 .so-dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.m01 .so-dots span {
+  padding: 2px 8px;
+  border: 1px solid var(--stroke);
+  border-radius: 999px;
+  color: var(--text-tertiary);
+  font-size: 11px;
+}
+
+.m01 .so-dots span.is-on {
+  border-color: rgba(52, 211, 153, 0.4);
+  color: var(--pine);
+  background: var(--pine-soft);
+}
+
+.m01 .so-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.m01 .so-setup {
+  border-color: rgba(52, 211, 153, 0.3);
+}
+
+.m01 .so-gap {
+  margin-top: 4px;
+}
+
+.m01 .so-mock-bar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.m01 .so-big-clock {
+  display: block;
+  font-size: 40px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.m01 .so-big-clock.is-low,
+.m01 .so-clock.is-low {
+  color: #f87171;
+}
+
+.m01 .so-history {
+  display: flex;
+  flex-direction: column;
+  list-style: none;
+  font-size: 13px;
+}
+
+.m01 .so-history li {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--stroke);
+  font-variant-numeric: tabular-nums;
+}
+
+.m01 .so-history li:last-child {
+  border-bottom: 0;
+}
+
+/* Guide */
+.m01 .so-guide details {
+  border: 1px solid var(--stroke);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.m01 .so-guide summary {
+  padding: 11px 14px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.m01 .so-guide details > *:not(summary) {
+  margin: 0 14px 12px;
+}
+
+.m01 .so-guide ul,
+.m01 .so-guide ol {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-left: 18px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.m01 .so-guide li strong {
+  color: var(--text);
+}
+
+.m01 .so code,
+.m01 .so-ide code {
+  padding: 1px 5px;
+  border-radius: 5px;
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.9em;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.m01 .so-table {
+  overflow-x: auto;
+}
+
+.m01 .so-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.m01 .so-table th,
+.m01 .so-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--stroke);
+  color: var(--text-secondary);
+  text-align: left;
+}
+
+.m01 .so-table th {
+  color: var(--text-tertiary);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.m01 .so-links {
+  list-style: none;
+  padding-left: 0 !important;
+}
+
+.m01 .so-links a {
+  color: var(--pine);
+  text-underline-offset: 2px;
+}
+
+/* Reflection */
+.m01 .so-reflect {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.m01 .so-prompts {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-left: 18px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.m01 .so-cam {
+  position: relative;
+}
+
+.m01 .so-cam video {
+  width: 100%;
+  max-width: 420px;
+  border-radius: 14px;
+  background: #000;
+}
+
+.m01 .so-cam video.is-live {
+  transform: scaleX(-1);
+}
+
+.m01 .so-cam-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.m01 .so-rec {
+  color: #f87171;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.m01 .so-clock {
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Workspace */
+.m01 .so-kind {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.m01 .so-kind--easy {
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.12);
+}
+
+.m01 .so-kind--project {
+  color: var(--amber, #fbbf24);
+  background: rgba(251, 191, 36, 0.12);
+}
+
+.m01 .so-ide .so-clock {
+  padding: 0 10px;
+  line-height: 32px;
+  border: 1px solid var(--stroke-strong);
+  border-radius: 9px;
+}
+
+.m01 .so-parts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 12px 14px 0;
+}
+
+.m01 .so-part {
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--stroke-strong);
+  border-radius: 999px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--surface-raised);
+}
+
+.m01 .so-part.is-active {
+  border-color: rgba(52, 211, 153, 0.6);
+  color: var(--text);
+}
+
+.m01 .so-part.is-done {
+  color: #4ade80;
+}
+
+.m01 .so-part:disabled {
+  opacity: 0.5;
+}
+
+.m01 .so-q {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px 24px;
+  overflow-y: auto;
+}
+
+.m01 .so-q h3 {
+  margin-top: 4px;
+  font-size: 15px;
+}
+
+.m01 .so-md {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+.m01 .so-md strong {
+  color: var(--text);
+}
+
+.m01 .so-md ul {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-left: 18px;
+}
+
+.m01 .so-md pre,
+.m01 .so-ref-code {
+  overflow-x: auto;
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: #d9e3ff;
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.55;
+  background: #0d1020;
+}
+
+.m01 .so-hint {
+  padding: 10px 12px;
+  border: 1px solid rgba(250, 204, 21, 0.3);
+  border-radius: 10px;
+  color: #fde68a;
+  font-size: 13px;
+  background: rgba(250, 204, 21, 0.06);
+}
+
+.m01 .so-locked,
+.m01 .so-source {
+  color: var(--text-tertiary);
+  font-size: 12px;
+}
+
+.m01 .so-ref {
+  padding-top: 8px;
+  border-top: 1px solid var(--stroke);
+}
+
+.m01 .so-ref-ask {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.m01 .so-reset-ask {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.m01 .so-results {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.m01 .so-result-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.m01 .so-result-group h4 {
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+.m01 .so-result-group ul {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  list-style: none;
+}
+
+.m01 .so-result-group li {
+  display: flex;
+  gap: 8px;
+  font-size: 12.5px;
+}
+
+.m01 .so-result-group li > div {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.m01 .so-result-group li.is-pass > span {
+  color: #4ade80;
+}
+
+.m01 .so-result-group li.is-fail > span {
+  color: #f87171;
+}
+
+.m01 .so-result-group pre {
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.m01 .so-stdout {
+  padding: 6px 8px;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 11.5px;
+  background: rgba(255, 255, 255, 0.04);
+}

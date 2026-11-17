@@ -6,7 +6,40 @@ This is only for U.S. college students who need to lock in and get the job prosp
 
 **Try it:** [tepobaby.vercel.app](https://tepobaby.vercel.app) works on any phone or computer. On iPhone, tap Share → **Add to Home Screen** to install it like an app.
 
-**Contents:** [Questionnaire](#getting-to-know-you-questionnaire) · [Sign-in](#sign-in-with-your-edu-google-account) · [Home](#home) · [Interview](#interview) · [＋ Ginny](#-ginny-ats--ask-gemini) · [Connect](#connect-alumni--recruiters-on-linkedin) · [Profile & organizations](#profile--organizations) · [Design decisions](#design-decisions--pain-points) · [Deployment](#deployment-vercel)
+**Contents:** [Tech stack](#tech-stack) · [Questionnaire](#getting-to-know-you-questionnaire) · [Sign-in](#sign-in-with-your-edu-google-account) · [Home](#home) · [Interview](#interview) · [＋ Ginny](#-ginny-ats--ask-gemini) · [Connect](#connect-alumni--recruiters-on-linkedin) · [Profile & organizations](#profile--organizations) · [Testing](#testing--quality-assurance) · [Design decisions](#design-decisions--pain-points) · [Deployment](#deployment-vercel)
+
+## Tech stack
+
+**In short:** the frontend is **React 18 in TypeScript**, built with **Vite**; the backend is **Node.js + Express in JavaScript**; it's hosted on **Vercel** with **Upstash Redis** for data.
+
+| Part | Language | Frameworks & libraries |
+| --- | --- | --- |
+| Frontend (the app you see, in [src/](src/)) | **TypeScript** (`.tsx` / `.ts`, no plain JavaScript files) | **React 18**, **Vite 5**, plain CSS (hand-written color tokens and dark theme, no Tailwind), hand-written screen navigation (no React Router), **CodeMirror 6** (NeetCode code editor), **Pyodide** (runs Python solutions in the browser) |
+| Backend (API, job feed, ATS, in [server/](server/)) | **JavaScript** (Node.js ES modules) | **Express 5**, `google-auth-library` (Google sign-in), **Transformers.js** (MiniLM reranker for ATS), `unpdf` (reads résumé PDFs) |
+| Data | | **Upstash Redis** on Vercel; local JSON files in `server/data/` during development |
+| Hosting | | **Vercel** (static frontend + one serverless function for the API), **Vercel Cron** for the daily 7 AM ET job update |
+
+**AI & outside APIs**
+
+| Service | Used for |
+| --- | --- |
+| Voyage AI | Embeddings for the ATS semantic score |
+| Gemini | Interview research with Google Search sources |
+| OpenAI Realtime (over WebRTC) | Live voice mock interviews |
+| Claude Code | Résumé tailoring from a phone (author only), through a relay and Cloudflare tunnel |
+| SerpApi | Google Jobs results and the daily job-board search |
+| Greenhouse, Lever, Ashby, Workday, Microsoft and Amazon job APIs | The live job feed |
+
+**Testing & tools**
+
+| Tool | Used for |
+| --- | --- |
+| **Playwright** | End-to-end and API tests on desktop and phone-sized browsers (`npm run test:e2e`) |
+| Node test runner | Unit tests for the job-feed rules (`npm run test:unit`), run by **GitHub Actions** on every pull request |
+| TypeScript compiler | Type-checking the frontend (`npx tsc --noEmit`) |
+| Claude Code and Cursor | AI-assisted development |
+
+See [Testing & quality assurance](#testing--quality-assurance) for what the tests cover.
 
 ## Getting to know you (questionnaire)
 Before your home page, Tepobaby asks 4 short sections, one page each:
@@ -204,6 +237,18 @@ North West grades each part by calling the `update_star_progress` tool (phase, s
   - **Live walkthrough:** the algorithm runs on a small example. The data moves step by step, with arrays and their `l` / `m` / `r` pointers, hash maps, stacks, linked-list arrows, trees, trie and decision trees, graphs, DP tables, intervals and bits, while the matching line of code lights up. You can play or pause, step back and forward, or change the speed.
   - **Runtime**: time and space complexity, and why.
 
+### Technical: 🌲 Sierra OA
+A third sub-tab, next to Card Game and Roadmap, for **Sierra's Software Engineer, Agent (new grad) CoderPad assessment**. It's built from what candidates report: 60–90 minutes, **2 easy coding questions**, a **TypeScript project that grows in parts**, then a **recorded video reflection**.
+
+- **7 practice problems, written in TypeScript and graded in the browser.** Two easy questions (log intervals, related catalog items) and five projects (conversation history loader, inventory sync, spreadsheet cells, undo/redo editor, header-aware Markdown chunks), each based on a question candidates reported.
+- **Parts unlock one at a time**, like the real assessment. Every run re-tests the earlier parts, so rewriting your code instead of extending it gets caught.
+- **Realistic services.** The project tests run your code against mock APIs that paginate, fail with 503s, hang until you time out, and loop their cursors, so retries, per-try timeouts and backoff are actually tested.
+- **Timed mock OA:** pick 60, 75 or 90 minutes. You get two easy questions plus a project, starting from blank code, with reference solutions hidden. When time runs out you go straight to the reflection, and the result is saved to your history.
+- **Video reflection drill:** five prompts and a 90-second recording with your camera that you can watch back. The recording stays in your browser and is never uploaded.
+- **The guide:** AI rules and what CoderPad records, a time plan, how to work during the test, edge cases, how people lose, the rest of the loop, and links to the sources.
+
+How it works: [shared/sierra/problems.js](shared/sierra/problems.js) holds the problems, starters and reference solutions. [shared/sierra/suite.js](shared/sierra/suite.js) holds the mock services and tests. Your TypeScript is compiled with [Sucrase](https://github.com/alangpierce/sucrase) in a Web Worker ([src/sierra/worker.ts](src/sierra/worker.ts)), which is stopped if a test hangs. `npm run test:unit` checks that every reference solution passes and every starter fails, and [e2e/sierra.spec.ts](e2e/sierra.spec.ts) tests the tab on desktop and phone. Progress and drafts sync to your account like the rest of the Technical tab.
+
 **Where the code runs.** Your code runs **in your own browser**, never on Tepobaby's server:
 - **JavaScript** runs in a sandboxed Web Worker. Like LeetCode's runtime, it has `ListNode`, `TreeNode` and `MinPriorityQueue` built in.
 - **Python 3** runs with [Pyodide](https://pyodide.org) (CPython compiled to WebAssembly). It loads from jsDelivr the first time you pick Python (about 10 MB, cached afterwards), with `typing`, `collections`, `heapq` and the other usual LeetCode imports ready.
@@ -381,6 +426,17 @@ On your **Profile**, inside **Demographic & Identity Information**, Tepobaby sug
 | Open to everyone | [CodePath](https://www.codepath.org/), [MLH Fellowship](https://fellowship.mlh.com/), [Tapia Conference](https://tapiaconference.cmd-it.org/), [Forage](https://www.theforage.com/), [ACM](https://www.acm.org/) |
 
 Each logo comes from the organization's own website (its app icon or site icon), with Google's favicon service as a backup, and every program in the list has a real logo. The list lives in [src/data/communities.json](src/data/communities.json), so adding a program is one entry. Your answers are only used inside the app to choose what to show; nothing extra is sent anywhere.
+
+## Testing & quality assurance
+
+| Command | What it checks |
+| --- | --- |
+| `npm run test:unit` | The job-feed rules in [server/jobs/classify.js](server/jobs/classify.js): level from a title, role type, which roles count as tech, and Remote / NYC (about 50 titles and locations). Node's built-in test runner; runs in GitHub Actions on every pull request ([.github/workflows/test.yml](.github/workflows/test.yml)). |
+| `npm run test:e2e` | [Playwright](https://playwright.dev) end-to-end and API tests in [e2e/](e2e/), on a desktop browser and a phone-sized one (Pixel 7). Starts the app if it isn't running. |
+| `npm run test:e2e:ui` | The same tests in Playwright's UI mode, to watch each step. |
+| `npm test` | Both. |
+
+The Playwright suite covers what a visitor does: "How it's built" shows live numbers and closes with Escape; the recruiter demo opens the live feed with links to the original postings; the Role type chips and 📍 Remote / NYC return only matching roles (checked in the API response and on screen); filters survive a reload; and no screen scrolls sideways. The API tests check input handling (unknown levels are rejected, unknown role types are ignored), that each filter returns only what it says, and that counts add up. Tests assert behaviour, not specific listings, because the feed changes every morning. Failures keep a trace and a screenshot in `test-results/` (`npx playwright show-trace …`).
 
 ## Design decisions & pain points
 How I built Tepobaby (with Claude Code): each decision, why I made it, and the pain point behind it.

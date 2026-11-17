@@ -12,7 +12,7 @@ import { oneDark } from "@codemirror/theme-one-dark";
 
 type Props = {
   value: string;
-  lang: "python3" | "javascript";
+  lang: "python3" | "javascript" | "typescript";
   onChange: (code: string) => void;
   onRun?: () => void;
 };
@@ -41,7 +41,7 @@ export default function CodeEditor({ value, lang, onChange, onRun }: Props) {
             { key: "Mod-Enter", run: () => (handlers.current.onRun?.(), true) },
           ]),
           indentUnit.of(lang === "python3" ? "    " : "  "),
-          lang === "python3" ? python() : javascript(),
+          lang === "python3" ? python() : javascript({ typescript: lang === "typescript" }),
           oneDark,
           theme,
           EditorView.updateListener.of((u) => u.docChanged && handlers.current.onChange(u.state.doc.toString())),

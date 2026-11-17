@@ -44,27 +44,46 @@ function resumeChunks(sections) {
 const WANT =
   /(experience|proficien|familiar|knowledge|understanding|skills?|ability to|degree|pursuing|coursework|background in|working with|expertise|strong|fluency|hands-on|build|design|develop|write|ship)/i;
 const REQ_HEADING =
-  /(requirement|qualification|what you('ll| will)? (need|bring)|you (have|bring|might be|should have)|about you|who you are|skills|nice to have|preferred|bonus|minimum|basic|what we('re| are) looking for|what you('ll| will) do|you('ll| will) (do|work on)|^you will$|responsibilit|in this role|your impact)/i;
+  /(requirement|qualification|what you('ll| will)? (need|bring)|you (have|bring|might be|should have)|about you|who you are|skills|nice to have|preferred|bonus|minimum|basic|what we('re| are) looking for|who we('re| are) looking for|what you('ll| will)( actually)? (be )?do(ing)?|you('ll| will) (do|work on)|^you will$|responsibilit|in this role|your impact|you('re| are) (our|the|a great|a good) (person|candidate|fit|match)|even better|ideal candidate|extra credit|what (it|you)('ll| will) take|you might also have)/i;
 const STOP_HEADING =
   /(benefit|perk|compensation|salary|pay range|base pay|about (us|the (company|team))|what we offer|equal (opportunity|employment)|eeo|why (join|work)|our (mission|values|culture)|life at|accommodation|privacy|how to apply|application process)/i;
 
 // Link bullets like "Jane Doe experience as a 2026 intern" or "Read Sam's story".
 const TESTIMONIAL = /^([A-Z][a-z]+\s+[A-Z][a-z]+('s)?\s+(experience|story|journey)\b|read .+'s story)/;
 
-const lineList = (jd) =>
+// Lines with a flag for whether they were bullets ("- ", "• "…) in the posting.
+const markedLines = (jd) =>
   jd
     .split(/\n/)
     // a pasted description can arrive as one paragraph: read its sentences as lines
     .flatMap((l) => (l.length > 400 ? l.split(/(?<=[.!?])\s+(?=[A-Z])/) : [l]))
-    .map((l) => l.replace(/^[•\-–*]\s*/, "").trim())
-    .filter(Boolean);
+    .map((l) => ({ bullet: /^\s*[•\-–*]\s/.test(l), text: l.replace(/^\s*[•\-–*]\s*/, "").trim() }))
+    .filter((l) => l.text);
+
+const lineList = (jd) => markedLines(jd).map((l) => l.text);
+
+const SMALL_WORDS = new Set(["a", "an", "and", "as", "at", "be", "for", "if", "in", "of", "on", "or", "the", "to", "we", "you", "your", "our", "with"]);
+
+/**
+ * A section heading ("Basic Qualifications", "What You'll Actually Be Doing", "You're Our Person If...",
+ * "What we are looking for:"), not a short requirement like "Strong analytical and problem-solving skills".
+ */
+function looksLikeHeading({ bullet, text }) {
+  if (bullet || text.length > 70 || /[.!?]$/.test(text)) return false;
+  if (/(:|\.\.\.|…)$/.test(text)) return true;
+  const words = text.split(/\s+/);
+  if (words.length <= 4) return true;
+  const big = words.filter((w) => !SMALL_WORDS.has(w.toLowerCase()));
+  return big.length > 0 && big.filter((w) => /^[A-Z0-9#("“]/.test(w)).length / big.length >= 0.7;
+}
 
 /** Lines inside the job's qualifications / responsibilities sections (skips benefits, about-us, testimonials). */
 function qualificationLines(jd) {
   const out = [];
   let inside = false;
-  for (const l of lineList(jd)) {
-    const isHeading = l.length <= 70 && !/[.!?]$/.test(l);
+  for (const line of markedLines(jd)) {
+    const l = line.text;
+    const isHeading = looksLikeHeading(line);
     if (isHeading && STOP_HEADING.test(l)) inside = false;
     else if (isHeading && REQ_HEADING.test(l)) inside = true;
     else if (inside && l.length >= 15 && !TESTIMONIAL.test(l)) out.push(l);
@@ -73,7 +92,7 @@ function qualificationLines(jd) {
 }
 
 /** The job's requirement lines, best source first. */
-function requirements(jd) {
+export function requirements(jd) {
   const fromSections = qualificationLines(jd).filter((l) => l.length <= 400);
   const bullets = jd
     .split(/\n/)

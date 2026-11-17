@@ -16,6 +16,8 @@ export const SYNCED_KEYS = [
   "tepobaby.neetcode.drafts.v1",
   "tepobaby.neetcode.lang",
   "tepobaby.technical.sub",
+  "tepobaby.sierra.v1",
+  "tepobaby.sierra.drafts.v1",
   "tepobaby.selectedJobId",
 ];
 const OWNER_KEY = "tepobaby.account.owner";
