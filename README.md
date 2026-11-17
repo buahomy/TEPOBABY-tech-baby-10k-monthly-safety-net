@@ -237,6 +237,18 @@ North West grades each part by calling the `update_star_progress` tool (phase, s
   - **Live walkthrough:** the algorithm runs on a small example. The data moves step by step, with arrays and their `l` / `m` / `r` pointers, hash maps, stacks, linked-list arrows, trees, trie and decision trees, graphs, DP tables, intervals and bits, while the matching line of code lights up. You can play or pause, step back and forward, or change the speed.
   - **Runtime**: time and space complexity, and why.
 
+### Technical: 🌲 Sierra OA
+A third sub-tab, next to Card Game and Roadmap, for **Sierra's Software Engineer, Agent (new grad) CoderPad assessment**. It's built from what candidates report: 60–90 minutes, **2 easy coding questions**, a **TypeScript project that grows in parts**, then a **recorded video reflection**.
+
+- **7 practice problems, written in TypeScript and graded in the browser.** Two easy questions (log intervals, related catalog items) and five projects (conversation history loader, inventory sync, spreadsheet cells, undo/redo editor, header-aware Markdown chunks), each based on a question candidates reported.
+- **Parts unlock one at a time**, like the real assessment. Every run re-tests the earlier parts, so rewriting your code instead of extending it gets caught.
+- **Realistic services.** The project tests run your code against mock APIs that paginate, fail with 503s, hang until you time out, and loop their cursors, so retries, per-try timeouts and backoff are actually tested.
+- **Timed mock OA:** pick 60, 75 or 90 minutes. You get two easy questions plus a project, starting from blank code, with reference solutions hidden. When time runs out you go straight to the reflection, and the result is saved to your history.
+- **Video reflection drill:** five prompts and a 90-second recording with your camera that you can watch back. The recording stays in your browser and is never uploaded.
+- **The guide:** AI rules and what CoderPad records, a time plan, how to work during the test, edge cases, how people lose, the rest of the loop, and links to the sources.
+
+How it works: [shared/sierra/problems.js](shared/sierra/problems.js) holds the problems, starters and reference solutions. [shared/sierra/suite.js](shared/sierra/suite.js) holds the mock services and tests. Your TypeScript is compiled with [Sucrase](https://github.com/alangpierce/sucrase) in a Web Worker ([src/sierra/worker.ts](src/sierra/worker.ts)), which is stopped if a test hangs. `npm run test:unit` checks that every reference solution passes and every starter fails, and [e2e/sierra.spec.ts](e2e/sierra.spec.ts) tests the tab on desktop and phone. Progress and drafts sync to your account like the rest of the Technical tab.
+
 **Where the code runs.** Your code runs **in your own browser**, never on Tepobaby's server:
 - **JavaScript** runs in a sandboxed Web Worker. Like LeetCode's runtime, it has `ListNode`, `TreeNode` and `MinPriorityQueue` built in.
 - **Python 3** runs with [Pyodide](https://pyodide.org) (CPython compiled to WebAssembly). It loads from jsDelivr the first time you pick Python (about 10 MB, cached afterwards), with `typing`, `collections`, `heapq` and the other usual LeetCode imports ready.

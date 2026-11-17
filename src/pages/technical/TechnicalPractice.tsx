@@ -1,19 +1,27 @@
-import { useEffect, useState } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import { Concept, ProblemSummary, getProblemList } from "../../neetcode/api";
 import CardGame from "./CardGame";
 import Roadmap from "./Roadmap";
 import "./technical.css";
 import { canSaveLocally, pushKey } from "../../utils/accountSync";
 
-// Technical practice, built entirely on the NeetCode 150: a Card Game and a concept Roadmap,
-// side by side.
+const SierraOA = lazy(() => import("./SierraOA"));
 
-type Sub = "cards" | "roadmap";
+// Technical practice: the NeetCode 150 as a Card Game and a concept Roadmap, plus Sierra OA (practice
+// for Sierra's new-grad CoderPad assessment, which doesn't need the NeetCode data).
+
+type Sub = "cards" | "roadmap" | "sierra";
+const SUBS: { id: Sub; label: string }[] = [
+  { id: "cards", label: "🃏 Card Game" },
+  { id: "roadmap", label: "🗺️ Roadmap" },
+  { id: "sierra", label: "🌲 Sierra OA" },
+];
 
 export default function TechnicalPractice() {
   const [sub, setSub] = useState<Sub>(() => {
     try {
-      return localStorage.getItem("tepobaby.technical.sub") === "roadmap" ? "roadmap" : "cards";
+      const saved = localStorage.getItem("tepobaby.technical.sub");
+      return saved === "roadmap" || saved === "sierra" ? saved : "cards";
     } catch {
       return "cards";
     }
@@ -41,15 +49,23 @@ export default function TechnicalPractice() {
   return (
     <>
       <div className="iv-tabs nc-subtabs" role="tablist" aria-label="Technical practice">
-        {(["cards", "roadmap"] as const).map((s) => (
-          <button key={s} type="button" role="tab" aria-selected={sub === s} className={sub === s ? "is-active" : ""} onClick={() => pick(s)}>
-            {s === "cards" ? "🃏 Card Game" : "🗺️ Roadmap"}
+        {SUBS.map((s) => (
+          <button key={s.id} type="button" role="tab" aria-selected={sub === s.id} className={sub === s.id ? "is-active" : ""} onClick={() => pick(s.id)}>
+            {s.label}
           </button>
         ))}
       </div>
-      {error && <p className="ob-error">{error}</p>}
-      {!data && !error && <div className="nc-skeleton nc-skeleton--tall" aria-label="Loading the NeetCode 150" />}
-      {data && (sub === "cards" ? <CardGame problems={data.problems} concepts={data.concepts} /> : <Roadmap problems={data.problems} />)}
+      {sub === "sierra" ? (
+        <Suspense fallback={<div className="nc-skeleton nc-skeleton--tall" aria-label="Loading Sierra OA practice" />}>
+          <SierraOA />
+        </Suspense>
+      ) : (
+        <>
+          {error && <p className="ob-error">{error}</p>}
+          {!data && !error && <div className="nc-skeleton nc-skeleton--tall" aria-label="Loading the NeetCode 150" />}
+          {data && (sub === "cards" ? <CardGame problems={data.problems} concepts={data.concepts} /> : <Roadmap problems={data.problems} />)}
+        </>
+      )}
     </>
   );
 }

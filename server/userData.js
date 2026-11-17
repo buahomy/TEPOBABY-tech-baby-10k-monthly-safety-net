@@ -18,6 +18,8 @@ export const KEYS = [
   "tepobaby.neetcode.drafts.v1",
   "tepobaby.neetcode.lang",
   "tepobaby.technical.sub",
+  "tepobaby.sierra.v1",
+  "tepobaby.sierra.drafts.v1",
   "tepobaby.selectedJobId",
 ];
 const MAX_VALUE = 900 * 1024; // characters (code drafts can be big)

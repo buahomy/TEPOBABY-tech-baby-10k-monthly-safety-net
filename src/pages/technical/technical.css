@@ -3,6 +3,15 @@
 
 .m01 .nc-subtabs {
   margin-top: -4px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.m01 .nc-subtabs button {
+  overflow: hidden;
+  padding: 0 4px;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .m01 .nc-muted {
