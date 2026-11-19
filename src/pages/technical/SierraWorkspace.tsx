@@ -95,7 +95,7 @@ export default function SierraWorkspace({ problem, draftKey, passed, onPassed, o
         setNote(`Part ${view + 1} passes. Part ${view + 2} is unlocked: extend your code, don't rewrite it.`);
         setView(view + 1);
         setHint(false);
-      } else setNote(`All ${total} parts pass. Now explain it out loud in 90 seconds, like the video reflection.`);
+      } else setNote(`${total === 1 ? "All tests pass" : `All ${total} parts pass`}. Now explain it out loud in 90 seconds, like the video reflection.`);
     }
   }
 
@@ -110,7 +110,7 @@ export default function SierraWorkspace({ problem, draftKey, passed, onPassed, o
         </button>
         <div className="nc-ide-title">
           <strong>{problem.title}</strong>
-          <span className={`so-kind so-kind--${problem.kind}`}>{problem.kind === "easy" ? "Easy question" : "TS project"}</span>
+          <span className={`so-kind so-kind--${problem.kind}`}>{problem.kind === "easy" ? "Easy question" : problem.kind === "stdin" ? "Easy · stdin" : "TS project"}</span>
         </div>
         <div className="nc-ide-actions">
           {mock && (

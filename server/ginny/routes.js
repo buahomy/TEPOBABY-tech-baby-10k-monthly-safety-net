@@ -7,7 +7,7 @@
 //   POST   /api/ginny/ats           ATS match analysis for one job
 //   POST   /api/ginny/tailor        opt-in Gemini rewrites of the resume for the selected job
 //   POST   /api/ginny/chat          Ask Gemini about the selected job
-//   POST   /api/ginny/code-assist   the Sierra OA coding assistant (stands in for CoderPad's embedded AI)
+//   POST   /api/ginny/code-assist   the Sierra OA coding assistant (stands in for CoderPad's embedded AI; author's account only)
 //
 // Guests can use both tools too: their resume stays on their device and is sent with each
 // analysis, processed in memory, and never stored on the server. With `sample: true`, the ATS and
@@ -23,6 +23,7 @@ import { RERANK_MODEL, warmReranker } from "./rerank.js";
 import { MAX_PDF_BYTES, deleteResume, loadResume, pdfToLines, publicMeta, sanitize, saveResume } from "./resume.js";
 import { VOYAGE_MODEL, voyageEnabled } from "./voyage.js";
 import { SAMPLE_RESUME } from "./sampleResume.js";
+import { sierraAllowed } from "../sierraAccess.js";
 import { takeDemo } from "../demo.js";
 
 // Simple in-memory rate limit per user / IP.
@@ -174,8 +175,6 @@ export function ginnyRoutes(app, { readSession, requireXhr, requireUser }) {
       .filter((m) => m.text);
     if (!messages.length || messages[messages.length - 1].role !== "user") return res.status(400).json({ error: "Ask a question first." });
 
-    if (!readSession(req) && !(await takeDemo("gemini", req.ip))) return res.status(429).json({ error: DEMO_GEMINI_DONE });
-
     const c = req.body?.context || {};
     const ctx = {
       role: str(c.role, 200),
@@ -196,6 +195,7 @@ export function ginnyRoutes(app, { readSession, requireXhr, requireUser }) {
 
   // ---- Sierra OA coding assistant ----
   app.post("/api/ginny/code-assist", requireXhr, express.json({ limit: "96kb" }), async (req, res) => {
+    if (!sierraAllowed(readSession(req)?.email)) return res.status(403).json({ error: "The Sierra OA assistant is only on the author's account." });
     if (!geminiEnabled()) return res.status(503).json({ error: "The assistant isn't set up yet (missing GEMINI_API_KEY)." });
     if (!limit(`assist:${who(req)}`, 60, HOUR)) return res.status(429).json({ error: "That's a lot of prompts this hour. Try again in a bit." });
 
@@ -204,8 +204,6 @@ export function ginnyRoutes(app, { readSession, requireXhr, requireUser }) {
       .map((m) => ({ role: m?.role === "model" ? "model" : "user", text: str(m?.text, 4000) }))
       .filter((m) => m.text);
     if (!messages.length || messages[messages.length - 1].role !== "user") return res.status(400).json({ error: "Type a prompt first." });
-
-    if (!readSession(req) && !(await takeDemo("gemini", req.ip))) return res.status(429).json({ error: DEMO_GEMINI_DONE });
 
     const c = req.body?.context || {};
     const ctx = { problem: str(c.problem, 200), part: str(c.part, 200), prompt: str(c.prompt, 4000), code: str(c.code, 20000) };

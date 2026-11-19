@@ -8,7 +8,8 @@ import { canSaveLocally, pushKey } from "../../utils/accountSync";
 const SierraOA = lazy(() => import("./SierraOA"));
 
 // Technical practice: the NeetCode 150 as a Card Game and a concept Roadmap, plus Sierra OA (practice
-// for Sierra's new-grad CoderPad assessment, which doesn't need the NeetCode data).
+// for Sierra's new-grad CoderPad assessment, which doesn't need the NeetCode data). Sierra OA is the
+// author's personal prep: it only shows for accounts the server marks `sierra` (server/sierraAccess.js).
 
 type Sub = "cards" | "roadmap" | "sierra";
 const SUBS: { id: Sub; label: string }[] = [
@@ -17,11 +18,12 @@ const SUBS: { id: Sub; label: string }[] = [
   { id: "sierra", label: "🌲 Sierra OA" },
 ];
 
-export default function TechnicalPractice() {
+export default function TechnicalPractice({ sierra = false }: { sierra?: boolean }) {
+  const subs = sierra ? SUBS : SUBS.filter((s) => s.id !== "sierra");
   const [sub, setSub] = useState<Sub>(() => {
     try {
       const saved = localStorage.getItem("tepobaby.technical.sub");
-      return saved === "roadmap" || saved === "sierra" ? saved : "cards";
+      return saved === "roadmap" || (saved === "sierra" && sierra) ? saved : "cards";
     } catch {
       return "cards";
     }
@@ -48,14 +50,14 @@ export default function TechnicalPractice() {
 
   return (
     <>
-      <div className="iv-tabs nc-subtabs" role="tablist" aria-label="Technical practice">
-        {SUBS.map((s) => (
+      <div className="iv-tabs nc-subtabs" role="tablist" aria-label="Technical practice" style={{ gridTemplateColumns: `repeat(${subs.length}, minmax(0, 1fr))` }}>
+        {subs.map((s) => (
           <button key={s.id} type="button" role="tab" aria-selected={sub === s.id} className={sub === s.id ? "is-active" : ""} onClick={() => pick(s.id)}>
             {s.label}
           </button>
         ))}
       </div>
-      {sub === "sierra" ? (
+      {sub === "sierra" && sierra ? (
         <Suspense fallback={<div className="nc-skeleton nc-skeleton--tall" aria-label="Loading Sierra OA practice" />}>
           <SierraOA />
         </Suspense>

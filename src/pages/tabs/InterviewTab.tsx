@@ -10,7 +10,7 @@ import "../interview.css";
 // Loaded on first use: the code editor and concept walkthroughs are most of its size.
 const TechnicalPractice = lazy(() => import("../technical/TechnicalPractice"));
 
-type Props = { profile: Profile };
+type Props = { profile: Profile; sierra: boolean }; // sierra: this account can see the Sierra OA practice
 type Mode = "behavioral" | "technical";
 
 const COMPANIES = [
@@ -37,7 +37,7 @@ function targetFrom(profile: Profile) {
   return "software engineering internships";
 }
 
-export default function InterviewTab({ profile }: Props) {
+export default function InterviewTab({ profile, sierra }: Props) {
   const [mode, setMode] = useState<Mode>("behavioral");
   return (
     <div className="tab-page">
@@ -52,7 +52,7 @@ export default function InterviewTab({ profile }: Props) {
         <Behavioral profile={profile} />
       ) : (
         <Suspense fallback={<div className="nc-loading">Loading technical practice…</div>}>
-          <TechnicalPractice />
+          <TechnicalPractice sierra={sierra} />
         </Suspense>
       )}
     </div>

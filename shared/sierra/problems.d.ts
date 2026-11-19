@@ -4,7 +4,7 @@ export type SierraPart = { title: string; prompt: string; hint: string };
 export type SierraProblem = {
   id: string;
   title: string;
-  kind: "easy" | "project";
+  kind: "easy" | "project" | "stdin";
   minutes: number;
   reported: string;
   entry: string[];

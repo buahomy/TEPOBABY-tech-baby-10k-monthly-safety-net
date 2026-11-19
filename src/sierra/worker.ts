@@ -4,7 +4,7 @@
 
 import { sierraProblemById } from "../../shared/sierra/problems.js";
 import { SIERRA_SUITES, runSierraTest } from "../../shared/sierra/suite.js";
-import { loadSierraModule } from "../../shared/sierra/compile.js";
+import { loadProblemModule } from "../../shared/sierra/compile.js";
 
 type Job = { code: string; problemId: string; upTo: number };
 
@@ -29,7 +29,7 @@ self.onmessage = async (e: MessageEvent<Job>) => {
 
   let mod: Record<string, unknown>;
   try {
-    mod = loadSierraModule(code, problem.entry, consoleShim);
+    mod = loadProblemModule(problem, code, consoleShim);
   } catch (err) {
     const e2 = err as Error;
     self.postMessage({ type: "compile", error: `${e2?.name || "Error"}: ${e2?.message || String(err)}` });

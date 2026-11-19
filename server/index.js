@@ -8,6 +8,7 @@
 //      verified and end in .edu. The browser never decides who is allowed in.
 //   4. We issue our own HMAC-signed, httpOnly session cookie. Google tokens are discarded.
 
+import { sierraAllowed } from "./sierraAccess.js";
 import crypto from "node:crypto";
 import express from "express";
 import { OAuth2Client } from "google-auth-library";
@@ -112,7 +113,9 @@ const sessionCookieOptions = {
 };
 
 function publicUser(s) {
-  return { email: s.email, name: s.name, picture: s.picture };
+  const user = { email: s.email, name: s.name, picture: s.picture };
+  if (sierraAllowed(s.email)) user.sierra = true; // the author's Sierra OA prep (server/sierraAccess.js)
+  return user;
 }
 
 // ---- Google code exchange + .edu policy ----
