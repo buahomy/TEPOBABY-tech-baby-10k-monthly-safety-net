@@ -247,7 +247,7 @@
 }
 
 .m01 .so code,
-.m01 .so-ide code {
+.m01.so-ide code {
   padding: 1px 5px;
   border-radius: 5px;
   font-family: "SF Mono", Menlo, Consolas, monospace;
@@ -360,7 +360,7 @@
   background: rgba(251, 191, 36, 0.12);
 }
 
-.m01 .so-ide .so-clock {
+.m01.so-ide .so-clock {
   padding: 0 10px;
   line-height: 32px;
   border: 1px solid var(--stroke-strong);
@@ -534,4 +534,162 @@
   color: var(--text-secondary);
   font-size: 11.5px;
   background: rgba(255, 255, 255, 0.04);
+}
+
+/* AI assistant panel (projects only): a third column on desktop, an "AI" tab on a phone. */
+.m01 .so-ai-btn {
+  border: 1px solid rgba(129, 140, 248, 0.45);
+  color: #c7d2fe;
+  background: rgba(99, 102, 241, 0.12);
+}
+
+.m01 .so-ai-btn.is-on {
+  color: white;
+  background: var(--indigo);
+}
+
+@media (min-width: 821px) {
+  .m01.so-ide.has-ai .nc-ide-main {
+    grid-template-columns: minmax(260px, 30%) minmax(0, 1fr) minmax(300px, 360px);
+  }
+
+  /* Let the editor shrink to its column instead of spilling over the assistant. */
+  .m01.so-ide.has-ai .nc-pane--work,
+  .m01.so-ide.has-ai .nc-editor-wrap,
+  .m01.so-ide.has-ai .nc-editor {
+    min-width: 0;
+    overflow: hidden;
+  }
+}
+
+.m01 .so-ai-pane {
+  min-width: 0;
+  border-left: 1px solid var(--stroke);
+}
+
+.m01 .so-ai {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  background: #0b0e1c;
+}
+
+.m01 .so-ai-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--stroke);
+}
+
+.m01 .so-ai-head strong {
+  font-size: 13.5px;
+}
+
+.m01 .so-ai-head button {
+  margin-left: auto;
+}
+
+.m01 .so-ai-note {
+  padding: 8px 12px;
+  color: var(--text-tertiary);
+  font-size: 11.5px;
+  border-bottom: 1px solid var(--stroke);
+}
+
+.m01 .so-ai-list {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  overflow-y: auto;
+}
+
+.m01 .so-ai-starters {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.m01 .so-ai-starters button {
+  padding: 8px 10px;
+  border: 1px solid var(--stroke-strong);
+  border-radius: 10px;
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  text-align: left;
+  background: var(--surface-raised);
+}
+
+.m01 .so-ai-starters button:hover {
+  border-color: rgba(129, 140, 248, 0.5);
+}
+
+.m01 .so-ai-msg {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.m01 .so-ai-msg--user {
+  align-self: flex-end;
+  max-width: 90%;
+  color: white;
+  background: rgba(99, 102, 241, 0.35);
+}
+
+.m01 .so-ai-msg--model {
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.m01 .so-ai-msg pre {
+  overflow-x: auto;
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: #d9e3ff;
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12px;
+  white-space: pre;
+  background: #0d1020;
+}
+
+.m01 .so-ai-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 10px 12px max(10px, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--stroke);
+}
+
+.m01 .so-ai-form textarea {
+  min-width: 0;
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid var(--stroke-strong);
+  border-radius: 10px;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  resize: none;
+  background: #161a2e;
+}
+
+.m01 .so-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }

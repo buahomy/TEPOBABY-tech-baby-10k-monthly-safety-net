@@ -7,6 +7,7 @@
 //   POST   /api/ginny/ats           ATS match analysis for one job
 //   POST   /api/ginny/tailor        opt-in Gemini rewrites of the resume for the selected job
 //   POST   /api/ginny/chat          Ask Gemini about the selected job
+//   POST   /api/ginny/code-assist   the Sierra OA coding assistant (stands in for CoderPad's embedded AI)
 //
 // Guests can use both tools too: their resume stays on their device and is sent with each
 // analysis, processed in memory, and never stored on the server. With `sample: true`, the ATS and
@@ -16,7 +17,7 @@
 
 import express from "express";
 import { analyze, TIERS } from "./ats.js";
-import { askGemini, GEMINI_MODEL, geminiEnabled, tailorResume } from "./gemini.js";
+import { askGemini, codingAssistant, GEMINI_MODEL, geminiEnabled, tailorResume } from "./gemini.js";
 import { fetchJobDescription } from "./jobDescription.js";
 import { RERANK_MODEL, warmReranker } from "./rerank.js";
 import { MAX_PDF_BYTES, deleteResume, loadResume, pdfToLines, publicMeta, sanitize, saveResume } from "./resume.js";
@@ -186,6 +187,30 @@ export function ginnyRoutes(app, { readSession, requireXhr, requireUser }) {
     };
     try {
       res.json(await askGemini(messages, ctx));
+    } catch (err) {
+      if (err.status === 429) return res.status(429).json({ error: "Gemini's free quota is used up for now. Try again later." });
+      if (err.busy) return res.status(503).json({ error: "Gemini is busy right now. Try again in a minute." });
+      fail(res, err, "answer");
+    }
+  });
+
+  // ---- Sierra OA coding assistant ----
+  app.post("/api/ginny/code-assist", requireXhr, express.json({ limit: "96kb" }), async (req, res) => {
+    if (!geminiEnabled()) return res.status(503).json({ error: "The assistant isn't set up yet (missing GEMINI_API_KEY)." });
+    if (!limit(`assist:${who(req)}`, 60, HOUR)) return res.status(429).json({ error: "That's a lot of prompts this hour. Try again in a bit." });
+
+    const messages = (Array.isArray(req.body?.messages) ? req.body.messages : [])
+      .slice(-12)
+      .map((m) => ({ role: m?.role === "model" ? "model" : "user", text: str(m?.text, 4000) }))
+      .filter((m) => m.text);
+    if (!messages.length || messages[messages.length - 1].role !== "user") return res.status(400).json({ error: "Type a prompt first." });
+
+    if (!readSession(req) && !(await takeDemo("gemini", req.ip))) return res.status(429).json({ error: DEMO_GEMINI_DONE });
+
+    const c = req.body?.context || {};
+    const ctx = { problem: str(c.problem, 200), part: str(c.part, 200), prompt: str(c.prompt, 4000), code: str(c.code, 20000) };
+    try {
+      res.json(await codingAssistant(messages, ctx));
     } catch (err) {
       if (err.status === 429) return res.status(429).json({ error: "Gemini's free quota is used up for now. Try again later." });
       if (err.busy) return res.status(503).json({ error: "Gemini is busy right now. Try again in a minute." });
