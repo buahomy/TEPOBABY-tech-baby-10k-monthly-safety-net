@@ -752,6 +752,176 @@ splitMarkdown("# A\nline1\nline2\n## B\nline3", 14)
 }
 `,
   },
+  // ---------- 1point3acres version: stdin easy questions ----------
+  // From 1point3acres post #1192604 (new grad, 2026-10-10): two very easy questions, one was "find the max",
+  // with input on standard input ("5\n3 -2 9 4 1\n"). Only maximum element is the reported question;
+  // the other three are the same style, so the stdin parsing becomes automatic.
+  {
+    id: "stdin-max",
+    title: "Maximum element",
+    kind: "stdin",
+    minutes: 5,
+    reported: "The reported one: \"one was finding the max\" (1point3acres #1192604). Same input format and test cases.",
+    entry: [],
+    intro:
+      "A whole program, like the real question: read standard input, print the answer. The first line is `n`, the second line has `n` integers.",
+    parts: [
+      {
+        title: "Print the largest number",
+        prompt: String.raw`Read ` + "`n`" + String.raw` and then ` + "`n`" + String.raw` integers from standard input, and print the largest one.
+
+- Values can be negative (as low as ` + "`-1000000000`" + String.raw`), so don't start the maximum at 0.
+- ` + "`n`" + String.raw` is at least 1 and can be up to 100,000.
+
+` + "```" + String.raw`
+input             output
+5                 9
+3 -2 9 4 1
+
+4                 -3
+-8 -3 -12 -5
+` + "```",
+        hint: "Start the maximum at the first number, not 0: every number can be negative. A plain loop is safest; `Math.max(...nums)` works too but spreading a huge array can overflow the stack.",
+      },
+    ],
+    starter: String.raw`// Read all of standard input, then print the answer with console.log.
+const data: number[] = require("fs").readFileSync(0, "utf8").trim().split(/\s+/).map(Number);
+const n = data[0];
+const nums = data.slice(1, n + 1);
+
+// TODO: print the largest number in nums
+`,
+    reference: String.raw`const data: number[] = require("fs").readFileSync(0, "utf8").trim().split(/\s+/).map(Number);
+const n = data[0];
+const nums = data.slice(1, n + 1);
+
+// O(n) time, O(1) extra space (O(n) to hold the input).
+let best = nums[0];
+for (const x of nums) if (x > best) best = x;
+console.log(best);
+`,
+  },
+  {
+    id: "stdin-second",
+    title: "Second largest",
+    kind: "stdin",
+    minutes: 6,
+    reported: "Same style as the reported max question, one step harder: duplicates and a \"no answer\" case.",
+    entry: [],
+    intro: "Read `n`, then `n` integers. Print the second-largest **distinct** value.",
+    parts: [
+      {
+        title: "Second-largest distinct value",
+        prompt: String.raw`Print the second-largest **distinct** value. If every number is the same (or ` + "`n`" + String.raw` is 1), print ` + "`NONE`" + String.raw`.
+
+` + "```" + String.raw`
+input             output
+5                 4
+3 -2 9 4 9
+
+3                 NONE
+6 6 6
+` + "```",
+        hint: "Track two values, `first` and `second`, starting at `-Infinity`. Skip numbers equal to `first`. At the end, `second === -Infinity` means NONE.",
+      },
+    ],
+    starter: String.raw`const data: number[] = require("fs").readFileSync(0, "utf8").trim().split(/\s+/).map(Number);
+const n = data[0];
+const nums = data.slice(1, n + 1);
+
+// TODO: print the second-largest distinct value, or NONE
+`,
+    reference: String.raw`const data: number[] = require("fs").readFileSync(0, "utf8").trim().split(/\s+/).map(Number);
+const n = data[0];
+const nums = data.slice(1, n + 1);
+
+let first = -Infinity;
+let second = -Infinity;
+for (const x of nums) {
+  if (x > first) {
+    second = first;
+    first = x;
+  } else if (x < first && x > second) {
+    second = x;
+  }
+}
+console.log(second === -Infinity ? "NONE" : second);
+`,
+  },
+  {
+    id: "stdin-reverse",
+    title: "Reverse the words",
+    kind: "stdin",
+    minutes: 5,
+    reported: "Same style: a one-line string input, where extra spaces are the trap.",
+    entry: [],
+    intro: "Standard input is one line of text. Print its words in reverse order.",
+    parts: [
+      {
+        title: "Words in reverse order",
+        prompt: String.raw`Print the words of the line in reverse order, separated by single spaces. Words are separated by one or more spaces, and the line may start or end with spaces. A line with no words prints an empty line.
+
+` + "```" + String.raw`
+input                       output
+the sky is blue             blue is sky the
+"  hello   world  "         world hello
+` + "```",
+        hint: "`line.trim().split(/\\s+/)` gives the words, but on an empty line it gives `[\"\"]`. Filter out empty strings, then `reverse().join(\" \")`.",
+      },
+    ],
+    starter: String.raw`const line: string = require("fs").readFileSync(0, "utf8").split("\n")[0];
+
+// TODO: print the words of line in reverse order
+`,
+    reference: String.raw`const line: string = require("fs").readFileSync(0, "utf8").split("\n")[0];
+
+const words = line.split(/\s+/).filter(Boolean);
+console.log(words.reverse().join(" "));
+`,
+  },
+  {
+    id: "stdin-prefix",
+    title: "Running totals",
+    kind: "stdin",
+    minutes: 5,
+    reported: "Same style, but the output is a whole line, so the formatting has to be exact.",
+    entry: [],
+    intro: "Read `n`, then `n` integers. Print the running totals on one line.",
+    parts: [
+      {
+        title: "Prefix sums on one line",
+        prompt: String.raw`Print the running totals (prefix sums), separated by single spaces, on one line.
+
+` + "```" + String.raw`
+input             output
+4                 1 3 6 10
+1 2 3 4
+
+3                 -5 0 1000000000
+-5 5 1000000000
+` + "```",
+        hint: "Keep a running `sum`, push it after each number, then print `totals.join(\" \")` once. Printing inside the loop puts each total on its own line.",
+      },
+    ],
+    starter: String.raw`const data: number[] = require("fs").readFileSync(0, "utf8").trim().split(/\s+/).map(Number);
+const n = data[0];
+const nums = data.slice(1, n + 1);
+
+// TODO: print the running totals on one line
+`,
+    reference: String.raw`const data: number[] = require("fs").readFileSync(0, "utf8").trim().split(/\s+/).map(Number);
+const n = data[0];
+const nums = data.slice(1, n + 1);
+
+const totals: number[] = [];
+let sum = 0;
+for (const x of nums) {
+  sum += x;
+  totals.push(sum);
+}
+console.log(totals.join(" "));
+`,
+  },
 ];
 
 export const sierraProblemById = new Map(SIERRA_PROBLEMS.map((p) => [p.id, p]));

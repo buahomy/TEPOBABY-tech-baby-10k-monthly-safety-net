@@ -164,6 +164,29 @@ const CATALOG = {
   batteries: [],
 };
 
+// ---------- stdin programs (1point3acres-style easy questions) ----------
+
+// Compares printed output like an online judge: ignores \r, trailing spaces on each line and trailing blank lines.
+const normalizeOut = (s) => String(s).replace(/\r/g, "").split("\n").map((l) => l.replace(/\s+$/, "")).join("\n").replace(/\n+$/, "");
+
+/** A stdin test: runs the program on `input` and compares what it printed with `expected`. */
+function io(name, input, expected) {
+  return {
+    name,
+    run: async (m) => {
+      if (typeof m.__stdin !== "function") throw new Error("This question runs your whole program on standard input.");
+      const out = await m.__stdin(input);
+      if (normalizeOut(out) !== normalizeOut(expected)) {
+        const shown = normalizeOut(out);
+        throw new Error(`input ${JSON.stringify(input)}: expected ${JSON.stringify(normalizeOut(expected))}, got ${shown ? JSON.stringify(shown) : "nothing (did you console.log the answer?)"}`);
+      }
+    },
+  };
+}
+
+const BIG = Array.from({ length: 100000 }, (_, i) => ((i * 7919) % 200001) - 100000);
+const bigInput = (nums) => `${nums.length}\n${nums.join(" ")}\n`;
+
 export const SIERRA_SUITES = {
   intervals: [
     [
@@ -776,6 +799,46 @@ export const SIERRA_SUITES = {
           ok(chunks.some((c) => c.startsWith("# Guide\n## Returns\n### Damaged")), "Expected a chunk under # Guide > ## Returns > ### Damaged.");
         },
       },
+    ],
+  ],
+  "stdin-max": [
+    [
+      io("The example", "5\n3 -2 9 4 1\n", "9"),
+      io("A single negative number", "1\n-7\n", "-7"),
+      io("All negative (don't start at 0)", "4\n-8 -3 -12 -5\n", "-3"),
+      io("All equal", "4\n6 6 6 6\n", "6"),
+      io("Extremes", "3\n-1000000000 0 1000000000\n", "1000000000"),
+      io("Numbers split across lines, no trailing newline", "3\n4\n10\n2", "10"),
+      io("100,000 numbers", bigInput(BIG), String(BIG.reduce((a, b) => (b > a ? b : a)))),
+    ],
+  ],
+  "stdin-second": [
+    [
+      io("The example (duplicate max)", "5\n3 -2 9 4 9\n", "4"),
+      io("All the same", "3\n6 6 6\n", "NONE"),
+      io("One number", "1\n42\n", "NONE"),
+      io("All negative", "4\n-8 -3 -12 -5\n", "-5"),
+      io("Max comes first", "4\n10 1 2 3\n", "3"),
+      io("Extremes", "3\n-1000000000 1000000000 1000000000\n", "-1000000000"),
+    ],
+  ],
+  "stdin-reverse": [
+    [
+      io("The example", "the sky is blue\n", "blue is sky the"),
+      io("Extra spaces", "  hello   world  \n", "world hello"),
+      io("One word", "sierra\n", "sierra"),
+      io("Empty line", "\n", ""),
+      io("Tabs count as spaces", "a\tb  c\n", "c b a"),
+      io("No trailing newline", "agents ship fast", "fast ship agents"),
+    ],
+  ],
+  "stdin-prefix": [
+    [
+      io("The example", "4\n1 2 3 4\n", "1 3 6 10"),
+      io("Negatives and big values", "3\n-5 5 1000000000\n", "-5 0 1000000000"),
+      io("One number", "1\n-7\n", "-7"),
+      io("All on one line (not one per line)", "3\n1 1 1\n", "1 2 3"),
+      io("100,000 numbers", bigInput(BIG), (() => { let t = 0; return BIG.map((x) => (t += x)).join(" "); })()),
     ],
   ],
 };

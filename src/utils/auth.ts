@@ -3,7 +3,8 @@
 // server (server/index.js) exchanges it, verifies the ID token, enforces the .edu rule, and sets an
 // httpOnly session cookie.
 
-export type User = { email: string; name: string; picture: string };
+// `sierra` is set by the server only for accounts allowed to see the Sierra OA practice (server/sierraAccess.js).
+export type User = { email: string; name: string; picture: string; sierra?: boolean };
 
 type CodeClient = { requestCode: () => void };
 type GoogleOAuth2 = {

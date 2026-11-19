@@ -58,7 +58,7 @@ export default function Main({ user, profile, onEdit, onSignIn, onSignOut }: Pro
             </div>
           )}
           {tab === "home" && <HomeTab firstName={firstName} profile={profile} saved={saved} />}
-          {tab === "interview" && <InterviewTab profile={profile} />}
+          {tab === "interview" && <InterviewTab profile={profile} sierra={!!user?.sierra} />}
           {tab === "connect" && (
             <ConnectTab
               user={user}
