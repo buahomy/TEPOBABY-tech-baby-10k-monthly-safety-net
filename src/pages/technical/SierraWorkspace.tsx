@@ -5,6 +5,7 @@ import { loadSierraDraft, saveSierraDraft } from "../../sierra/progress";
 import { SierraOutcome, TestResult, runSierraTests } from "../../sierra/runner";
 import Markdown from "../../sierra/Markdown";
 import CodeEditor from "./CodeEditor";
+import SierraAssistant from "./SierraAssistant";
 
 // The Sierra OA coding screen. Same layout as the NeetCode IDE (question | editor + tests; three tabs
 // on a phone), but in TypeScript, with parts that unlock one at a time like the real assessment. Each
@@ -18,7 +19,7 @@ type Props = {
   onClose: () => void;
   mock?: { endsAt: number; label: string };
 };
-type Pane = "question" | "code" | "console";
+type Pane = "question" | "code" | "console" | "ai";
 
 export function clock(ms: number) {
   const s = Math.max(0, Math.round(ms / 1000));
@@ -38,6 +39,8 @@ export default function SierraWorkspace({ problem, draftKey, passed, onPassed, o
   const [refStep, setRefStep] = useState<0 | 1 | 2>(0);
   const [resetAsk, setResetAsk] = useState(false);
   const [now, setNow] = useState(Date.now());
+  const isProject = problem.kind === "project";
+  const [aiOpen, setAiOpen] = useState(false);
   const saveTimer = useRef(0);
   const unlocked = Math.min(passed + 1, total);
 
@@ -100,7 +103,7 @@ export default function SierraWorkspace({ problem, draftKey, passed, onPassed, o
   const shown = outcome && outcome.kind !== "compile" ? outcome.results : live;
 
   return createPortal(
-    <div className="m01 nc-ide so-ide" role="dialog" aria-modal="true" aria-label={problem.title}>
+    <div className={`m01 nc-ide so-ide${isProject && aiOpen ? " has-ai" : ""}`} role="dialog" aria-modal="true" aria-label={problem.title}>
       <header className="nc-ide-top">
         <button type="button" className="nc-btn nc-btn--icon" onClick={onClose} aria-label="Back">
           ←
@@ -118,6 +121,26 @@ export default function SierraWorkspace({ problem, draftKey, passed, onPassed, o
           <button type="button" className={`nc-btn nc-btn--ghost${hint ? " is-on" : ""}`} onClick={() => setHint((h) => !h)}>
             💡 Hint
           </button>
+          {isProject && (
+            <button
+              type="button"
+              className={`nc-btn so-ai-btn${aiOpen ? " is-on" : ""}`}
+              onClick={() => {
+                const phone = window.innerWidth <= 820;
+                if (!aiOpen) {
+                  setAiOpen(true);
+                  setPane("ai");
+                } else if (phone && pane !== "ai") {
+                  setPane("ai"); // on a phone the panel is a tab: show it
+                } else {
+                  setAiOpen(false);
+                  setPane("code");
+                }
+              }}
+            >
+              ✨ AI assistant
+            </button>
+          )}
           <button type="button" className="nc-btn nc-btn--submit" disabled={busy} onClick={run}>
             {busy ? "Testing…" : `▶ Test part ${view + 1}`}
           </button>
@@ -125,9 +148,9 @@ export default function SierraWorkspace({ problem, draftKey, passed, onPassed, o
       </header>
 
       <nav className="nc-ide-tabs" aria-label="Panes">
-        {(["question", "code", "console"] as Pane[]).map((p) => (
+        {(["question", "code", "console", ...(isProject && aiOpen ? (["ai"] as Pane[]) : [])] as Pane[]).map((p) => (
           <button key={p} type="button" className={pane === p ? "is-active" : ""} onClick={() => setPane(p)}>
-            {p === "question" ? "Question" : p === "code" ? "Code" : "Tests"}
+            {p === "question" ? "Question" : p === "code" ? "Code" : p === "console" ? "Tests" : "AI"}
           </button>
         ))}
       </nav>
@@ -202,7 +225,7 @@ export default function SierraWorkspace({ problem, draftKey, passed, onPassed, o
           </div>
         </section>
 
-        <section className={`nc-pane nc-pane--work${pane !== "question" ? " is-shown" : ""}${pane === "console" ? " show-console" : ""}`}>
+        <section className={`nc-pane nc-pane--work${pane === "code" || pane === "console" ? " is-shown" : ""}${pane === "console" ? " show-console" : ""}`}>
           <div className="nc-editor-wrap">
             <div className="nc-editor-bar">
               <span>TypeScript</span>
@@ -250,6 +273,21 @@ export default function SierraWorkspace({ problem, draftKey, passed, onPassed, o
             </div>
           </div>
         </section>
+
+        {isProject && aiOpen && (
+          <section className={`nc-pane so-ai-pane${pane === "ai" ? " is-shown" : ""}`}>
+            <SierraAssistant
+              problem={problem.title}
+              part={`Part ${view + 1}: ${problem.parts[view].title}`}
+              prompt={problem.parts[view].prompt}
+              code={code}
+              onClose={() => {
+                setAiOpen(false);
+                setPane("code");
+              }}
+            />
+          </section>
+        )}
       </div>
     </div>,
     document.body,

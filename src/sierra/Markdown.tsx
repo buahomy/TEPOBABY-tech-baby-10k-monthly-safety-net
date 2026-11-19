@@ -3,7 +3,7 @@ import { Fragment, ReactNode } from "react";
 // Renders the small markdown subset used in shared/sierra/problems.js: blank-line paragraphs,
 // "- " bullet lists, ``` code fences, `inline code` and **bold**. No HTML is injected.
 
-function inline(text: string): ReactNode[] {
+export function inline(text: string): ReactNode[] {
   return text.split(/(`[^`]+`|\*\*[^*]+\*\*)/g).map((part, i) => {
     if (part.startsWith("`") && part.endsWith("`") && part.length > 1) return <code key={i}>{part.slice(1, -1)}</code>;
     if (part.startsWith("**") && part.endsWith("**") && part.length > 3) return <strong key={i}>{part.slice(2, -2)}</strong>;

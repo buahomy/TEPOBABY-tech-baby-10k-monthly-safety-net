@@ -173,6 +173,30 @@ export function askGemini(messages, ctx) {
 }
 
 /**
+ * The coding assistant in Interview → Technical → Sierra OA: stands in for the AI assistant embedded in
+ * a CoderPad assessment, so students can practice prompting it well. It sees the problem, the part the
+ * student is on, and their current code. messages → { text }
+ */
+export async function codingAssistant(messages, { problem, part, prompt, code }) {
+  const system = [
+    "You are the AI coding assistant built into an online coding assessment (like CoderPad's assistant).",
+    "The candidate is solving a timed TypeScript problem. Help with exactly what they ask: explain, write a small piece of code, find a bug, suggest tests.",
+    "Reply in TypeScript when you write code. Keep answers short: a few sentences and one code block at most, unless they ask for more.",
+    "Don't rewrite their whole file unless they ask; prefer the smallest change that does what they asked.",
+    "Be accurate. If something in their request or code is wrong, say so plainly.",
+    "",
+    `Problem: ${problem}`,
+    part ? `Current part: ${part}` : "",
+    prompt ? `Part instructions:\n${prompt}` : "",
+    code ? `Candidate's current code:\n${code}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+  const { text } = await generate({ system, messages, temperature: 0.3, maxTokens: 6000 });
+  return { text };
+}
+
+/**
  * Tailored resume suggestions for one job (opt-in from the ATS report). Gets only the sanitized,
  * sectioned resume text (no name or contact info) plus the job's requirements.
  */

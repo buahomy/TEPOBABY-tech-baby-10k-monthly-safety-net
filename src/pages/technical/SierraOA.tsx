@@ -4,6 +4,9 @@ import type { SierraProblem } from "../../../shared/sierra/problems.js";
 import { addMock, clearMockDrafts, markPartsPassed, useSierraProgress } from "../../sierra/progress";
 import SierraWorkspace, { clock } from "./SierraWorkspace";
 import SierraReflection from "./SierraReflection";
+import CodeIDE from "./CodeIDE";
+import { Problem, getProblem } from "../../neetcode/api";
+import { useProgress } from "../../neetcode/progress";
 import "./sierra.css";
 
 // Interview → Technical → Sierra OA. Practice for Sierra's Software Engineer, Agent (new grad)
@@ -31,6 +34,17 @@ function writeMock(m: Mock | null) {
 }
 
 const EASY = SIERRA_PROBLEMS.filter((p) => p.kind === "easy");
+
+// LeetCode problems that match the OA's easy questions, opened in the NeetCode coding screen
+// (same problems as in the Card Game, so solving one here also marks its card solved).
+const LEETCODE = [
+  { slug: "merge-intervals", n: 56, title: "Merge Intervals", level: "Medium", why: "Same skill as the one question labeled Sierra OA (intervals)." },
+  { slug: "longest-substring-without-repeating-characters", n: 3, title: "Longest Substring Without Repeating Characters", level: "Medium", why: "Listed for the new-grad Agent role. Then try it with characters arriving one at a time." },
+  { slug: "word-ladder", n: 127, title: "Word Ladder", level: "Hard", why: "BFS. The coding problem in another Sierra online assessment." },
+  { slug: "number-of-islands", n: 200, title: "Number of Islands", level: "Medium", why: "BFS/DFS speed for graph questions." },
+  { slug: "two-sum", n: 1, title: "Two Sum", level: "Easy", why: "Hashmap warm-up. Aim for under 5 minutes." },
+  { slug: "group-anagrams", n: 49, title: "Group Anagrams", level: "Medium", why: "Hashmap and string grouping." },
+];
 const PROJECTS = SIERRA_PROBLEMS.filter((p) => p.kind === "project");
 const TOTAL_PARTS = SIERRA_PROBLEMS.reduce((n, p) => n + p.parts.length, 0);
 
@@ -40,6 +54,15 @@ export default function SierraOA() {
   const [mock, setMock] = useState<Mock | null>(readMock);
   const [setup, setSetup] = useState(false);
   const [now, setNow] = useState(Date.now());
+  const [lc, setLc] = useState<{ slug: string; problem?: Problem; error?: string } | null>(null);
+  const solved = useProgress([]).solved;
+
+  const openLeetCode = (slug: string) => {
+    setLc({ slug });
+    getProblem(slug)
+      .then((problem) => setLc((cur) => (cur?.slug === slug ? { slug, problem } : cur)))
+      .catch((e) => setLc((cur) => (cur?.slug === slug ? { slug, error: e.message } : cur)));
+  };
 
   const saveMock = (m: Mock | null) => {
     setMock(m);
@@ -87,6 +110,8 @@ export default function SierraOA() {
           mock={inMock ? { endsAt, label: "Mock OA" } : undefined}
         />
       )}
+
+      {lc?.problem && <CodeIDE problem={lc.problem} onClose={() => setLc(null)} />}
 
       {mock ? (
         <MockView mock={mock} now={now} endsAt={endsAt} onOpen={setOpen} onSave={saveMock} />
@@ -139,6 +164,34 @@ export default function SierraOA() {
               {EASY.map((p) => (
                 <ProblemCard key={p.id} p={p} passed={progress.parts[p.id] || 0} onOpen={() => setOpen(p.id)} />
               ))}
+            </div>
+          </section>
+
+          <section className="so-block">
+            <h3>LeetCode set for the easy questions</h3>
+            <p className="nc-muted nc-small">
+              Graded with hidden tests like LeetCode, in JavaScript or Python (write TypeScript in the real OA). 12 minutes each for easy, 20 for
+              medium. No AI: the built-in assistant is for the project.
+            </p>
+            {lc?.error && <p className="nc-bad nc-small">Couldn't load that problem: {lc.error}</p>}
+            <div className="so-list">
+              {LEETCODE.map((p) => {
+                const done = solved.includes(p.slug);
+                return (
+                  <button key={p.slug} type="button" className={`so-card${done ? " is-done" : ""}`} onClick={() => openLeetCode(p.slug)}>
+                    <div className="so-card-top">
+                      <strong>
+                        {p.n}. {p.title}
+                      </strong>
+                      <span className={`nc-diff nc-diff--${p.level.toLowerCase()}`}>{p.level}</span>
+                    </div>
+                    <p>{p.why}</p>
+                    <div className="so-dots">
+                      <span className={done ? "is-on" : ""}>{done ? "✓ Solved" : lc?.slug === p.slug && !lc.problem && !lc.error ? "Loading…" : "Not solved yet"}</span>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </section>
 

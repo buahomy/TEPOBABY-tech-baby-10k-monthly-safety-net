@@ -93,3 +93,35 @@ test("no sideways scrolling on the Sierra OA page", async ({ page }) => {
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(1);
 });
+
+test("the AI assistant panel sends the prompt with the current code", async ({ page }) => {
+  let sent: { messages: { text: string }[]; context: { problem: string; code: string } } | null = null;
+  await page.route("**/api/ginny/code-assist", async (route) => {
+    sent = route.request().postDataJSON();
+    await route.fulfill({ json: { text: "Wrap each try.\n\n```ts\nawait withTimeout(fn(), ms);\n```" } });
+  });
+  await page.getByRole("button", { name: /Conversation history loader/ }).click();
+  const ide = page.getByRole("dialog", { name: "Conversation history loader" });
+  await ide.getByRole("button", { name: /AI assistant/ }).click();
+  const panel = ide.getByRole("complementary", { name: "AI assistant" });
+  await expect(panel).toBeVisible();
+  await panel.getByLabel("Prompt").fill("Per-try or whole-loop timeout?");
+  await panel.getByRole("button", { name: "Send" }).click();
+  await expect(panel.getByText("Wrap each try.")).toBeVisible();
+  await expect(panel.locator("pre")).toContainText("withTimeout");
+  expect(sent!.messages.at(-1)!.text).toBe("Per-try or whole-loop timeout?");
+  expect(sent!.context.problem).toBe("Conversation history loader");
+  expect(sent!.context.code).toContain("loadHistory");
+});
+
+test("easy questions have no AI assistant", async ({ page }) => {
+  await page.getByRole("button", { name: /Debug log intervals/ }).click();
+  const ide = page.getByRole("dialog", { name: "Debug log intervals" });
+  await expect(ide).toBeVisible();
+  await expect(ide.getByRole("button", { name: /AI assistant/ })).toHaveCount(0);
+});
+
+test("the LeetCode set opens a problem in the coding screen", async ({ page }) => {
+  await page.getByRole("button", { name: /56\. Merge Intervals/ }).click();
+  await expect(page.getByRole("dialog", { name: /Code .*Merge Intervals/ })).toBeVisible({ timeout: 30_000 });
+});
